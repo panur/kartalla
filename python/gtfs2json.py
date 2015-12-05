@@ -105,14 +105,14 @@ def _parse_routes(routes_txt):
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['route_type'] not in route_types:
-                logging.error('in route_id={} route_type {} not in {}'.format(
+                logging.error('In route_id={} route_type {} not in {}'.format(
                     row['route_id'], row['route_type'], route_types))
             # create new route
             routes[row['route_id']] = {'route_id': row['route_id'],
                                        'name': row['route_short_name'],
                                        'type': route_types.get(row['route_type'],
                                                                row['route_type']),
-                                       'services': {},
+                                       'services': {},  # by service_id
                                        'shapes': []}
 
     logging.debug('parsed {} routes'.format(len(routes)))
@@ -126,16 +126,17 @@ def _add_services_trips_to_routes(routes, trips_txt):
         for row in csv_reader:
             if row['route_id'] not in routes:
                 logging.error('No route information for route_id={}'.format(row['route_id']))
+            elif row['direction_id'] not in ['0', '1']:
+                logging.error('For route_id={} invalid direction_id: {}'.format(
+                    row['route_id'], row['direction_id']))
             else:
                 _add_services_trips_to_route(routes[row['route_id']], row)
-
-    # logging.debug('huppa: {}'.format(routes['2132']))
 
     return routes
 
 
 def _add_services_trips_to_route(route, row):  # row in trips.txt
-    # tbd: validate direction_id, shape_id
+    # tbd: validate shape_id
     # route contains services, service contains trips
 
     if row['service_id'] not in route['services']:
@@ -148,7 +149,7 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
             'stop_distances': {'0': [], '1': []}}  # shape indexes
     service = route['services'][row['service_id']]
     if row['trip_id'] in service['trips']:
-        logging.error('in route_id={} service_id={} duplicate trip_id: {}'.format(
+        logging.error('In route_id={} service_id={} duplicate trip_id: {}'.format(
             row['route_id'], row['service_id'], row['trip_id']))
     else:
         # create new trip
@@ -163,7 +164,7 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
 
         if (service['shape_id'][row['direction_id']] and
                 (row['shape_id'] != service['shape_id'][row['direction_id']])):
-            logging.error('in service_id={} duplicate shape_id: {}'.format(
+            logging.error('In service_id={} duplicate shape_id: {}'.format(
                 row['service_id'], row['shape_id']))
 
         service['shape_id'][row['direction_id']] = row['shape_id']
@@ -202,7 +203,7 @@ def _get_services_and_trips(routes):
 def _check_stops_times_input_row(row):
     """Check the row in stop_times.txt matches expectations."""
     if not row['arrival_time'].endswith(':00'):
-        logging.error('in {} seconds in arrival_time: {}'.format(
+        logging.error('In trip_id={} seconds in arrival_time: {}'.format(
             row['trip_id'], row['arrival_time']))
 
 
@@ -215,6 +216,9 @@ def _get_minutes(time_string):
 def _add_stop_times_to_trip(trip, row):  # row in stop_times.txt
     arrival_time = _get_minutes(row['arrival_time'])
     departure_time = _get_minutes(row['departure_time'])
+    if departure_time < arrival_time:
+        logging.error('In service_id= {} departure_time < arrival_time: {} < {}'.format(
+            trip['service_id'], row['departure_time'], row['arrival_time']))
     trip['is_departure_times'] = trip['is_departure_times'] or (arrival_time != departure_time)
     trip['stop_times'].append(arrival_time - trip['start_time'])
     trip['stop_times'].append(departure_time - trip['start_time'])
@@ -227,7 +231,7 @@ def _add_stop_to_stops(stops, row):  # row in stop_times.txt
         stops[stop_sequence] = row['stop_id']
     else:
         if stops[stop_sequence] != row['stop_id']:
-            logging.error('in trip_id={} two stops for stop_sequence={}: {} {} '.format(
+            logging.error('In trip_id={} two stops for stop_sequence={}: {} {} '.format(
                 row['trip_id'], stop_sequence, row['stop_id'],
                 stops[stop_sequence]))
 
@@ -241,15 +245,19 @@ def _add_stop_distances_to_services(routes, shapes, stops):
                         logging.error('No stop information for stop_id={}'.format(stop_id))
                     else:
                         shape = shapes[service['shape_id'][direction_id]]
-                        shape_index = _get_shape_index(shape, stops[stop_id])
+                        if len(service['stop_distances'][direction_id]) == 0:
+                            previous_index = 0
+                        else:
+                            previous_index = service['stop_distances'][direction_id][-1]
+                        shape_index = _get_shape_index(shape, stops[stop_id], previous_index)
                         service['stop_distances'][direction_id].append(shape_index)
 
 
-def _get_shape_index(shape, lon_lat):
-    for i in range(len(shape)):
+def _get_shape_index(shape, lon_lat, previous_index):
+    for i in range(previous_index, len(shape)):
         if shape[i] == lon_lat:
             return i
-    logging.error('no shape index for {}'.format(lon_lat))  # tbd: add some id
+    logging.error('No shape index for {}'.format(lon_lat))  # tbd: add some id
 
 
 def _write_routes_to_file(shapes, routes, routes_json):
@@ -277,8 +285,6 @@ def _write_routes_to_file(shapes, routes, routes_json):
     stats['routes'] = len(output_routes)
     logging.debug('output stats: {}'.format(stats))
 
-    # logging.debug('huppa3: {}'.format(output_routes['2132']))
-
 
 def _add_shapes_to_route(shapes, route):
     for _, service in sorted(route['services'].iteritems()):
@@ -297,6 +303,8 @@ def _get_output_services(services):
     for service_id in sorted(services):
         service = services[service_id]
         for direction_id in ['0', '1']:
+            delta_stop_distances = _get_delta_list(service['stop_distances'][direction_id])
+            output_stop_distances = _integer_list_to_string(delta_stop_distances)
             is_departure_times = _is_departure_times_in_service(service)
             output_stop_times = _get_service_stop_times(service, direction_id, is_departure_times)
             # stop times must be set before these
@@ -304,7 +312,7 @@ def _get_output_services(services):
             # 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
             service_direction = []
             service_direction.append(service['shape_i'][direction_id])
-            service_direction.append(_get_delta_list(service['stop_distances'][direction_id]))
+            service_direction.append(output_stop_distances)
             service_direction.append(int(is_departure_times))
             service_direction.append(output_stop_times)
             service_direction.append(output_trips)
@@ -328,8 +336,7 @@ def _get_service_stop_times(service, direction_id, is_departure_times):
     for _, trip in sorted(service['trips'].iteritems()):
         if trip['direction_id'] == direction_id:
             trip_stop_times = _get_trip_stop_times(trip['stop_times'], is_departure_times)
-            delta_stop_times = _get_delta_list(trip_stop_times)
-            delta_stop_times = _integer_list_to_string(delta_stop_times)
+            delta_stop_times = _integer_list_to_string(_get_delta_list(trip_stop_times))
             try:
                 trip['stop_times_i'] = service_stop_times.index(delta_stop_times)
             except ValueError:
@@ -350,16 +357,25 @@ def _get_delta_list(integer_list):
     """For [0, 10, 11, 22, 25] return [10, 1, 11, 3]."""
     if (len(integer_list) > 0) and (integer_list[0] != 0):
         raise SystemExit('integer_list[0] = {} != 0'.format(integer_list[0]))
+    if integer_list != sorted(integer_list):
+        raise SystemExit('integer_list not sorted: {}'.format(integer_list))
     return [(integer_list[i] - integer_list[i - 1]) for i in range(1, len(integer_list))]
 
 
 def _integer_list_to_string(integer_list):
-    """For [0, 10, 11, 22, 25] return ''."""
-    min_chr = 35  # 35='#'
-    max_value = 126 - min_chr  # 126='~'
-    if (len(integer_list) > 0) and (max(integer_list) > max_value):
-        raise SystemExit('max(integer_list) = {} > {}'.format(max(integer_list), max_value))
-    return ''.join([chr(integer + min_chr) for integer in integer_list])
+    """For [0, 1, 2, 14, 91, 92, 15, 182, 183, 16] return '#$%1~!$2!~!!$3'."""
+    if (len(integer_list) > 0) and (min(integer_list) < 0):
+        raise SystemExit('negative value in integer_list: {}'.format(integer_list))
+    mult_chr = 33  # 33='!'
+    min_chr = 35  # 35='#', not 34='"' because it takes three characters in JSON
+    max_chr = 126  # 126='~'
+    max_value = max_chr - min_chr
+    output_string = ''
+    for integer in integer_list:
+        num_mult_chr = max(0, integer - 1) / max_value
+        last_output_chr = chr(min_chr + (integer - (num_mult_chr * max_value)))
+        output_string += (chr(mult_chr) * num_mult_chr) + last_output_chr
+    return output_string
 
 
 def _get_output_trips(trips, direction_id):
@@ -374,7 +390,8 @@ def _get_output_trips(trips, direction_id):
     if len(start_times) == 0:  # some services operate only in one direction
         return [[], [], []]
     else:
-        return [start_times[0], _get_delta_list([0] + start_times)[1:], stop_times_indexes]
+        delta_start_times = _integer_list_to_string(_get_delta_list([0] + start_times)[1:])
+        return [start_times[0], delta_start_times, _integer_list_to_string(stop_times_indexes)]
 
 
 if __name__ == "__main__":
