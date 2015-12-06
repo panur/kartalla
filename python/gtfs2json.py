@@ -16,7 +16,7 @@ import gpolyencode
 def _main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_dir', help='GTFS input directory')
-    parser.add_argument('output_dir', help='JSON output directory')
+    parser.add_argument('output_file', help='JSON output file')
     args = parser.parse_args()
 
     _init_logging()
@@ -31,6 +31,10 @@ def _main():
     routes = _parse_routes(os.path.join(args.input_dir, 'routes.txt'))
     print 'adding services and trips to routes...'
     _add_services_trips_to_routes(routes, os.path.join(args.input_dir, 'trips.txt'))
+    print 'adding calendar to services...'
+    _add_calendar_to_services(routes, os.path.join(args.input_dir, 'calendar.txt'))
+    print 'adding calendar dates to services...'
+    _add_calendar_dates_to_services(routes, os.path.join(args.input_dir, 'calendar_dates.txt'))
     print 'adding stop times to trips...'
     # _add_stop_times_to_trips(routes, os.path.join(args.input_dir, 'stop_times.txt'))
     _add_stop_times_to_trips(routes, os.path.join(args.input_dir, '2132_stop_times.txt'))
@@ -38,8 +42,8 @@ def _main():
     _add_stop_distances_to_services(routes, shapes, stops)
     print 'encoding shapes...'
     _encode_shapes(shapes)
-    print 'writing routes to file...'
-    _write_routes_to_file(shapes, routes, os.path.join(args.output_dir, 'routes.json'))
+    print 'creating output file...'
+    _create_output_file(shapes, routes, args.output_file)
 
     print 'max mem: {} megabytes'.format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
 
@@ -49,10 +53,10 @@ def _init_logging():
     logging.basicConfig(filename='gtfs2json.log', format=log_format, level=logging.DEBUG)
 
 
-def _parse_shapes(input_filename):
+def _parse_shapes(shapes_txt):
     shapes = {}
 
-    with open(input_filename, 'r') as input_file:
+    with open(shapes_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['shape_id'] not in shapes:
@@ -107,12 +111,13 @@ def _parse_routes(routes_txt):
                 logging.error('In route_id={} route_type {} not in {}'.format(
                     row['route_id'], row['route_type'], route_types))
             # create new route
-            routes[row['route_id']] = {'route_id': row['route_id'],
-                                       'name': row['route_short_name'],
-                                       'type': route_types.get(row['route_type'],
-                                                               row['route_type']),
-                                       'services': {},  # by service_id
-                                       'shapes': []}
+            routes[row['route_id']] = {
+                'route_id': row['route_id'],
+                'name': row['route_short_name'],
+                'type': route_types.get(row['route_type'], row['route_type']),
+                'services': {},  # by service_id
+                'shapes': []
+            }
 
     logging.debug('parsed {} routes'.format(len(routes)))
 
@@ -141,9 +146,14 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
     if row['service_id'] not in route['services']:
         # create new service
         route['services'][row['service_id']] = {
+            'start_date': None,
+            'end_date': None,
+            'weekday': None,
+            'exception_dates': {'added': [], 'removed': []},
             'trips': {},  # by trip_id
             'directions_i': None,
-            'directions': {'0': _create_direction(), '1': _create_direction()}}
+            'directions': {'0': _create_direction(), '1': _create_direction()}
+        }
     service = route['services'][row['service_id']]
     if row['trip_id'] in service['trips']:
         logging.error('In route_id={} service_id={} duplicate trip_id: {}'.format(
@@ -157,8 +167,8 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
             'start_time': 0,  # number of minutes after midnight
             'is_departure_times': False,
             'stop_times': [],
-            'stop_times_i': None}
-
+            'stop_times_i': None
+        }
         _add_shape_id_to_direction(service['directions'][row['direction_id']], row)
 
 
@@ -177,6 +187,54 @@ def _add_shape_id_to_direction(direction, row):  # row in trips.txt
             row['service_id'], row['shape_id']))
 
     direction['shape_id'] = row['shape_id']
+
+
+def _add_calendar_to_services(routes, calendar_txt):
+    services = _get_services(routes)
+
+    with open(calendar_txt, 'r') as input_file:
+        csv_reader = csv.DictReader(input_file)
+        for row in csv_reader:
+            if row['service_id'] in services:
+                service = services[row['service_id']]
+                if service['start_date']:
+                    logging.error('duplicate service_id={} in calendar'.format(row['service_id']))
+                service['start_date'] = row['start_date']
+                service['end_date'] = row['end_date']
+                service['weekday'] = _get_service_weekday(row['service_id'], row)
+
+
+def _get_services(routes):
+    services = {}
+    for route in routes.itervalues():
+        for service_id, service in route['services'].iteritems():
+            services[service_id] = service
+    return services
+
+
+def _get_service_weekday(service_id, row):  # row in calendar.txt
+    days = [row['monday'], row['tuesday'], row['wednesday'], row['thursday'], row['friday'],
+            row['saturday'], row['sunday']]
+    if ''.join(sorted(days)) != '0000001':
+        logging.error('For service_id={} invalid week days: {}'.format(service_id, days))
+    return days.index('1')
+
+
+def _add_calendar_dates_to_services(routes, calendar_dates_txt):
+    services = _get_services(routes)
+
+    with open(calendar_dates_txt, 'r') as input_file:
+        csv_reader = csv.DictReader(input_file)
+        for row in csv_reader:
+            if row['service_id'] in services:
+                exception_types = {'1': 'added', '2': 'removed'}
+                if row['exception_type'] in exception_types:  # tbd: check start/end
+                    exception_dates = services[row['service_id']]['exception_dates']
+                    exception_type = exception_types[row['exception_type']]
+                    exception_dates[exception_type].append(row['date'])
+                else:
+                    logging.error('For service_id={} invalid exception_type: {}'.format(
+                        row['service_id'], row['exception_type']))
 
 
 def _add_stop_times_to_trips(routes, stop_times_txt):
@@ -267,7 +325,34 @@ def _get_shape_index(shape, lon_lat, previous_index):
     logging.error('No shape index for {}'.format(lon_lat))  # tbd: add some id
 
 
-def _write_routes_to_file(shapes, routes, routes_json):
+def _create_output_file(shapes, routes, output_filename):
+    output_dates = _get_output_dates(routes)
+    output_routes = _get_output_routes(shapes, output_dates, routes)
+
+    output_data = []  # 0=dates, 1=routes
+    output_data.append(output_dates)
+    output_data.append(output_routes)
+
+    with open(output_filename, 'w') as output_file:
+        output_file.write(json.dumps(output_data, separators=(',', ':')))
+
+
+def _get_output_dates(routes):
+    output_dates = {}
+    for route in routes.itervalues():
+        for service in route['services'].itervalues():
+            dates = [service['start_date'], service['end_date']]
+            for exception_dates in service['exception_dates'].itervalues():
+                dates = dates + exception_dates
+            for date in dates:
+                if date not in output_dates:
+                    output_dates[date] = 0
+                output_dates[date] += 1
+
+    return sorted(output_dates, key=output_dates.get, reverse=True)
+
+
+def _get_output_routes(shapes, output_dates, routes):
     output_routes = []
     stats = {'route_ids': len(routes), 'service_ids': 0, 'trip_ids': 0, 'shapes': 0,
              'directions': 0, 'stop_times': 0}
@@ -276,7 +361,7 @@ def _write_routes_to_file(shapes, routes, routes_json):
         route = routes[route_id]
         _add_shapes_to_route(shapes, route)
         output_directions = _get_output_directions(route['services'])
-        output_services = _get_output_services(route['services'])
+        output_services = _get_output_services(route['services'], output_dates)
         output_route = []  # 0=name, 1=type, 2=shapes, 3=directions, 4=services
         output_route.append(route['name'])
         output_route.append(route['type'])
@@ -290,10 +375,9 @@ def _write_routes_to_file(shapes, routes, routes_json):
         stats['shapes'] += len(route['shapes'])
         stats['directions'] += len(output_directions['directions'])
 
-    with open(routes_json, 'w') as output_file:
-        output_file.write(json.dumps(output_routes, separators=(',', ':')))
-
     logging.debug('output stats: {}'.format(stats))
+
+    return output_routes
 
 
 def _add_shapes_to_route(shapes, route):
@@ -344,16 +428,28 @@ def _get_output_direction(service, direction_id, direction, stats):
     return output_direction
 
 
-def _get_output_services(services):
+def _get_output_services(services, output_dates):
     output_services = []
 
     for _, service in sorted(services.iteritems()):
-        # 0=directions_i
+        # 0=start_date_i, 1=end_date_i, 2=weekday, 3=exception_dates, 4=directions_i
         output_service = []
+        output_service.append(output_dates.index(service['start_date']))
+        output_service.append(output_dates.index(service['end_date']))
+        output_service.append(service['weekday'])
+        output_service.append(_get_output_exception_dates(service['exception_dates'], output_dates))
         output_service.append(service['directions_i'])
         output_services.append(output_service)
 
     return output_services
+
+
+def _get_output_exception_dates(exception_dates, output_dates):
+    output_exception_dates = [[], []]
+    for i, exception_type in enumerate(exception_dates):
+        for exception_date in exception_dates[exception_type]:
+            output_exception_dates[i].append(output_dates.index(exception_date))
+    return output_exception_dates
 
 
 def _is_departure_times_in_service(service):
