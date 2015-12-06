@@ -142,6 +142,7 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
         # create new service
         route['services'][row['service_id']] = {
             'trips': {},  # by trip_id
+            'directions_i': None,
             'directions': {'0': _create_direction(), '1': _create_direction()}}
     service = route['services'][row['service_id']]
     if row['trip_id'] in service['trips']:
@@ -269,22 +270,25 @@ def _get_shape_index(shape, lon_lat, previous_index):
 def _write_routes_to_file(shapes, routes, routes_json):
     output_routes = []
     stats = {'route_ids': len(routes), 'service_ids': 0, 'trip_ids': 0, 'shapes': 0,
-             'stop_times': 0}
+             'directions': 0, 'stop_times': 0}
 
     for route_id in sorted(routes):
         route = routes[route_id]
         _add_shapes_to_route(shapes, route)
+        output_directions = _get_output_directions(route['services'])
         output_services = _get_output_services(route['services'])
-        output_route = []  # 0=name, 1=type, 2=shapes, 3=services
+        output_route = []  # 0=name, 1=type, 2=shapes, 3=directions, 4=services
         output_route.append(route['name'])
         output_route.append(route['type'])
         output_route.append(route['shapes'])
-        output_route.append(output_services['services'])
+        output_route.append(output_directions['directions'])
+        output_route.append(output_services)
         output_routes.append(output_route)
         stats['service_ids'] += len(route['services'])
-        stats['trip_ids'] += output_services['stats']['trip_ids']
-        stats['stop_times'] += output_services['stats']['stop_times']
+        stats['trip_ids'] += output_directions['stats']['trip_ids']
+        stats['stop_times'] += output_directions['stats']['stop_times']
         stats['shapes'] += len(route['shapes'])
+        stats['directions'] += len(output_directions['directions'])
 
     with open(routes_json, 'w') as output_file:
         output_file.write(json.dumps(output_routes, separators=(',', ':')))
@@ -303,29 +307,51 @@ def _add_shapes_to_route(shapes, route):
                     direction['shape_i'] = len(route['shapes']) - 1
 
 
-def _get_output_services(services):
-    output_services = {'services': [], 'stats': {'trip_ids': 0, 'stop_times': 0}}
+def _get_output_directions(services):
+    output = {'directions': [], 'stats': {'trip_ids': 0, 'stop_times': 0}}
 
     for _, service in sorted(services.iteritems()):
+        output['stats']['trip_ids'] += len(service['trips'])
         output_directions = [[], []]
         for direction_id, direction in sorted(service['directions'].iteritems()):
-            delta_stop_distances = _get_delta_list(direction['stop_distances'])
-            output_stop_distances = _integer_list_to_string(delta_stop_distances)
-            is_departure_times = _is_departure_times_in_service(service)
-            output_stop_times = _get_service_stop_times(service, direction_id, is_departure_times)
-            # stop times must be set before these
-            output_trips = _get_output_trips(service['trips'], direction_id)
-            # 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
-            output_direction = []
-            output_direction.append(direction['shape_i'])
-            output_direction.append(output_stop_distances)
-            output_direction.append(int(is_departure_times))
-            output_direction.append(output_stop_times)
-            output_direction.append(output_trips)
+            output_direction = _get_output_direction(service, direction_id, direction,
+                                                     output['stats'])
             output_directions[int(direction_id)].append(output_direction)
-            output_services['stats']['stop_times'] += len(output_stop_times)
-        output_services['services'].append(output_directions)
-        output_services['stats']['trip_ids'] += len(service['trips'])
+        try:
+            service['directions_i'] = output['directions'].index(output_directions)
+        except ValueError:
+            output['directions'].append(output_directions)
+            service['directions_i'] = len(output['directions']) - 1
+
+    return output
+
+
+def _get_output_direction(service, direction_id, direction, stats):
+    delta_stop_distances = _get_delta_list(direction['stop_distances'])
+    output_stop_distances = _integer_list_to_string(delta_stop_distances)
+    is_departure_times = _is_departure_times_in_service(service)
+    output_stop_times = _get_service_stop_times(service, direction_id, is_departure_times)
+    stats['stop_times'] += len(output_stop_times)
+    # stop times must be set before these
+    output_trips = _get_output_trips(service['trips'], direction_id)
+    # 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
+    output_direction = []
+    output_direction.append(direction['shape_i'])
+    output_direction.append(output_stop_distances)
+    output_direction.append(int(is_departure_times))
+    output_direction.append(output_stop_times)
+    output_direction.append(output_trips)
+    return output_direction
+
+
+def _get_output_services(services):
+    output_services = []
+
+    for _, service in sorted(services.iteritems()):
+        # 0=directions_i
+        output_service = []
+        output_service.append(service['directions_i'])
+        output_services.append(output_service)
 
     return output_services
 
