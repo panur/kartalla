@@ -142,9 +142,8 @@ function GtfsService(gtfsRoot, gtfsRoute, serviceIndex) {
 function GtfsDirection(gtfsRoot, gtfsRoute, gtfsService) {
     // 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
     this.getStopDistances = function () {
-        var rootDirection = gtfsService.getRootDirection()[0];  // tbd: extra level
-        console.debug('rootDirection.length: ' + rootDirection.length);
-        console.debug('rdump: ' + rootDirection);
+        var rootDirection = gtfsService.getRootDirection();
+        console.log('rdump: %o', rootDirection);
         return gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(rootDirection[1]));
     }
 }

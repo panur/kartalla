@@ -33,18 +33,22 @@ function Map(master) {
         var readyEvent = document.createEvent('Event');
         readyEvent.initEvent('gtfsIsReady', false, false);
         document.addEventListener('gtfsIsReady', function (e) {start(gtfs);}, false);
-        gtfs.init('json/gtfs.json', readyEvent);
+        gtfs.init('json/132.json', readyEvent);
     }
 
     function start(gtfs) {
         console.log('start');
         var routes = gtfs.getRoutes();
-        var activeServices = routes[0].getActiveServices();
-        //console.debug('activeServices.length: ' + activeServices.length);
-        var direction = activeServices[1].getDirection();
-        //console.debug('len: ' + direction.getStopDistances().length);
-        console.log('getStopDistances: %o', direction.getStopDistances());
-        //console.debug(direction.getStopDistances());
+        for (var i = 0; i < routes.length; i++) {
+            if (routes[i].getName() == '132') {
+                var activeServices = routes[i].getActiveServices();
+                console.log('activeServices.length: %d', activeServices.length);
+                var direction = activeServices[1].getDirection();
+                //console.debug('len: ' + direction.getStopDistances().length);
+                console.log('getStopDistances: %o', direction.getStopDistances());
+                //console.debug(direction.getStopDistances());
+            }
+        }
     }
 
   function huppa() {

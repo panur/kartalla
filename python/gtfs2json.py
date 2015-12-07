@@ -396,11 +396,11 @@ def _get_output_directions(services):
 
     for _, service in sorted(services.iteritems()):
         output['stats']['trip_ids'] += len(service['trips'])
-        output_directions = [[], []]
+        output_directions = [None, None]
         for direction_id, direction in sorted(service['directions'].iteritems()):
             output_direction = _get_output_direction(service, direction_id, direction,
                                                      output['stats'])
-            output_directions[int(direction_id)].append(output_direction)
+            output_directions[int(direction_id)] = output_direction
         try:
             service['directions_i'] = output['directions'].index(output_directions)
         except ValueError:
