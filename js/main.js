@@ -1,27 +1,18 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi */
 
 function main() {
-  /* note: master must not be modified outside of this function */
-  var master = {};
-  var gmElement = document.getElementById("map_canvas");
-  var gmOptions = {
-    mapTypeId: google.maps.MapTypeId.ROADMAP,
-    mapTypeControlOptions:
-      {style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR},
-    zoomControlOptions: {style: google.maps.ZoomControlStyle.DEFAULT},
-    panControl: true,
-    zoomControl: true,
-    scaleControl: true,
-    streetViewControl: true,
-    styles: [{
-      featureType: "road.arterial",
-      elementType: "geometry.fill",
-      stylers: [{color: "#FBF8A5" }]
-    }]
-  };
+    var map = new Map();
+    map.init();
+    var gtfs = new Gtfs();
+    var controller = new Controller(gtfs, map);
 
-  master.gm = new google.maps.Map(gmElement, gmOptions);
+    var readyEvent = document.createEvent('Event');
+    readyEvent.initEvent('gtfsIsReady', false, false);
+    document.addEventListener('gtfsIsReady', start, false);
 
-  master.map = new Map(master);
-  master.map.init();
+    gtfs.init('json/132.json', readyEvent);
+
+    function start() {
+        controller.start();
+    }
 }
