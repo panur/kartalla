@@ -43,10 +43,14 @@ function Map(master) {
             if (routes[i].getName() == '132') {
                 var activeServices = routes[i].getActiveServices();
                 console.log('activeServices.length: %d', activeServices.length);
-                var direction = activeServices[1].getDirection();
-                //console.debug('len: ' + direction.getStopDistances().length);
-                console.log('getStopDistances: %o', direction.getStopDistances());
-                //console.debug(direction.getStopDistances());
+                for (var j = 0; j < activeServices.length; j++) {
+                    var activeTrips = activeServices[j].getActiveTrips();
+                    console.log('activeServices[%d].activeTrips.length: %d', j, activeTrips.length);
+                    for (var k = 0; k < activeTrips.length; k++) {
+                        console.log('startTime: %o, %o',
+                                    activeTrips[k].getStartTime(), activeTrips[k].getStopTimes());
+                    }
+                }
             }
         }
     }
