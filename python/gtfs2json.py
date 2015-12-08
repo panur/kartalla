@@ -445,8 +445,8 @@ def _get_output_services(services, output_dates):
 
 
 def _get_output_exception_dates(exception_dates, output_dates):
-    output_exception_dates = [[], []]
-    for i, exception_type in enumerate(exception_dates):
+    output_exception_dates = [[], []]  # 0=added, 1=removed
+    for i, exception_type in enumerate(sorted(exception_dates)):
         for exception_date in exception_dates[exception_type]:
             output_exception_dates[i].append(output_dates.index(exception_date))
     return output_exception_dates

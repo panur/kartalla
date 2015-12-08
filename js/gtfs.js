@@ -74,7 +74,7 @@ function GtfsRoute(gtfsRoot, routeIndex) {
         var rootRoute = gtfsRoot.getRootRoute(routeIndex);
         for (var i = 0; i < getServices(rootRoute).length; i++) {
             var service = new GtfsService(gtfsRoot, that, i);
-            if (service.isActive()) {
+            if (service.isActive('20151208')) { // tbd
                 activeServices.push(service);
             }
         }
@@ -105,13 +105,27 @@ function GtfsRoute(gtfsRoot, routeIndex) {
 function GtfsService(gtfsRoot, gtfsRoute, serviceIndex) {
     var that = this;
 
-    this.isActive = function () {
+    this.isActive = function (dateString) {  // dateString = YYYYMMDD
         var rootService = gtfsRoute.getRootService(serviceIndex);
-        if (getWeekDay(rootService) == 1) {  // tbd
+        var exceptionDates = getExceptionDates(rootService);
+
+        if (exceptionDates.added.indexOf(dateString) != -1) {
             return true;
+        } else if (exceptionDates.removed.indexOf(dateString) != -1) {
+            return false;
+        } else if (getWeekDay(rootService) == getDateWeekDay(dateString)) {
+            var startDay = getStartDay(rootService);
+            var endDay = getEndDay(rootService);
+            return ((dateString >= startDay) && (dateString <= endDay));
         } else {
             return false;
         }
+    }
+
+    function getDateWeekDay(dateString) { // dateString = YYYYMMDD
+        var date = new Date(dateString.substring(0, 4), dateString.substring(4, 6) - 1,
+                            dateString.substring(6, 8));
+        return (date.getDay() + 6) % 7; // 0=Monday
     }
 
     this.getActiveTrips = function () {
@@ -132,8 +146,32 @@ function GtfsService(gtfsRoot, gtfsRoute, serviceIndex) {
     }
 
     // 0=start_date_i, 1=end_date_i, 2=weekday, 3=exception_dates, 4=directions_i
+    function getStartDay(rootService) {
+        return gtfsRoot.getDates()[rootService[0]];
+    }
+
+    function getEndDay(rootService) {
+        return gtfsRoot.getDates()[rootService[1]];
+    }
+
     function getWeekDay(rootService) {
-        return rootService[2];
+        return rootService[2]; // 0=Monday
+    }
+
+    function getExceptionDates(rootService) {
+        var exceptionDates = rootService[3];
+        var addedDates = exceptionDates [0];
+        var removedDates = exceptionDates [1];
+        return {added: getDateStrings(addedDates), removed: getDateStrings(removedDates)};
+    }
+
+    function getDateStrings(dateIndexes) {
+        var rootDates = gtfsRoot.getDates();
+        var dateStrings = [];
+        for (var i = 0; i < dateIndexes.length; i++) {
+            dateStrings.push(rootDates[dateIndexes[i]]);
+        }
+        return dateStrings;
     }
 
     function getDirectionsI(rootService) {
