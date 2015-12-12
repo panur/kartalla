@@ -7,8 +7,11 @@ function Controller(gtfs, map) {
     function getState() {
         var s = {};
         s.initialStatistics = document.getElementById("statistics").innerHTML;
-        s.ticks = {tick: 0};
-        s.activeTrips = [];
+        s.timing = {startFake: null, startReal: null, tickMs: 1000, speedMultiplier: 15,
+                    nextTripUpdate: 0, intervalId: null};
+        s.activeServicesDateString = null;
+        s.activeServices = [];
+        s.activeTrips = {};
         return s;
     }
 
@@ -17,41 +20,93 @@ function Controller(gtfs, map) {
     }
 
     this.start = function () {
-        console.log('start');
-        var routes = gtfs.getRoutes();
-        for (var i = 0; i < routes.length; i++) {
-            if (routes[i].getName() == '132') {
-                var activeServices = routes[i].getActiveServices();
-                console.log('activeServices.length: %d', activeServices.length);
-                for (var j = 0; j < activeServices.length; j++) {
-                    var activeTrips = activeServices[j].getActiveTrips();
-                    console.log('activeServices[%d].activeTrips.length: %d', j, activeTrips.length);
-                    for (var k = 0; k < activeTrips.length; k++) {
-                        var tripPath = map.decodePath(activeTrips[k].getShape());
-                        var distances = map.getDistances(tripPath,
-                                                         activeTrips[k].getStopDistances());
-                        var activeTrip = new ControllerTrip(map, tripPath, distances,
-                                                            activeTrips[k].getStopTimes());
-                        state.activeTrips.push(activeTrip);
-                    }
-                }
-            }
-        }
-        window.setInterval(function () {processTick();}, 1000);
+        state.timing.startFake = new Date('2015-12-24T05:42:00'); // tbd
+        state.timing.startReal = new Date();
+        console.log('start, real: %o, fake: %o', state.timing.startReal, state.timing.startFake);
+        state.timing.intervalId =
+            window.setInterval(function () {processTick();}, state.timing.tickMs);
     }
 
     function processTick() {
-        var secondsFromStart = 0 + state.ticks.tick * 15;
+        var nowDate = getNowDate();
+        var nowDateString = getDateString(nowDate);
 
-        for (var i = 0; i < state.activeTrips.length; i++) {
-            state.activeTrips[i].update(secondsFromStart);
+        if ((nowDate.getTime() - state.timing.startFake.getTime()) > 1250000) {
+            window.clearInterval(state.timing.intervalId); // tbd
+            console.log('stopped');
         }
 
-        state.ticks.tick += 1;
+        console.log('now, real: %o, fake: %o', new Date(), nowDate);
+
+        if (state.activeServicesDateString != nowDateString) {
+            state.activeServices = getActiveServices(nowDateString);
+            state.activeServicesDateString = nowDateString;
+        }
+
+        if (nowDate.getTime() > state.timing.nextTripUpdate) {
+            var updatePeriodInMinutes = 10;
+            state.timing.nextTripUpdate = nowDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
+            var minutesAfterMidnight = Math.round(getSecondsAfterMidnight(nowDate) / 60);
+            updateActiveTrips(minutesAfterMidnight, minutesAfterMidnight + updatePeriodInMinutes);
+        }
+
+        for (var tripId in state.activeTrips) {
+            state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
+        }
+    }
+
+    function getNowDate() {
+        var realMsFromStart = (new Date()).getTime() - state.timing.startReal.getTime();
+        var fakeMsFromStart = realMsFromStart * state.timing.speedMultiplier;
+        return new Date(state.timing.startFake.getTime() + fakeMsFromStart);
+    }
+
+    function getDateString(date) {
+        return '' + date.getFullYear() + (date.getMonth() + 1) + date.getDate();
+    }
+
+    function getSecondsAfterMidnight(date) {
+        var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
+        return (minutesAfterMidnight * 60) + date.getSeconds();
+    }
+
+    function getActiveServices(dateString) { // dateString = YYYYMMDD
+        var activeServices = [];
+        var routes = gtfs.getRoutes();
+        for (var i = 0; i < routes.length; i++) {
+            if (routes[i].getName() == '132') { // tbd
+                activeServices = activeServices.concat(routes[i].getActiveServices(dateString));
+            }
+        }
+        console.log('found %d active services for %s', activeServices.length, dateString);
+        return activeServices;
+    }
+
+    function updateActiveTrips(fromMinutesAfterMidnight, toMinutesAfterMidnight) {
+        var numNewTrips = 0;
+        for (var i = 0; i < state.activeServices.length; i++) {
+            var activeTrips = state.activeServices[i].getActiveTrips(fromMinutesAfterMidnight,
+                                                                     toMinutesAfterMidnight);
+            for (var j = 0; j < activeTrips.length; j++) {
+                var tripId = activeTrips[j].getId();
+                if (state.activeTrips[tripId] == undefined) {
+                    var tripPath = map.decodePath(activeTrips[j].getShape());
+                    var distances = map.getDistances(tripPath,
+                                                     activeTrips[j].getStopDistances());
+                    var activeTrip = new ControllerTrip(map, tripPath, distances,
+                                                        activeTrips[j].getStartTime(),
+                                                        activeTrips[j].getStopTimes());
+                    state.activeTrips[tripId] = activeTrip;
+                    numNewTrips += 1;
+                }
+            }
+        }
+        console.log('found %d new active trips from %d to %d',
+                    numNewTrips, fromMinutesAfterMidnight, toMinutesAfterMidnight);
     }
 }
 
-function ControllerTrip(map, tripPath, stopDistances, stopTimes) {
+function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
     var that = this;
     var state = getState();
 
@@ -85,12 +140,17 @@ function ControllerTrip(map, tripPath, stopDistances, stopTimes) {
         return timesAndDistances;
     }
 
-    this.update = function (secondsFromStart) {
-        var distance = getDistance(secondsFromStart, state.timesAndDistances);
-        if (state.marker != null) {
-            map.removeMarker(state.marker);
+    this.update = function (secondsAfterMidnight) {
+        var secondsFromStart = secondsAfterMidnight - (startTime * 60);
+        if (secondsFromStart > 0) {
+            var distance = getDistance(secondsFromStart, state.timesAndDistances);
+            console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
+                        startTime, secondsFromStart, distance);
+            if (state.marker != null) {
+                map.removeMarker(state.marker);
+            }
+            state.marker = map.addMarker(tripPath, distance);
         }
-        state.marker = map.addMarker(tripPath, distance);
     }
 
     function getDistance(secondsFromStart, timesAndDistances) {
