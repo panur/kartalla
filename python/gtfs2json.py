@@ -10,7 +10,7 @@ import os
 import resource
 import sys
 
-import gpolyencode
+import polyline
 
 
 def _main():
@@ -38,12 +38,10 @@ def _main():
     print 'adding stop times to trips...'
     # _add_stop_times_to_trips(routes, os.path.join(args.input_dir, 'stop_times.txt'))
     _add_stop_times_to_trips(routes, os.path.join(args.input_dir, '2132_stop_times.txt'))
-    print 'adding stop distances to services...'
-    _add_stop_distances_to_services(routes, shapes, stops)
-    print 'encoding shapes...'
-    _encode_shapes(shapes)
+    print 'adding shapes to routes...'
+    _add_shapes_to_routes(routes, shapes, stops)
     print 'creating output file...'
-    _create_output_file(shapes, routes, args.output_file)
+    _create_output_file(routes, args.output_file)
 
     print 'max mem: {} megabytes'.format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
 
@@ -61,29 +59,12 @@ def _parse_shapes(shapes_txt):
         for row in csv_reader:
             if row['shape_id'] not in shapes:
                 shapes[row['shape_id']] = []
-            point = (float(row['shape_pt_lon']), float(row['shape_pt_lat']))
+            point = (float(row['shape_pt_lat']), float(row['shape_pt_lon']))
             shapes[row['shape_id']].append(point)
 
     logging.debug('parsed {} shapes'.format(len(shapes)))
 
     return shapes
-
-
-def _encode_shapes(shapes):  # tbd: encode only shapes in use
-    encoder = gpolyencode.GPolyEncoder()
-    size_stats = {'min': (1000, None), 'max': (0, None), 'total': 0}
-
-    for shape_id in shapes:
-        encoder_output = encoder.encode(shapes[shape_id])
-        shapes[shape_id] = encoder_output['points'].replace("\\", "\\\\")
-        size = len(shapes[shape_id])
-        size_stats['total'] += size
-        if size < size_stats['min'][0]:
-            size_stats['min'] = (size, shape_id)
-        if size > size_stats['max'][0]:
-            size_stats['max'] = (size, shape_id)
-
-    logging.debug('encoded shapes size_stats: {}'.format(size_stats))
 
 
 def _parse_stops(stops_txt):
@@ -92,7 +73,7 @@ def _parse_stops(stops_txt):
     with open(stops_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
-            stops[row['stop_id']] = (float(row['stop_lon']), float(row['stop_lat']))
+            stops[row['stop_id']] = (float(row['stop_lat']), float(row['stop_lon']))
 
     logging.debug('parsed {} stops'.format(len(stops)))
 
@@ -177,7 +158,7 @@ def _create_direction():
         'shape_id': None,
         'shape_i': None,
         'stops': {},  # by stop_sequence
-        'stop_distances': []  # shape indexes
+        'stop_distances': []  # point indexes in encoded shape
     }
 
 
@@ -301,33 +282,69 @@ def _add_stop_to_stops(stops, row):  # row in stop_times.txt
                 stops[stop_sequence]))
 
 
-def _add_stop_distances_to_services(routes, shapes, stops):
+def _add_shapes_to_routes(routes, shapes, stops):
+    stats = {'shapes': 0, 'points': 0, 'dropped_points': 0, 'bytes': 0}
+
     for route in routes.itervalues():
+        direction_cache = {}
         for service in route['services'].itervalues():
             for direction in service['directions'].itervalues():
-                for _, stop_id in sorted(direction['stops'].iteritems()):
-                    if stop_id not in stops:
-                        logging.error('No stop information for stop_id={}'.format(stop_id))
+                if direction['shape_id']:  # some services operate only in one direction
+                    cache_key = tuple(sorted(direction['stops'].items()))
+                    if cache_key in direction_cache:
+                        direction['stop_distances'] = direction_cache[cache_key]['stop_distances']
+                        direction['shape_i'] = direction_cache[cache_key]['shape_i']
                     else:
                         shape = shapes[direction['shape_id']]
-                        if len(direction['stop_distances']) == 0:
-                            previous_index = 0
-                        else:
-                            previous_index = direction['stop_distances'][-1]
-                        shape_index = _get_shape_index(shape, stops[stop_id], previous_index)
-                        direction['stop_distances'].append(shape_index)
+                        stop_distances = _get_stop_distances(shape, direction['stops'], stops)
+                        _add_shape_to_route(route, direction, shape, stop_distances, stats)
+                        direction_cache[cache_key] = {'shape_i': direction['shape_i'],
+                                                      'stop_distances': direction['stop_distances']}
+
+    logging.debug('shape encoding stats: {}'.format(stats))
 
 
-def _get_shape_index(shape, lon_lat, previous_index):
-    for i in range(previous_index, len(shape)):
-        if shape[i] == lon_lat:
+def _get_stop_distances(shape, direction_stops, stops):
+    stop_distances = []
+
+    for _, stop_id in sorted(direction_stops.iteritems()):
+        if stop_id not in stops:
+            logging.error('No stop information for stop_id={}'.format(stop_id))
+        else:
+            if len(stop_distances) == 0:
+                previous_index = 0
+            else:
+                previous_index = stop_distances[-1]
+            point_index = _get_point_index(shape, stops[stop_id], previous_index)
+            stop_distances.append(point_index)
+
+    return stop_distances
+
+
+def _get_point_index(points, point, previous_index):
+    for i in range(previous_index, len(points)):
+        if points[i] == point:
             return i
-    logging.error('No shape index for {}'.format(lon_lat))  # tbd: add some id
+    logging.error('No point index for {}'.format(point))
 
 
-def _create_output_file(shapes, routes, output_filename):
+def _add_shape_to_route(route, direction, shape, stop_distances, stats):
+    encoded_shape = polyline.encode(shape, stop_distances)
+    direction['stop_distances'] = encoded_shape['fixed_indexes']
+    if encoded_shape['points'] in route['shapes']:
+        logging.error('Duplicate shape encoding for route {}'.format(route['name']))
+    else:
+        route['shapes'].append(encoded_shape['points'])
+        direction['shape_i'] = len(route['shapes']) - 1
+        stats['shapes'] += 1
+        stats['points'] += len(shape)
+        stats['dropped_points'] += encoded_shape['num_dropped_points']
+        stats['bytes'] += len(encoded_shape['points'])
+
+
+def _create_output_file(routes, output_filename):
     output_dates = _get_output_dates(routes)
-    output_routes = _get_output_routes(shapes, output_dates, routes)
+    output_routes = _get_output_routes(output_dates, routes)
 
     output_data = []  # 0=dates, 1=routes
     output_data.append(output_dates)
@@ -352,14 +369,13 @@ def _get_output_dates(routes):
     return sorted(output_dates, key=output_dates.get, reverse=True)
 
 
-def _get_output_routes(shapes, output_dates, routes):
+def _get_output_routes(output_dates, routes):
     output_routes = []
     stats = {'route_ids': len(routes), 'service_ids': 0, 'trip_ids': 0, 'shapes': 0,
              'directions': 0, 'stop_times': 0}
 
     for route_id in sorted(routes):
         route = routes[route_id]
-        _add_shapes_to_route(shapes, route)
         output_directions = _get_output_directions(route['services'])
         output_services = _get_output_services(route['services'], output_dates)
         output_route = []  # 0=name, 1=type, 2=shapes, 3=directions, 4=services
@@ -378,17 +394,6 @@ def _get_output_routes(shapes, output_dates, routes):
     logging.debug('output stats: {}'.format(stats))
 
     return output_routes
-
-
-def _add_shapes_to_route(shapes, route):
-    for _, service in sorted(route['services'].iteritems()):
-        for direction in service['directions'].itervalues():
-            if direction['shape_id']:  # some services operate only in one direction
-                try:
-                    direction['shape_i'] = route['shapes'].index(shapes[direction['shape_id']])
-                except ValueError:
-                    route['shapes'].append(shapes[direction['shape_id']])
-                    direction['shape_i'] = len(route['shapes']) - 1
 
 
 def _get_output_directions(services):
