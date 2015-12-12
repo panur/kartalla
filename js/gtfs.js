@@ -74,7 +74,7 @@ function GtfsRoute(gtfsRoot, routeIndex) {
         var rootRoute = gtfsRoot.getRootRoute(routeIndex);
         for (var i = 0; i < getServices(rootRoute).length; i++) {
             var service = new GtfsService(gtfsRoot, that, i);
-            if (service.isActive('20151208')) { // tbd
+            if (service.isActive('20151224')) { // tbd
                 activeServices.push(service);
             }
         }
@@ -92,6 +92,11 @@ function GtfsRoute(gtfsRoot, routeIndex) {
         return rootRoute[0];
     }
 
+    this.getShape = function (shapeIndex) {
+        var rootRoute = gtfsRoot.getRootRoute(routeIndex);
+        return rootRoute[2][shapeIndex];
+    }
+
     this.getDirections = function () {
         var rootRoute = gtfsRoot.getRootRoute(routeIndex);
         return rootRoute[3];
@@ -104,6 +109,10 @@ function GtfsRoute(gtfsRoot, routeIndex) {
 
 function GtfsService(gtfsRoot, gtfsRoute, serviceIndex) {
     var that = this;
+
+    this.getShape = function (shapeIndex) {
+        return gtfsRoute.getShape(shapeIndex);
+    }
 
     this.isActive = function (dateString) {  // dateString = YYYYMMDD
         var rootService = gtfsRoute.getRootService(serviceIndex);
@@ -133,7 +142,7 @@ function GtfsService(gtfsRoot, gtfsRoute, serviceIndex) {
         var serviceDirections = getServiceDirections();
         for (var i = 0; i < serviceDirections.length; i++) {
             var direction = new GtfsDirection(gtfsRoot, that, serviceDirections[i]);
-            activeTrips = activeTrips.concat(direction.getActiveTrips(1020));  // tbd
+            activeTrips = activeTrips.concat(direction.getActiveTrips(344));  // tbd
         }
         return activeTrips;
     }
@@ -183,6 +192,10 @@ function GtfsDirection(gtfsRoot, gtfsService, rootDirection) {
     var that = this;
 
     // 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
+    this.getShape = function () {
+        return gtfsService.getShape(rootDirection[0]);
+    }
+
     this.getActiveTrips = function (minutesAfterMidnight) {  // tbd: add threshold
         var activeTrips = [];
         var directionTrips = rootDirection[4];
@@ -222,5 +235,13 @@ function GtfsTrip(gtfsRoot, gtfsDirection, startTime, stopTimes) {
 
     this.getStopTimes = function () {
         return stopTimes;
+    }
+
+    this.getShape = function () {
+        return gtfsDirection.getShape();
+    }
+
+    this.getStopDistances = function () {
+        return gtfsDirection.getStopDistances();
     }
 }

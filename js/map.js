@@ -19,10 +19,10 @@ function Map() {
         return s;
     }
 
-    this.init = function () {
+    this.init2 = function () {
     }
 
-    this.init2 = function () {
+    this.init = function () {
         var gmElement = document.getElementById("map_canvas");
         var gmOptions = {
             mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -45,106 +45,52 @@ function Map() {
         window.onresize = function () {that.resizeMap()};
         setStatus('tbd');
         that.resizeMap();
-        huppa();
     }
 
-    function huppa() {
-        var huppaCoordinates = [];
-        for (var i = 0; i < points.length; i++) {
-            var lup = new google.maps.LatLng(points[i][0], points[i][1]);
-            huppaCoordinates.push(lup);
-        }
+    this.decodePath = function (encodedPath) {
+        return google.maps.geometry.encoding.decodePath(encodedPath);
+    }
 
-        var duppa = google.maps.geometry.spherical.computeLength(huppaCoordinates);
-        console.info('duppa: ' + duppa);
+    this.removeMarker = function (marker) {
+        marker.setMap(null);
+    }
 
-        var encodedHuppa = google.maps.geometry.encoding.encodePath(huppaCoordinates);
-
-        var huppaPath = new google.maps.Polyline({
-            path: huppaCoordinates,
+    this.addMarker = function (path, distance) {
+        var marker = new google.maps.Marker({
+            position: getPathLatLng(new google.maps.MVCArray(path), distance),
             map: state.gm,
-            strokeColor: '#FF0000',
+            title: 'd: ' + distance
+        });
+        return marker;
+    }
+
+    this.addPolyline = function (path, color) {
+        var polyline = new google.maps.Polyline({
+            path: path,
+            map: state.gm,
+            strokeColor: color,
             strokeOpacity: 1.0,
             strokeWeight: 2
         });
-/*
-    var huppaPath2 = new google.maps.Polyline({
-      path: google.maps.geometry.encoding.decodePath(encodedHuppa),
-      map: state.gm,
-      strokeColor: '#00FF00',
-      strokeOpacity: 1.0,
-      strokeWeight: 2
-    });
-*/
-        var euppa = '}vfnJsldwC{@eBMx@jDzNfBbGv@f@hHpDz@Nz@\\x@Vp@fD\\dD@jCt@dSVxXLzXkAdA}@fAiAxAgApBgAxCs@lCa@pBa@nCa@rFY|FM~EGnE@hFLtGV~GxHhvAvApUl@pI~@nKdAzJjBzOdB|MpAdMTrDHfCHtFCpGOvFMfCk@vG}BdUkA~L{Il}@}CpXwAnJuBrLaAnG_AvHe@zE_AzKm@fJoA~UcAbGaAzE@h@_@`C[tEK~EGrLNzq@AxBlAbKVzM\\pOTpEr@xPp@hSPdJHtJDvM@n\\DdMLpKR|J\\nJl@vMtB|^h@zHXbGxBvi@h@rUR|GAjMQ`B_@pAQVSL[C[g@Q}@Ag@Di@j@yCrEPbEh@x@NzARbBj@hAv@xAlAdAj@`@\\pAzArCjC`BpAbADl@QhHfk@z@m@xEgEpOgMBK`As@xAsBZ[DD|CwEv@iBlEyLbAcBv@aAx@q@vAzKb@lCv@zAhGtF`@`ARjBXnH\\vKAfAI~@k@|CgAxHi@xCWz@iBzBqErEqAhAuAzBsAlEm@bBiAlCUb@]~@SfAK|AA~ALzEGjB]|Ay@dAiE`Da@^g@ZeAx@eHrGwD|CmAt@u@^uCTeAAgAYgBOcA`@}D|Ds@v@uG~K[p@iAzAa@^a@h@';
-
-        var huppaPath3 = new google.maps.Polyline({
-            path: google.maps.geometry.encoding.decodePath(euppa),
-            map: state.gm,
-            strokeColor: '#0000FF',
-            strokeOpacity: 1.0,
-            strokeWeight: 2
-        });
-
-        state.route = huppaPath.getPath();
-
-        //window.setInterval(function () {processTick();}, 2000);
-    }
-/*
-var dists = [
-  [2, 0.5650],
-  [2, 1.4520],
-  [3, 5.7180],
-
-0: 0/8 * 5650
-1: 1/8 * 5650
-2: 2/8 * 5650
-3: 3/8 * 5650
-4: 4/8 * 5650 = 1/2 * 5650 = 5650 / 2
-5: 5/8 * 5650
-6: 6/8 * 5650
-7: 7/8 * 5650
-8: 8/8 * 5650 = 1 * 5650 = 5650 / 1
-
-*/
-    function processTick() {
-        var secondsFromStart = 1080 + state.ticks.tick * 15;
-        var distance = getDistance(secondsFromStart, huppaMinutes, huppaDistances);
-
-        updateMarker(getPathLatLng(state.route, distance), distance);
-
-        state.ticks.tick += 1;
+        return polyline;
     }
 
-    function getDistance(secondsFromStart, deltaMinutes, deltaDistances) {
-        var distance = 0;
-        var cumulSeconds = 0;
-        var cumulDistance = 0;
+    this.getDistances = function (path, pathIndexes) {
+        var distances = []
+        var distanceFromStart = 0;
 
-        for (var i = 0; i < deltaMinutes.length; i++) {
-            var secondsInc = deltaMinutes[i] * 60;
-            cumulSeconds += secondsInc;
-            var distanceInc = deltaDistances[i];
-            cumulDistance += distanceInc;
-            if (cumulSeconds <= secondsFromStart) {
-                if (cumulSeconds == secondsFromStart) {
-                    distance = cumulDistance;
-                    //console.info('d: ' + distance);
-                    break;
-                }
-            } else {
-                var secondsSincePreviousDelta = secondsFromStart - (cumulSeconds - secondsInc);
-                var fraction = secondsSincePreviousDelta / secondsInc;
-                distance = (cumulDistance - distanceInc) + (fraction * distanceInc);
-                break;
+        for (var i = 1, j = 1; i < path.length; i++) {
+            var p1 = path[i - 1];
+            var p2 = path[i];
+            var distanceInc = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+            distanceFromStart += distanceInc;
+            if (i == pathIndexes[j]) {
+                j += 1;
+                distances.push(Math.round(distanceFromStart));
             }
         }
 
-        distance = Math.round(distance);
-        time = Math.floor(secondsFromStart / 60) + ':' + secondsFromStart % 60;
-        setStatus('time: ' + time + ', d: ' + distance);
-
-        return distance;
+        return distances;
     }
 
     function getPathLatLng(path, distanceFromStart) {
@@ -162,23 +108,7 @@ var dists = [
             }
         }
 
-        console.info('hup: ' + path.getLength());
-
         return path.getAt(0);
-    }
-
-    function updateMarker(latLng, distance) {
-        if (state.marker != null) {
-        state.marker.setMap(null);
-        }
-
-        console.info('ll: ' + latLng + ', d: ' + distance);
-
-        state.marker = new google.maps.Marker({
-        position: latLng,
-        map: state.gm,
-        title: 'd: ' + distance
-        });
     }
 
     function setStatus(statusBarHtml) {
