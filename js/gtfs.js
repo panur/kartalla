@@ -3,19 +3,17 @@
 'use strict';  // tbd
 
 function Gtfs() {
-    var that = this; /* http://javascript.crockford.com/private.html */
-    var state = {};
+    var that = this;
+    var state = getState();
 
-    this.init = function (url, readyEvent) {
-        var utils = new Utils();
-        utils.downloadUrl(url, function (data, responseCode) {
-            state.root = JSON.parse(data)
-            console.log('root is read');
-            document.dispatchEvent(readyEvent);
-            console.log('root is read2');
-        }, function (error) {
-            console.error(error)
-        });
+    function getState() {
+        var s = {};
+        s.root = null;
+        return s;
+    }
+
+    this.init = function (jsonData) {
+        state.root = jsonData;
     }
 
     // 0=dates, 1=routes

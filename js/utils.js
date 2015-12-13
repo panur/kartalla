@@ -1,60 +1,30 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi */
 
 function Utils() {
-  var that = this; /* http://javascript.crockford.com/private.html */
+    var that = this;
 
-  this.downloadUrl = function (url, callback, errorHandler) {
-    var request = createXmlHttpRequest();
+    this.downloadUrl = function (url, progressHandler, responseHandler) {
+        var request = new XMLHttpRequest();
+        request.addEventListener('progress', progressHandler);
 
-    if (request == null) {
-      return false;
-    }
-
-    request.onreadystatechange = function () {
-      if (request.readyState == 4) {
-        try {
-          var status = request.status;
-          if ((status == 0) || (status == 200)) {
-            callback(request.responseText, status);
-            request.onreadystatechange = function () {};
-          } else {
-            console.error("unexpected status: " + status)
-          }
-        } catch (e) {
-          if (errorHandler) {
-            errorHandler(e);
-          } else {
-            console.error("url (" + url + ") download failed: " + e)
-            //callback(e, -1);
-            //request.onreadystatechange = function () {};
-          }
+        request.onreadystatechange = function () {
+            if (request.readyState == 4) {
+                var status = request.status;
+                if ((status === 0) || (status === 200)) {
+                    responseHandler(request.responseText);
+                    request.onreadystatechange = function () {};
+                } else {
+                    console.error('unexpected status: ' + status)
+                }
+            }
         }
-      }
+
+        request.open('GET', url, true);
+        if (url.indexOf('.json') != -1) {
+            request.overrideMimeType('application/json');
+        }
+        request.send();
     }
-
-    request.open("GET", url, true);
-    if (url.indexOf('.json') != -1) {
-      request.overrideMimeType('application/json');
-    }
-    request.send(null);
-  }
-
-  function createXmlHttpRequest() {
-    try {
-      if (typeof ActiveXObject != "undefined") {
-        return new ActiveXObject("Microsoft.XMLHTTP");
-      } else if (window["XMLHttpRequest"]) {
-        return new XMLHttpRequest();
-        //return new ActiveXObject("MSXML2.XMLHTTP.6.0");
-      }
-    } catch (e) {
-      alert(e);
-    }
-
-    alert("Cannot create XmlHttpRequest");
-
-    return null;
-  }
 
   this.getHeading = function (point, polyline, zoom) {
     var tolerances = [0.0001, 391817 * Math.pow(0.445208, zoom)];
