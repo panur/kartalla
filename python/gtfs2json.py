@@ -82,7 +82,7 @@ def _parse_stops(stops_txt):
 
 def _parse_routes(routes_txt):
     routes = {}
-    # tbd: is 109 some hsl hack?
+    # 109: https://github.com/HSLdevcom/kalkati2gtfs/commit/d4758fb74d7455ddbf4032175ef8ff51c587ec7f
     route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '109': 'train'}
 
     with open(routes_txt, 'r') as input_file:
@@ -121,7 +121,6 @@ def _add_services_trips_to_routes(routes, trips_txt):
 
 
 def _add_services_trips_to_route(route, row):  # row in trips.txt
-    # tbd: validate shape_id
     # route contains services, service contains trips
 
     if row['service_id'] not in route['services']:
@@ -147,7 +146,7 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
             'direction_id': row['direction_id'],
             'start_time': 0,  # number of minutes after midnight
             'is_departure_times': False,
-            'stop_times': [],
+            'stop_times': [],  # arrival and departure times for each stop
             'stop_times_i': None
         }
         _add_shape_id_to_direction(service['directions'][row['direction_id']], row)
@@ -208,11 +207,15 @@ def _add_calendar_dates_to_services(routes, calendar_dates_txt):
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['service_id'] in services:
+                service = services[row['service_id']]
                 exception_types = {'1': 'added', '2': 'removed'}
-                if row['exception_type'] in exception_types:  # tbd: check start/end
-                    exception_dates = services[row['service_id']]['exception_dates']
-                    exception_type = exception_types[row['exception_type']]
-                    exception_dates[exception_type].append(row['date'])
+                if row['exception_type'] in exception_types:
+                    if (row['date'] < service['start_date']) or (row['date'] > service['end_date']):
+                        logging.error('For service_id={} invalid exception date: {}'.format(
+                            row['service_id'], row['date']))
+                    else:
+                        exception_type = exception_types[row['exception_type']]
+                        service['exception_dates'][exception_type].append(row['date'])
                 else:
                     logging.error('For service_id={} invalid exception_type: {}'.format(
                         row['service_id'], row['exception_type']))
@@ -225,9 +228,11 @@ def _add_stop_times_to_trips(routes, stop_times_txt):
     with open(stop_times_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
-            _check_stops_times_input_row(row)
             if row['trip_id'] not in trips:
                 logging.error('No trip information for trip_id={}'.format(row['trip_id']))
+            elif not row['arrival_time'].endswith(':00'):
+                logging.error('In trip_id={} seconds in arrival_time: {}'.format(
+                    row['trip_id'], row['arrival_time']))
             else:
                 trip = trips[row['trip_id']]
                 if len(trip['stop_times']) == 0:
@@ -244,13 +249,6 @@ def _get_trips(routes):
             for trip_id, trip in service['trips'].iteritems():
                 trips[trip_id] = trip
     return trips
-
-
-def _check_stops_times_input_row(row):
-    """Check the row in stop_times.txt matches expectations."""
-    if not row['arrival_time'].endswith(':00'):
-        logging.error('In trip_id={} seconds in arrival_time: {}'.format(
-            row['trip_id'], row['arrival_time']))
 
 
 def _get_minutes(time_string):
@@ -271,7 +269,6 @@ def _add_stop_times_to_trip(trip, row):  # row in stop_times.txt
 
 
 def _add_stop_to_stops(stops, row):  # row in stop_times.txt
-    # tbd: validate stop_sequence
     stop_sequence = int(row['stop_sequence'])
     if stop_sequence not in stops:
         stops[stop_sequence] = row['stop_id']
@@ -295,11 +292,16 @@ def _add_shapes_to_routes(routes, shapes, stops):
                         direction['stop_distances'] = direction_cache[cache_key]['stop_distances']
                         direction['shape_i'] = direction_cache[cache_key]['shape_i']
                     else:
-                        shape = shapes[direction['shape_id']]
-                        stop_distances = _get_stop_distances(shape, direction['stops'], stops)
-                        _add_shape_to_route(route, direction, shape, stop_distances, stats)
-                        direction_cache[cache_key] = {'shape_i': direction['shape_i'],
-                                                      'stop_distances': direction['stop_distances']}
+                        if direction['shape_id'] in shapes:
+                            shape = shapes[direction['shape_id']]
+                            stop_distances = _get_stop_distances(shape, direction['stops'], stops)
+                            _add_shape_to_route(route, direction, shape, stop_distances, stats)
+                            direction_cache[cache_key] = {
+                                'shape_i': direction['shape_i'],
+                                'stop_distances': direction['stop_distances']}
+                        else:
+                            logging.error('No shape information for shape_id={}'.format(
+                                direction['shape_id']))
 
     logging.debug('shape encoding stats: {}'.format(stats))
 
