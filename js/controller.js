@@ -1,7 +1,9 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi */
 
+'use strict';  // tbd
+
 function Controller(gtfs, map) {
-    var that = this; /* http://javascript.crockford.com/private.html */
+    var that = this;
     var state = getState();
 
     function getState() {
@@ -36,7 +38,7 @@ function Controller(gtfs, map) {
             console.log('stopped');
         }
 
-        console.log('now, real: %o, fake: %o', new Date(), nowDate);
+        // console.log('now, real: %o, fake: %o', new Date(), nowDate);
 
         if (state.activeServicesDateString != nowDateString) {
             state.activeServices = getActiveServices(nowDateString);
@@ -119,60 +121,76 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
 
     function mergeStopTimesAndDistances(times, distances) {
         var timesAndDistances = [];
-        while (times.length > 3) {
-            if (times[times.length - 1] == times[times.length - 2]) {
-                times.splice(times.length - 2, 1);
-                distances.splice(distances.length - 2, 1);
-            } else {
-                break;
-            }
-        }
 
-        for (var i = 1; i < times.length; i++) {
-            if ((i < (times.length - 1)) && (times[i] == times[i + 1])) {
-                var distance = Math.round((distances[i] + distances[i + 1]) / 2);
-                timesAndDistances.push([times[i], distance]);
+        for (var i = 0; i < times.length; i++) {
+            var distance = distances[i];
+            if ((i == 0) && (times[0] == times[1])) {
+                // skip 2nd if it's same as 1st
                 i++;
-            } else {
-                timesAndDistances.push([times[i], distances[i]]);
+            } else if ((i < (times.length - 2)) && (times[i] == times[i + 1])) {
+                // with duplicate arrival times get average distance and skip the other
+                distance = Math.round((distances[i] + distances[i + 1]) / 2);
+                i++;
+            } else if ((i == (times.length - 2)) && (times[i] == times[i + 1])) {
+                // skip next to last if it's same as last
+                distance = undefined;
+            }
+            console.log('i: %d, t: %o, d: %o', i, times[i], distance);
+            if (distance != undefined) {
+                timesAndDistances.push({arrival: times[i], distance: distance})
             }
         }
+        console.log('times: %o', times);
+        console.log('distances: %o', distances);
+        console.log('timesAndDistances %s: ', getHuppa(timesAndDistances));
         return timesAndDistances;
+    }
+
+    function getHuppa(list) {
+        var str = list.length + ': ';
+        for (var i = 0; i < list.length; i++) {
+            str += list[i].arrival + '/' + list[i].distance + ' ';
+        }
+        return str;
     }
 
     this.update = function (secondsAfterMidnight) {
         var secondsFromStart = secondsAfterMidnight - (startTime * 60);
-        if (secondsFromStart > 0) {
-            var distance = getDistance(secondsFromStart, state.timesAndDistances);
-            console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
-                        startTime, secondsFromStart, distance);
-            if (state.marker != null) {
-                map.removeMarker(state.marker);
-            }
-            state.marker = map.addMarker(tripPath, distance);
+        var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
+        console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
+                    startTime, secondsFromStart, distance);
+        if (state.marker != null) {
+            map.removeMarker(state.marker);
         }
+        state.marker = map.addMarker(tripPath, distance);
     }
 
-    function getDistance(secondsFromStart, timesAndDistances) {
+    function getDistanceFromStart(secondsFromStart, timesAndDistances) {
         var distance = 0;
-        var cumulSeconds = 0;
-        var cumulDistance = 0;
+        var lastArrivalSeconds = timesAndDistances[timesAndDistances.length - 1].arrival * 60;
 
-        for (var i = 0; i < timesAndDistances.length - 1; i++) {
-            var secondsInc = (timesAndDistances[i + 1][0] - timesAndDistances[i][0]) * 60;
-            cumulSeconds += secondsInc;
-            var distanceInc = (timesAndDistances[i + 1][1] - timesAndDistances[i][1]);
-            cumulDistance += distanceInc;
-            if (cumulSeconds <= secondsFromStart) {
-                if (cumulSeconds == secondsFromStart) {
-                    distance = cumulDistance;
+        if (secondsFromStart <= 0) {
+            distance = timesAndDistances[0].distance;
+        } else if (secondsFromStart >= lastArrivalSeconds) {
+            distance = timesAndDistances[timesAndDistances.length - 1].distance;
+        } else {
+            for (var i = 1; i < timesAndDistances.length; i++) {
+                if (secondsFromStart > (timesAndDistances[i].arrival * 60)) {
+                    continue;
+                } else if (secondsFromStart == (timesAndDistances[i].arrival * 60)) {
+                    distance = timesAndDistances[i].distance;
+                    break;
+                } else {
+                    var secondsInc =
+                        (timesAndDistances[i].arrival - timesAndDistances[i - 1].arrival) * 60;
+                    var distanceInc =
+                        (timesAndDistances[i].distance - timesAndDistances[i - 1].distance);
+                    var secondsSincePrevious =
+                        secondsFromStart - (timesAndDistances[i - 1].arrival * 60);
+                    var fraction = secondsSincePrevious / secondsInc;
+                    distance = timesAndDistances[i - 1].distance + (fraction * distanceInc);
                     break;
                 }
-            } else {
-                var secondsSincePreviousDelta = secondsFromStart - (cumulSeconds - secondsInc);
-                var fraction = secondsSincePreviousDelta / secondsInc;
-                distance = (cumulDistance - distanceInc) + (fraction * distanceInc);
-                break;
             }
         }
 

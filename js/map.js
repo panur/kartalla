@@ -1,7 +1,7 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi */
 
 function Map() {
-    var that = this; /* http://javascript.crockford.com/private.html */
+    var that = this;
     var state = getState();
 
     function getState() {
@@ -76,7 +76,7 @@ function Map() {
     }
 
     this.getDistances = function (path, pathIndexes) {
-        var distances = []
+        var distances = [0]
         var distanceFromStart = 0;
 
         for (var i = 1, j = 1; i < path.length; i++) {
@@ -108,7 +108,7 @@ function Map() {
             }
         }
 
-        return path.getAt(0);
+        return path.getAt(path.getLength() - 1);
     }
 
     function setStatus(statusBarHtml) {
