@@ -124,16 +124,20 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
 
         for (var i = 0; i < times.length; i++) {
             var distance = distances[i];
-            if ((i == 0) && (times[0] == times[1])) {
-                // skip 2nd if it's same as 1st
-                i++;
-            } else if ((i < (times.length - 2)) && (times[i] == times[i + 1])) {
-                // with duplicate arrival times get average distance and skip the other
-                distance = Math.round((distances[i] + distances[i + 1]) / 2);
-                i++;
-            } else if ((i == (times.length - 2)) && (times[i] == times[i + 1])) {
-                // skip next to last if it's same as last
-                distance = undefined;
+            if (times[i] == times[0]) {
+                if (i != 0) {
+                    distance = undefined; // skip if same as 1st but not 1st
+                }
+            } else if (times[i] == times[times.length - 1]) {
+                if (i != (times.length - 1)) {
+                    distance = undefined; // skip if same as last but not last
+                }
+            } else {
+                var sameArrivals = getSameArrivals(times, i);
+                if (sameArrivals > 0) { // many stops with same arrival time
+                    distance = (distances[i] + distances[i + sameArrivals + 1]) / 2;
+                    i += sameArrivals; // save the first with average distance, skip the rest
+                }
             }
             console.log('i: %d, t: %o, d: %o', i, times[i], distance);
             if (distance != undefined) {
@@ -144,6 +148,16 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
         console.log('distances: %o', distances);
         console.log('timesAndDistances %s: ', getHuppa(timesAndDistances));
         return timesAndDistances;
+    }
+
+    function getSameArrivals(times, startIndex) {
+        var sameArrivals = 0;
+        for (var i = startIndex + 1; i < times.length; i++) {
+            if (times[i] == times[startIndex]) {
+                sameArrivals += 1;
+            }
+        }
+        return sameArrivals;
     }
 
     function getHuppa(list) {
