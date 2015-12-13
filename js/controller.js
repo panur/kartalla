@@ -122,26 +122,29 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
     function mergeStopTimesAndDistances(times, distances) {
         var timesAndDistances = [];
 
-        for (var i = 0; i < times.length; i++) {
+        for (var i = 0; i < distances.length; i++) {
+            var arrivalTime = times[i * 2];
+            var departureTime = times[(i * 2) + 1];
             var distance = distances[i];
-            if (times[i] == times[0]) {
+            if (arrivalTime == times[0]) {
                 if (i != 0) {
                     distance = undefined; // skip if same as 1st but not 1st
                 }
-            } else if (times[i] == times[times.length - 1]) {
-                if (i != (times.length - 1)) {
+            } else if (arrivalTime == times[times.length - 2]) {
+                if (i != (distances.length - 1)) {
                     distance = undefined; // skip if same as last but not last
                 }
             } else {
-                var sameArrivals = getSameArrivals(times, i);
+                var sameArrivals = getSameArrivals(times, i * 2);
                 if (sameArrivals > 0) { // many stops with same arrival time
-                    distance = (distances[i] + distances[i + sameArrivals + 1]) / 2;
+                    distance = Math.round((distances[i] + distances[i + sameArrivals + 1]) / 2);
                     i += sameArrivals; // save the first with average distance, skip the rest
                 }
             }
-            console.log('i: %d, t: %o, d: %o', i, times[i], distance);
+
             if (distance != undefined) {
-                timesAndDistances.push({arrival: times[i], distance: distance})
+                timesAndDistances.push({arrival: arrivalTime, departure: departureTime,
+                                        distance: distance})
             }
         }
         console.log('times: %o', times);
@@ -152,7 +155,7 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
 
     function getSameArrivals(times, startIndex) {
         var sameArrivals = 0;
-        for (var i = startIndex + 1; i < times.length; i++) {
+        for (var i = startIndex + 2; i < times.length; i += 2) {
             if (times[i] == times[startIndex]) {
                 sameArrivals += 1;
             }
@@ -163,7 +166,7 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
     function getHuppa(list) {
         var str = list.length + ': ';
         for (var i = 0; i < list.length; i++) {
-            str += list[i].arrival + '/' + list[i].distance + ' ';
+            str += '(' + list[i].arrival + '|' + list[i].departure + ')/' + list[i].distance + ' ';
         }
         return str;
     }
@@ -189,18 +192,19 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
             distance = timesAndDistances[timesAndDistances.length - 1].distance;
         } else {
             for (var i = 1; i < timesAndDistances.length; i++) {
-                if (secondsFromStart > (timesAndDistances[i].arrival * 60)) {
+                if (secondsFromStart > (timesAndDistances[i].departure * 60)) {
                     continue;
-                } else if (secondsFromStart == (timesAndDistances[i].arrival * 60)) {
+                } else if ((secondsFromStart >= (timesAndDistances[i].arrival * 60)) &&
+                           (secondsFromStart <= (timesAndDistances[i].departure * 60))) {
                     distance = timesAndDistances[i].distance;
                     break;
                 } else {
                     var secondsInc =
-                        (timesAndDistances[i].arrival - timesAndDistances[i - 1].arrival) * 60;
+                        (timesAndDistances[i].arrival - timesAndDistances[i - 1].departure) * 60;
                     var distanceInc =
                         (timesAndDistances[i].distance - timesAndDistances[i - 1].distance);
                     var secondsSincePrevious =
-                        secondsFromStart - (timesAndDistances[i - 1].arrival * 60);
+                        secondsFromStart - (timesAndDistances[i - 1].departure * 60);
                     var fraction = secondsSincePrevious / secondsInc;
                     distance = timesAndDistances[i - 1].distance + (fraction * distanceInc);
                     break;

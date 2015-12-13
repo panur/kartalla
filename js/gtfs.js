@@ -18,6 +18,7 @@ function Gtfs() {
         });
     }
 
+    // 0=dates, 1=routes
     this.getDates = function () {
         return state.root[0];
     }
@@ -45,7 +46,7 @@ function Gtfs() {
         var max_value = max_chr - min_chr;
         for (var i = 0; i < string.length; i++) {
             var charCode = string.charCodeAt(i);
-            if (charCode == mult_chr) {
+            if (charCode === mult_chr) {
                 integer_value += max_value;
             } else {
                 integer_value += charCode - min_chr;
@@ -124,7 +125,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
             return true;
         } else if (exceptionDates.removed.indexOf(dateString) != -1) {
             return false;
-        } else if (getWeekDay() == getDateWeekDay(dateString)) {
+        } else if (getWeekDay() === getDateWeekDay(dateString)) {
             var startDay = getStartDay();
             var endDay = getEndDay();
             return ((dateString >= startDay) && (dateString <= endDay));
@@ -223,8 +224,22 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     }
 
     function getStopTimes(stopTimesI) {
-        var stopTimes = rootDirection[3][stopTimesI];
-        return gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(stopTimes));
+        var isDepartureTimes = rootDirection[2];
+        var stopTimeDeltas = gtfsRoot.string_to_integer_list(rootDirection[3][stopTimesI]);
+        var stopTimes = gtfsRoot.unpack_delta_list(stopTimeDeltas);
+        if (isDepartureTimes === 0) {
+            stopTimes = addDepartureTimes(stopTimes);
+        }
+        return stopTimes;
+    }
+
+    function addDepartureTimes(arrivalTimes) {
+        var stopTimes = [];
+        for (var i = 0; i < arrivalTimes.length; i++) {
+            // arrival time is used as missing departure time
+            stopTimes.push(arrivalTimes[i], arrivalTimes[i]);
+        }
+        return stopTimes;
     }
 
     this.getStopDistances = function () {
