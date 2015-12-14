@@ -11,10 +11,6 @@ function Map() {
 
         s.initialZL = 10;
         s.initialLatLng = new google.maps.LatLng(60.273969, 24.791911);
-        s.zoomToPointZoomLevel = 14;
-        s.ticks = {tick: 0};
-        s.route = null;
-        s.marker = null;
 
         return s;
     }
@@ -51,28 +47,33 @@ function Map() {
         return google.maps.geometry.encoding.decodePath(encodedPath);
     }
 
-    this.removeMarker = function (marker) {
-        marker.setMap(null);
-    }
-
-    this.addMarker = function (path, distance) {
-        var marker = new google.maps.Marker({
-            position: getPathLatLng(new google.maps.MVCArray(path), distance),
-            map: state.gm,
-            title: 'd: ' + distance
-        });
-        return marker;
-    }
-
-    this.addPolyline = function (path, color) {
+    this.addPolyline = function (path) {
         var polyline = new google.maps.Polyline({
             path: path,
             map: state.gm,
-            strokeColor: color,
+            strokeColor: 'black',
             strokeOpacity: 1.0,
-            strokeWeight: 2
+            strokeWeight: 1
         });
         return polyline;
+    }
+
+    this.updatePolyline = function (polyline, distance, opacity) {
+        var paths = [google.maps.SymbolPath.FORWARD_CLOSED_ARROW, google.maps.SymbolPath.CIRCLE];
+        var lineSymbol = {
+            path: paths[~~(opacity < 1)],
+            strokeOpacity: opacity,
+            strokeColor: 'blue',
+            strokeWeight: 2,
+            scale: 5
+        };
+        var length = google.maps.geometry.spherical.computeLength(polyline.getPath());
+        var offset = Math.min(100, ((distance / length) * 100)) + '%';
+        polyline.setOptions({icons: [{icon: lineSymbol, offset: offset}]});
+    }
+
+    this.removePolyline = function (polyline) {
+        polyline.setMap(null);
     }
 
     this.getDistances = function (path, pathIndexes) {
@@ -93,38 +94,8 @@ function Map() {
         return distances;
     }
 
-    function getPathLatLng(path, distanceFromStart) {
-        var cumulDistance = 0;
-
-        for (var i = 1; i < path.getLength(); i++) {
-            var p1 = path.getAt(i - 1);
-            var p2 = path.getAt(i);
-            var distanceInc = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
-            cumulDistance += distanceInc;
-            if (cumulDistance > distanceFromStart) {
-                var distanceFromP1 = (distanceFromStart - (cumulDistance - distanceInc));
-                var fraction = distanceFromP1 / distanceInc;
-                return google.maps.geometry.spherical.interpolate(p1, p2, fraction);
-            }
-        }
-
-        return path.getAt(path.getLength() - 1);
-    }
-
     function setStatus(statusBarHtml) {
         document.getElementById("status_bar").innerHTML = statusBarHtml;
-    }
-
-    function setCenter(latLng, zoom) {
-        /* http://code.google.com/p/gmaps-api-issues/issues/detail?id=2673 */
-        if (zoom != state.gm.getZoom()) {
-            state.gm.setZoom(zoom);
-        }
-        state.gm.panTo(latLng);
-    }
-
-    this.zoomToPoint = function (latLng) {
-        setCenter(latLng, state.zoomToPointZoomLevel);
     }
 
     this.resizeMap = function () {
@@ -143,8 +114,4 @@ function Map() {
 
         google.maps.event.trigger(state.gm, "resize");
   }
-
-    this.resetLocationAndZoom = function () {
-        setCenter(state.initialLatLng, state.initialZL);
-    }
 }

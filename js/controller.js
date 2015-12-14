@@ -52,8 +52,16 @@ function Controller(gtfs, map) {
             updateActiveTrips(minutesAfterMidnight, minutesAfterMidnight + updatePeriodInMinutes);
         }
 
+        var tripsToBeDeleted = [];
         for (var tripId in state.activeTrips) {
-            state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
+            var canBeDeleted = state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
+            if (canBeDeleted) {
+                tripsToBeDeleted.push(tripId);
+            }
+        }
+        for (var i = 0; i < tripsToBeDeleted.length; i++) {
+            delete state.activeTrips[tripsToBeDeleted[i]];
+            console.log('deleted: %o', tripsToBeDeleted[i]);
         }
     }
 
@@ -115,10 +123,18 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
     function getState() {
         var s = {};
         s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
-        s.marker = null;
+        s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
+        s.polyline = map.addPolyline(tripPath);
         return s;
     }
 
+    /* Merge stop times (arrival/departure) and distances into list of objects with unique arrival
+    time (to simplify the calculation of distance from start when given seconds from start). The
+    first and last stops are not modified but otherwise returned distances don't necessary match
+    with any real stop. For times=[[0,0,0,0,2,2,3,3,3,3,4,4,6,6,6,6,6,6] and
+    distances=[100,10,210,300,380,430,11,12,600] stops {0,0,10}, {6,6,11} and {6,6,12} are skipped
+    and stops {3,3,300} and {3,3,380} are combined into {3,3,365} and what is finally returned is
+    [{0,0,100},{2,2,210},{3,3,365},{4,4,430},{6,6,600}] */
     function mergeStopTimesAndDistances(times, distances) {
         var timesAndDistances = [];
 
@@ -147,9 +163,6 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
                                         distance: distance})
             }
         }
-        console.log('times: %o', times);
-        console.log('distances: %o', distances);
-        console.log('timesAndDistances %s: ', getHuppa(timesAndDistances));
         return timesAndDistances;
     }
 
@@ -163,32 +176,32 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
         return sameArrivals;
     }
 
-    function getHuppa(list) {
-        var str = list.length + ': ';
-        for (var i = 0; i < list.length; i++) {
-            str += '(' + list[i].arrival + '|' + list[i].departure + ')/' + list[i].distance + ' ';
-        }
-        return str;
-    }
-
     this.update = function (secondsAfterMidnight) {
+        var canBeRemoved = false;
+        var fadeSeconds = 60;
         var secondsFromStart = secondsAfterMidnight - (startTime * 60);
-        var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
-        console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
-                    startTime, secondsFromStart, distance);
-        if (state.marker != null) {
-            map.removeMarker(state.marker);
+
+        if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
+            map.removePolyline(state.polyline);
+            canBeRemoved = true;
+        } else if ((secondsFromStart >= -fadeSeconds) &&
+            (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
+            var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
+            console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
+                        startTime, secondsFromStart, distance);
+            var opacity = getPolylineOpacity(secondsFromStart, fadeSeconds);
+            map.updatePolyline(state.polyline, distance, opacity);
         }
-        state.marker = map.addMarker(tripPath, distance);
+
+        return canBeRemoved;
     }
 
     function getDistanceFromStart(secondsFromStart, timesAndDistances) {
         var distance = 0;
-        var lastArrivalSeconds = timesAndDistances[timesAndDistances.length - 1].arrival * 60;
 
         if (secondsFromStart <= 0) {
             distance = timesAndDistances[0].distance;
-        } else if (secondsFromStart >= lastArrivalSeconds) {
+        } else if (secondsFromStart >= state.lastArrivalSeconds) {
             distance = timesAndDistances[timesAndDistances.length - 1].distance;
         } else {
             for (var i = 1; i < timesAndDistances.length; i++) {
@@ -213,5 +226,15 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
         }
 
         return Math.round(distance);
+    }
+
+    function getPolylineOpacity(secondsFromStart, fadeSeconds) {
+        if (secondsFromStart < 0) {
+            return (fadeSeconds + secondsFromStart) / fadeSeconds;
+        } else if (secondsFromStart > state.lastArrivalSeconds) {
+            return (fadeSeconds - (secondsFromStart - state.lastArrivalSeconds)) / fadeSeconds;
+        } else {
+            return 1.0;
+        }
     }
 }
