@@ -2,13 +2,12 @@
 
 'use strict';  // tbd
 
-function Controller(gtfs, map) {
+function Controller(gtfs, map, uiBar) {
     var that = this;
     var state = getState();
 
     function getState() {
         var s = {};
-        s.initialStatistics = document.getElementById("statistics").innerHTML;
         s.timing = {startFake: null, startReal: null, tickMs: 1000, speedMultiplier: 15,
                     nextTripUpdate: 0, intervalId: null};
         s.activeServicesDateString = null;
@@ -33,6 +32,8 @@ function Controller(gtfs, map) {
         var nowDate = getNowDate();
         var nowDateString = getDateString(nowDate);
 
+        uiBar.updateClock(nowDate);
+
         if ((nowDate.getTime() - state.timing.startFake.getTime()) > 1250000) {
             window.clearInterval(state.timing.intervalId); // tbd
             console.log('stopped');
@@ -52,16 +53,32 @@ function Controller(gtfs, map) {
             updateActiveTrips(minutesAfterMidnight, minutesAfterMidnight + updatePeriodInMinutes);
         }
 
+        updateTrips(nowDate);
+    }
+
+    function updateTrips(nowDate) {
+        var statistics = {};
         var tripsToBeDeleted = [];
         for (var tripId in state.activeTrips) {
-            var canBeDeleted = state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
-            if (canBeDeleted) {
+            var tripState = state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
+            if (tripState === 'exit') {
                 tripsToBeDeleted.push(tripId);
+            } else if (tripState === 'active') {
+                updateStatistics(statistics, state.activeTrips[tripId].getType());
             }
         }
         for (var i = 0; i < tripsToBeDeleted.length; i++) {
             delete state.activeTrips[tripsToBeDeleted[i]];
             console.log('deleted: %o', tripsToBeDeleted[i]);
+        }
+        uiBar.updateStatistics(statistics);
+    }
+
+    function updateStatistics(statistics, tripType) {
+        if (statistics[tripType] === undefined) {
+            statistics[tripType] = 1;
+        } else {
+            statistics[tripType] += 1;
         }
     }
 
@@ -99,13 +116,8 @@ function Controller(gtfs, map) {
                                                                      toMinutesAfterMidnight);
             for (var j = 0; j < activeTrips.length; j++) {
                 var tripId = activeTrips[j].getId();
-                if (state.activeTrips[tripId] == undefined) {
-                    var tripPath = map.decodePath(activeTrips[j].getShape());
-                    var distances = map.getDistances(tripPath,
-                                                     activeTrips[j].getStopDistances());
-                    var activeTrip = new ControllerTrip(map, tripPath, distances,
-                                                        activeTrips[j].getStartTime(),
-                                                        activeTrips[j].getStopTimes());
+                if (state.activeTrips[tripId] === undefined) {
+                    var activeTrip = new ControllerTrip(map, activeTrips[j]);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
@@ -116,15 +128,20 @@ function Controller(gtfs, map) {
     }
 }
 
-function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
+function ControllerTrip(map, gtfsTrip) {
     var that = this;
     var state = getState();
 
     function getState() {
         var s = {};
+        var tripPath = map.decodePath(gtfsTrip.getShape());
+        var stopTimes = gtfsTrip.getStopTimes();
+        var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
         s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
         s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
         s.polyline = map.addPolyline(tripPath);
+        s.startTime = gtfsTrip.getStartTime();
+        s.tripType = gtfsTrip.getType();
         return s;
     }
 
@@ -142,11 +159,11 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
             var arrivalTime = times[i * 2];
             var departureTime = times[(i * 2) + 1];
             var distance = distances[i];
-            if (arrivalTime == times[0]) {
+            if (arrivalTime === times[0]) {
                 if (i != 0) {
                     distance = undefined; // skip if same as 1st but not 1st
                 }
-            } else if (arrivalTime == times[times.length - 2]) {
+            } else if (arrivalTime === times[times.length - 2]) {
                 if (i != (distances.length - 1)) {
                     distance = undefined; // skip if same as last but not last
                 }
@@ -169,31 +186,38 @@ function ControllerTrip(map, tripPath, stopDistances, startTime, stopTimes) {
     function getSameArrivals(times, startIndex) {
         var sameArrivals = 0;
         for (var i = startIndex + 2; i < times.length; i += 2) {
-            if (times[i] == times[startIndex]) {
+            if (times[i] === times[startIndex]) {
                 sameArrivals += 1;
             }
         }
         return sameArrivals;
     }
 
+    this.getType = function () {
+        return state.tripType;
+    }
+
     this.update = function (secondsAfterMidnight) {
-        var canBeRemoved = false;
+        var tripState = '';
         var fadeSeconds = 60;
-        var secondsFromStart = secondsAfterMidnight - (startTime * 60);
+        var secondsFromStart = secondsAfterMidnight - (state.startTime * 60);
 
         if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
             map.removePolyline(state.polyline);
-            canBeRemoved = true;
+            tripState = 'exit';
         } else if ((secondsFromStart >= -fadeSeconds) &&
             (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
             var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
             console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
-                        startTime, secondsFromStart, distance);
+                        state.startTime, secondsFromStart, distance);
             var opacity = getPolylineOpacity(secondsFromStart, fadeSeconds);
             map.updatePolyline(state.polyline, distance, opacity);
+            tripState = 'active';
+        } else {
+            tripState = 'waiting';
         }
 
-        return canBeRemoved;
+        return tripState;
     }
 
     function getDistanceFromStart(secondsFromStart, timesAndDistances) {

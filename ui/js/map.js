@@ -6,20 +6,13 @@ function Map() {
 
     function getState() {
         var s = {};
-
-        s.initialStatistics = document.getElementById("statistics").innerHTML;
-
         s.initialZL = 10;
         s.initialLatLng = new google.maps.LatLng(60.273969, 24.791911);
-
         return s;
     }
 
-    this.init2 = function () {
-    }
-
     this.init = function () {
-        var gmElement = document.getElementById("map_canvas");
+        var gmElement = document.getElementById('map_canvas');
         var gmOptions = {
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             mapTypeControlOptions: {style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR},
@@ -29,18 +22,20 @@ function Map() {
             scaleControl: true,
             streetViewControl: true,
             styles: [{
-                featureType: "road.arterial",
-                elementType: "geometry.fill",
-                stylers: [{color: "#FBF8A5" }]
+                featureType: 'road.arterial',
+                elementType: 'geometry.fill',
+                stylers: [{color: '#FBF8A5' }]
             }]
         };
 
         state.gm = new google.maps.Map(gmElement, gmOptions);
 
         state.gm.setOptions({center: state.initialLatLng, zoom: state.initialZL});
-        window.onresize = function () {that.resizeMap()};
-        setStatus('tbd');
-        that.resizeMap();
+    }
+
+    this.resize = function (newHeight) {
+        state.gm.getDiv().style.height = newHeight + 'px';
+        google.maps.event.trigger(state.gm, 'resize');
     }
 
     this.decodePath = function (encodedPath) {
@@ -93,25 +88,4 @@ function Map() {
 
         return distances;
     }
-
-    function setStatus(statusBarHtml) {
-        document.getElementById("status_bar").innerHTML = statusBarHtml;
-    }
-
-    this.resizeMap = function () {
-        that.resizeDivs();
-    }
-
-    this.resizeDivs = function () {
-        resizeMapCanvas();
-    }
-
-    function resizeMapCanvas() {
-        document.getElementById("map_canvas").style.height =
-            document.documentElement.clientHeight -
-            document.getElementById("status_bar").clientHeight -
-            document.getElementById("statistics").clientHeight + "px";
-
-        google.maps.event.trigger(state.gm, "resize");
-  }
 }
