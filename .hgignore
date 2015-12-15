@@ -1,3 +1,4 @@
-^gtfs/.*
-^python/.*\.pyc
+^gtfs/.*\.txt
+^gtfs2json/.*\.pyc
 ^tmp/.*
+^ui/json/.*\.json
