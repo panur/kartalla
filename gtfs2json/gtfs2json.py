@@ -405,8 +405,11 @@ def _get_output_directions(services):
         output['stats']['trip_ids'] += len(service['trips'])
         output_directions = [None, None]
         for direction_id, direction in sorted(service['directions'].iteritems()):
-            output_direction = _get_output_direction(service, direction_id, direction,
-                                                     output['stats'])
+            if direction['shape_id']:  # some services operate only in one direction
+                output_direction = _get_output_direction(service, direction_id, direction,
+                                                         output['stats'])
+            else:
+                output_direction = []
             output_directions[int(direction_id)] = output_direction
         try:
             service['directions_i'] = output['directions'].index(output_directions)
@@ -523,11 +526,8 @@ def _get_output_trips(trips, direction_id):
             start_times.append(trip['start_time'])
             stop_times_indexes.append(trip['stop_times_i'])
 
-    if len(start_times) == 0:  # some services operate only in one direction
-        return [[], [], []]
-    else:
-        delta_start_times = _integer_list_to_string(_get_delta_list([0] + start_times)[1:])
-        return [start_times[0], delta_start_times, _integer_list_to_string(stop_times_indexes)]
+    delta_start_times = _integer_list_to_string(_get_delta_list([0] + start_times)[1:])
+    return [start_times[0], delta_start_times, _integer_list_to_string(stop_times_indexes)]
 
 
 if __name__ == "__main__":

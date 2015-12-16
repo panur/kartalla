@@ -150,9 +150,11 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         var activeTrips = [];
         var serviceDirections = getServiceDirections();
         for (var i = 0; i < serviceDirections.length; i++) {
-            var direction = new GtfsDirection(i, gtfsRoot, that, serviceDirections[i]);
-            activeTrips = activeTrips.concat(direction.getActiveTrips(fromMinutesAfterMidnight,
-                                                                      toMinutesAfterMidnight));
+            if (serviceDirections[i].length > 0) { // some services operate only in one direction
+                var direction = new GtfsDirection(i, gtfsRoot, that, serviceDirections[i]);
+                activeTrips = activeTrips.concat(direction.getActiveTrips(fromMinutesAfterMidnight,
+                                                                          toMinutesAfterMidnight));
+            }
         }
         return activeTrips;
     }
