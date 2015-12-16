@@ -6,41 +6,47 @@ function UiBar() {
 
     function getState() {
         var s = {};
+        s.tripTypeInfos = null;
         return s;
     }
 
-    this.init = function (tripTypes) {
+    this.init = function (tripTypeInfos) {
+        state.tripTypeInfos = tripTypeInfos;
+
         var uiBarElement = document.getElementById('ui_bar');
 
-        var line1Element = createElement('div', 'uiLine1');
+        var line1Element = createElement('div');
         line1Element.appendChild(createElement('span', 'clock'));
         line1Element.appendChild(createTextElement(' | '));
-        line1Element.appendChild(createStatisticsElement(tripTypes));
+        line1Element.appendChild(createTripTypeElement(tripTypeInfos.getTypes()));
         uiBarElement.appendChild(line1Element);
 
-        var line2Element = createElement('div', 'uiLine2');
+        var line2Element = createElement('div');
         line2Element.appendChild(createJsonDataElement());
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
         uiBarElement.appendChild(line2Element);
     }
 
-    function createStatisticsElement(tripTypes) {
-        var statisticsElement = createElement('span', 'statistics');
+    function createTripTypeElement(tripTypes) {
+        var tripTypeElement = createElement('span');
 
         for (var tripTypeName in tripTypes) {
             var statisticsTitle = getStatisticsTitle(tripTypeName);
-            if (statisticsElement.hasChildNodes()) {
+            if (tripTypeElement.hasChildNodes()) {
                 statisticsTitle = ', ' + statisticsTitle;
             }
             var titleElement = createTextElement(statisticsTitle + ': ');
             titleElement.style.color = tripTypes[tripTypeName].color;
-            statisticsElement.appendChild(titleElement);
+            tripTypeElement.appendChild(titleElement);
             var elementId = tripTypeName + 'Count';
-            statisticsElement.appendChild(createElement('span', elementId, '-'));
+            tripTypeElement.appendChild(createElement('span', elementId, '-'));
+            var tripTypeVisibilityElement =
+                createTripTypeVisibilityElement(tripTypeName, tripTypes[tripTypeName]);
+            tripTypeElement.appendChild(tripTypeVisibilityElement);
         }
 
-        return statisticsElement;
+        return tripTypeElement;
     }
 
     function getStatisticsTitle(tripTypeName) {
@@ -48,23 +54,40 @@ function UiBar() {
                 'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
     }
 
+    function createTripTypeVisibilityElement(tripTypeName, tripType) {
+        var visibilityElement = createElement('span');
+        updateTripTypeVisibilityElement(visibilityElement, tripType.isVisible);
+        visibilityElement.className = 'visibilityButton';
+        visibilityElement.addEventListener('click', function () {
+            state.tripTypeInfos.toggleVisibility(tripTypeName);
+            updateTripTypeVisibilityElement(visibilityElement, tripType.isVisible);
+        });
+        return visibilityElement;
+    }
+
+    function updateTripTypeVisibilityElement(visibilityElement, isVisible) {
+        visibilityElement.textContent = {false: ' (n)', true: ' (p)'}[isVisible];
+        visibilityElement.title = {false: 'näytä', true: 'piilota'}[isVisible];
+    }
+
     function createJsonDataElement() {
-        var jsonDataElement = createElement('span', 'jsonData');
+        var jsonDataElement = createElement('span');
         jsonDataElement.appendChild(createTextElement('Data: '));
         jsonDataElement.appendChild(createElement('span', 'downloadStatus'));
         return jsonDataElement;
     }
 
     function createAboutLinkElement() {
-        var aboutLinkElement = document.createElement('a');
+        var aboutLinkElement = createElement('a', undefined, 'tietoja');
         aboutLinkElement.href = 'about/';
-        aboutLinkElement.textContent = 'tietoja';
         return aboutLinkElement;
     }
 
     function createElement(elementType, elementId, textContent) {
         var newElement = document.createElement(elementType);
-        newElement.id = elementId;
+        if (elementId != undefined) {
+            newElement.id = elementId;
+        }
         if (textContent != undefined) {
             newElement.textContent = textContent;
         }
@@ -72,9 +95,7 @@ function UiBar() {
     }
 
     function createTextElement(textContent) {
-        var newElement = document.createElement('span');
-        newElement.textContent = textContent;
-        return newElement;
+        return createElement('span', undefined, textContent);
     }
 
     function setElementText(elementId, textContent) {
@@ -93,7 +114,8 @@ function UiBar() {
         setElementText('clock', date.toLocaleDateString() + ' ' + date.toLocaleTimeString());
     }
 
-    this.updateStatistics = function (tripTypes) {
+    this.updateStatistics = function () {
+        var tripTypes = state.tripTypeInfos.getTypes();
         for (var tripTypeName in tripTypes) {
             var elementId = tripTypeName + 'Count'
             setElementText(elementId, tripTypes[tripTypeName].count);

@@ -56,6 +56,14 @@ function Controller(gtfs, map) {
         state.tripTypeInfos.refreshStatistics();
     }
 
+    this.updateTripTypeVisibility = function (tripTypeName) {
+        for (var tripId in state.activeTrips) {
+            if (state.activeTrips[tripId].getType() == tripTypeName) {
+                state.activeTrips[tripId].updateVisibility();
+            }
+        }
+    }
+
     function getDateString(date) {
         return '' + date.getFullYear() + (date.getMonth() + 1) + date.getDate();
     }
@@ -85,8 +93,8 @@ function Controller(gtfs, map) {
             for (var j = 0; j < activeTrips.length; j++) {
                 var tripId = activeTrips[j].getId();
                 if (state.activeTrips[tripId] === undefined) {
-                    var color = state.tripTypeInfos.getType(activeTrips[j].getType()).color;
-                    var activeTrip = new ControllerTrip(map, activeTrips[j], color);
+                    var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
+                    var activeTrip = new ControllerTrip(map, activeTrips[j], tripTypeInfo);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
@@ -97,7 +105,7 @@ function Controller(gtfs, map) {
     }
 }
 
-function ControllerTrip(map, gtfsTrip, color) {
+function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
     var that = this;
     var state = getState();
 
@@ -108,7 +116,7 @@ function ControllerTrip(map, gtfsTrip, color) {
         var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
         s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
         s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
-        s.polyline = map.addPolyline(tripPath);
+        s.polyline = map.addPolyline(tripPath, tripTypeInfo.isVisible);
         s.startTime = gtfsTrip.getStartTime();
         s.tripType = gtfsTrip.getType();
         return s;
@@ -180,7 +188,7 @@ function ControllerTrip(map, gtfsTrip, color) {
             console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
                         state.startTime, secondsFromStart, distance);
             var opacity = getPolylineOpacity(secondsFromStart, fadeSeconds);
-            map.updatePolyline(state.polyline, distance, color, opacity);
+            map.updatePolyline(state.polyline, distance, tripTypeInfo.color, opacity);
             tripState = 'active';
         } else {
             tripState = 'waiting';
@@ -229,5 +237,9 @@ function ControllerTrip(map, gtfsTrip, color) {
         } else {
             return 1.0;
         }
+    }
+
+    this.updateVisibility = function () {
+        map.setPolylineVisibility(state.polyline, tripTypeInfo.isVisible);
     }
 }

@@ -1,5 +1,9 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi */
 
+/* Show markers on Google Maps
+API Reference: https://developers.google.com/maps/documentation/javascript/reference
+*/
+
 function Map() {
     var that = this;
     var state = getState();
@@ -42,10 +46,11 @@ function Map() {
         return google.maps.geometry.encoding.decodePath(encodedPath);
     }
 
-    this.addPolyline = function (path) {
+    this.addPolyline = function (path, isVisible) {
         var polyline = new google.maps.Polyline({
             path: path,
             map: state.gm,
+            visible: isVisible,
             strokeColor: 'black',
             strokeOpacity: 1.0,
             strokeWeight: 1
@@ -69,6 +74,10 @@ function Map() {
 
     this.removePolyline = function (polyline) {
         polyline.setMap(null);
+    }
+
+    this.setPolylineVisibility = function (polyline, isVisible) {
+        polyline.setVisible(isVisible);
     }
 
     this.getDistances = function (path, pathIndexes) {

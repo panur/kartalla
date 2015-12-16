@@ -9,7 +9,7 @@ function main() {
     var timing = new Timing(uiBar, controller);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
-    uiBar.init(tripTypeInfos.getTypes());
+    uiBar.init(tripTypeInfos);
     controller.init(tripTypeInfos);
     timing.init();
     map.init();
@@ -135,6 +135,11 @@ function TripTypeInfos(controller, uiBar) {
     }
 
     this.refreshStatistics = function () {
-        uiBar.updateStatistics(state.types);
+        uiBar.updateStatistics();
+    }
+
+    this.toggleVisibility = function (tripTypeName) {
+        state.types[tripTypeName].isVisible = !state.types[tripTypeName].isVisible;
+        controller.updateTripTypeVisibility(tripTypeName);
     }
 }

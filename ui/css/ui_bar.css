@@ -4,6 +4,10 @@ html, body {
     overflow: hidden;
 }
 
+span.visibilityButton {
+    cursor: pointer;
+}
+
 a:link {
     color: #0000FF;
     background-color: #FFFFFF;
