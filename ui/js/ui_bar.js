@@ -6,27 +6,16 @@ function UiBar() {
 
     function getState() {
         var s = {};
-        s.statisticsTypes = getStatisticsTypes();
         return s;
     }
 
-    function getStatisticsTypes() {
-        return [getStatisticsType('busseja', 'bus'), getStatisticsType('junia', 'train'),
-                getStatisticsType('ratikoita', 'tram'), getStatisticsType('metroja', 'metro'),
-                getStatisticsType('lauttoja', 'ferry')];
-    }
-
-    function getStatisticsType(title, type) {
-        return {title: title, type: type};
-    }
-
-    this.init = function () {
+    this.init = function (tripTypes) {
         var uiBarElement = document.getElementById('ui_bar');
 
         var line1Element = createElement('div', 'uiLine1');
         line1Element.appendChild(createElement('span', 'clock'));
         line1Element.appendChild(createTextElement(' | '));
-        line1Element.appendChild(createStatisticsElement());
+        line1Element.appendChild(createStatisticsElement(tripTypes));
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div', 'uiLine2');
@@ -36,20 +25,27 @@ function UiBar() {
         uiBarElement.appendChild(line2Element);
     }
 
-    function createStatisticsElement() {
+    function createStatisticsElement(tripTypes) {
         var statisticsElement = createElement('span', 'statistics');
 
-        for (var i = 0; i < state.statisticsTypes.length; i++) {
-            var statisticsTitle = state.statisticsTypes[i].title;
-            if (i > 0) {
+        for (var tripTypeName in tripTypes) {
+            var statisticsTitle = getStatisticsTitle(tripTypeName);
+            if (statisticsElement.hasChildNodes()) {
                 statisticsTitle = ', ' + statisticsTitle;
             }
-            statisticsElement.appendChild(createTextElement(statisticsTitle + ': '));
-            var elementId = state.statisticsTypes[i].type + 'Count';
+            var titleElement = createTextElement(statisticsTitle + ': ');
+            titleElement.style.color = tripTypes[tripTypeName].color;
+            statisticsElement.appendChild(titleElement);
+            var elementId = tripTypeName + 'Count';
             statisticsElement.appendChild(createElement('span', elementId, '-'));
         }
 
         return statisticsElement;
+    }
+
+    function getStatisticsTitle(tripTypeName) {
+        return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
+                'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
     }
 
     function createJsonDataElement() {
@@ -62,7 +58,7 @@ function UiBar() {
     function createAboutLinkElement() {
         var aboutLinkElement = document.createElement('a');
         aboutLinkElement.href = 'about/';
-        aboutLinkElement.innerHTML = 'tietoja';
+        aboutLinkElement.textContent = 'tietoja';
         return aboutLinkElement;
     }
 
@@ -70,19 +66,19 @@ function UiBar() {
         var newElement = document.createElement(elementType);
         newElement.id = elementId;
         if (textContent != undefined) {
-            newElement.innerHTML = textContent;
+            newElement.textContent = textContent;
         }
         return newElement;
     }
 
     function createTextElement(textContent) {
         var newElement = document.createElement('span');
-        newElement.innerHTML = textContent;
+        newElement.textContent = textContent;
         return newElement;
     }
 
     function setElementText(elementId, textContent) {
-        document.getElementById(elementId).innerHTML = textContent;
+        document.getElementById(elementId).textContent = textContent;
     }
 
     this.updateDownloadProgress = function (progressEvent) {
@@ -97,15 +93,10 @@ function UiBar() {
         setElementText('clock', date.toLocaleDateString() + ' ' + date.toLocaleTimeString());
     }
 
-    this.updateStatistics = function (statistics) {
-        for (var i = 0; i < state.statisticsTypes.length; i++) {
-            var statisticsType = state.statisticsTypes[i].type;
-            var elementId = statisticsType + 'Count'
-            var count = 0;
-            if (statistics[statisticsType] != undefined) {
-                count = statistics[statisticsType];
-            }
-            setElementText(elementId, count);
+    this.updateStatistics = function (tripTypes) {
+        for (var tripTypeName in tripTypes) {
+            var elementId = tripTypeName + 'Count'
+            setElementText(elementId, tripTypes[tripTypeName].count);
         }
     }
 }

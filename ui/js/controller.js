@@ -2,12 +2,13 @@
 
 'use strict';  // tbd
 
-function Controller(gtfs, map, uiBar) {
+function Controller(gtfs, map) {
     var that = this;
     var state = getState();
 
     function getState() {
         var s = {};
+        s.tripTypeInfos = null;
         s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
         s.activeServices = [];
@@ -15,11 +16,11 @@ function Controller(gtfs, map, uiBar) {
         return s;
     }
 
-    this.init = function () {
-        //huppa();
+    this.init = function (tripTypeInfos) {
+        state.tripTypeInfos = tripTypeInfos;
     }
 
-    this.update = function(nowDate) {
+    this.update = function (nowDate) {
         var nowDateString = getDateString(nowDate);
 
         if (state.activeServicesDateString != nowDateString) {
@@ -38,29 +39,21 @@ function Controller(gtfs, map, uiBar) {
     }
 
     function updateTrips(nowDate) {
-        var statistics = {};
+        state.tripTypeInfos.resetStatistics();
         var tripsToBeDeleted = [];
         for (var tripId in state.activeTrips) {
             var tripState = state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
             if (tripState === 'exit') {
                 tripsToBeDeleted.push(tripId);
             } else if (tripState === 'active') {
-                updateStatistics(statistics, state.activeTrips[tripId].getType());
+                state.tripTypeInfos.getType(state.activeTrips[tripId].getType()).count += 1;
             }
         }
         for (var i = 0; i < tripsToBeDeleted.length; i++) {
             delete state.activeTrips[tripsToBeDeleted[i]];
             console.log('deleted: %o', tripsToBeDeleted[i]);
         }
-        uiBar.updateStatistics(statistics);
-    }
-
-    function updateStatistics(statistics, tripType) {
-        if (statistics[tripType] === undefined) {
-            statistics[tripType] = 1;
-        } else {
-            statistics[tripType] += 1;
-        }
+        state.tripTypeInfos.refreshStatistics();
     }
 
     function getDateString(date) {
@@ -92,7 +85,8 @@ function Controller(gtfs, map, uiBar) {
             for (var j = 0; j < activeTrips.length; j++) {
                 var tripId = activeTrips[j].getId();
                 if (state.activeTrips[tripId] === undefined) {
-                    var activeTrip = new ControllerTrip(map, activeTrips[j]);
+                    var color = state.tripTypeInfos.getType(activeTrips[j].getType()).color;
+                    var activeTrip = new ControllerTrip(map, activeTrips[j], color);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
@@ -103,7 +97,7 @@ function Controller(gtfs, map, uiBar) {
     }
 }
 
-function ControllerTrip(map, gtfsTrip) {
+function ControllerTrip(map, gtfsTrip, color) {
     var that = this;
     var state = getState();
 
@@ -186,7 +180,7 @@ function ControllerTrip(map, gtfsTrip) {
             console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
                         state.startTime, secondsFromStart, distance);
             var opacity = getPolylineOpacity(secondsFromStart, fadeSeconds);
-            map.updatePolyline(state.polyline, distance, opacity);
+            map.updatePolyline(state.polyline, distance, color, opacity);
             tripState = 'active';
         } else {
             tripState = 'waiting';

@@ -5,10 +5,12 @@ function main() {
     var uiBar = new UiBar();
     var map = new Map();
     var gtfs = new Gtfs();
-    var controller = new Controller(gtfs, map, uiBar);
+    var controller = new Controller(gtfs, map);
     var timing = new Timing(uiBar, controller);
+    var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
-    uiBar.init();
+    uiBar.init(tripTypeInfos.getTypes());
+    controller.init(tripTypeInfos);
     timing.init();
     map.init();
 
@@ -65,7 +67,7 @@ function Timing(uiBar, controller) {
         return s;
     }
 
-    this.init = function() {
+    this.init = function () {
         state.startFake = new Date('2015-12-24T05:42:00'); // tbd
         state.startReal = new Date();
         console.log('start, real: %o, fake: %o', state.startReal, state.startFake);
@@ -93,7 +95,46 @@ function Timing(uiBar, controller) {
         return new Date(state.startFake.getTime() + fakeMsFromStart);
     }
 
-    this.downloadIsReady = function() {
+    this.downloadIsReady = function () {
         state.downloadIsReady = true;
+    }
+}
+
+function TripTypeInfos(controller, uiBar) {
+    var that = this;
+    var state = getState();
+
+    function getState() {
+        var s = {};
+        s.types = createTypes();
+        return s;
+    }
+
+    function createTypes() {
+        var types = {}; // by name
+        types.bus = {isVisible: true, color: 'blue', count: 0};
+        types.train = {isVisible: false, color: 'red', count: 0};
+        types.tram = {isVisible: false, color: 'green', count: 0};
+        types.metro = {isVisible: false, color: 'orange', count: 0};
+        types.ferry = {isVisible: false, color: 'purple', count: 0};
+        return types;
+    }
+
+    this.getType = function (tripTypeName) {
+        return state.types[tripTypeName];
+    }
+
+    this.getTypes = function () {
+        return state.types;
+    }
+
+    this.resetStatistics = function () {
+        for (var tripTypeName in state.types) {
+            state.types[tripTypeName].count = 0;
+        }
+    }
+
+    this.refreshStatistics = function () {
+        uiBar.updateStatistics(state.types);
     }
 }

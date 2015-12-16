@@ -53,12 +53,12 @@ function Map() {
         return polyline;
     }
 
-    this.updatePolyline = function (polyline, distance, opacity) {
+    this.updatePolyline = function (polyline, distance, color, opacity) {
         var paths = [google.maps.SymbolPath.FORWARD_CLOSED_ARROW, google.maps.SymbolPath.CIRCLE];
         var lineSymbol = {
             path: paths[~~(opacity < 1)],
             strokeOpacity: opacity,
-            strokeColor: 'blue',
+            strokeColor: color,
             strokeWeight: 2,
             scale: 5
         };
