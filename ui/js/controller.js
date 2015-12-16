@@ -8,8 +8,7 @@ function Controller(gtfs, map, uiBar) {
 
     function getState() {
         var s = {};
-        s.timing = {startFake: null, startReal: null, tickMs: 1000, speedMultiplier: 15,
-                    nextTripUpdate: 0, intervalId: null};
+        s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
         s.activeServices = [];
         s.activeTrips = {};
@@ -20,35 +19,17 @@ function Controller(gtfs, map, uiBar) {
         //huppa();
     }
 
-    this.start = function () {
-        state.timing.startFake = new Date('2015-12-24T05:42:00'); // tbd
-        state.timing.startReal = new Date();
-        console.log('start, real: %o, fake: %o', state.timing.startReal, state.timing.startFake);
-        state.timing.intervalId =
-            window.setInterval(function () {processTick();}, state.timing.tickMs);
-    }
-
-    function processTick() {
-        var nowDate = getNowDate();
+    this.update = function(nowDate) {
         var nowDateString = getDateString(nowDate);
-
-        uiBar.updateClock(nowDate);
-
-        if ((nowDate.getTime() - state.timing.startFake.getTime()) > 1250000) {
-            window.clearInterval(state.timing.intervalId); // tbd
-            console.log('stopped');
-        }
-
-        // console.log('now, real: %o, fake: %o', new Date(), nowDate);
 
         if (state.activeServicesDateString != nowDateString) {
             state.activeServices = getActiveServices(nowDateString);
             state.activeServicesDateString = nowDateString;
         }
 
-        if (nowDate.getTime() > state.timing.nextTripUpdate) {
+        if (nowDate.getTime() > state.nextTripUpdate) {
             var updatePeriodInMinutes = 10;
-            state.timing.nextTripUpdate = nowDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
+            state.nextTripUpdate = nowDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
             var minutesAfterMidnight = Math.round(getSecondsAfterMidnight(nowDate) / 60);
             updateActiveTrips(minutesAfterMidnight, minutesAfterMidnight + updatePeriodInMinutes);
         }
@@ -80,12 +61,6 @@ function Controller(gtfs, map, uiBar) {
         } else {
             statistics[tripType] += 1;
         }
-    }
-
-    function getNowDate() {
-        var realMsFromStart = (new Date()).getTime() - state.timing.startReal.getTime();
-        var fakeMsFromStart = realMsFromStart * state.timing.speedMultiplier;
-        return new Date(state.timing.startFake.getTime() + fakeMsFromStart);
     }
 
     function getDateString(date) {
