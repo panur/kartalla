@@ -46,38 +46,71 @@ function Map() {
         return google.maps.geometry.encoding.decodePath(encodedPath);
     }
 
-    this.addPolyline = function (path, isVisible) {
-        var polyline = new google.maps.Polyline({
-            path: path,
+    this.addMarker = function (path, isVisible, color) {
+        var gmMarker = new google.maps.Marker({
             map: state.gm,
+            visible: isVisible,
+        });
+        var gmSymbol = {
+            strokeColor: color,
+            strokeWeight: 2,
+            scale: 5
+        };
+        var gmPolyline = new google.maps.Polyline({
+            path: path,
             visible: isVisible,
             strokeColor: 'black',
             strokeOpacity: 1.0,
             strokeWeight: 1
         });
-        return polyline;
+        return {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline};
     }
 
-    this.updatePolyline = function (polyline, distance, color, opacity) {
+    this.updateMarker = function (marker, distanceFromStart, opacity) {
+        var distance = getPathPositionAndHeading(marker.gmPolyline.getPath(), distanceFromStart);
         var paths = [google.maps.SymbolPath.FORWARD_CLOSED_ARROW, google.maps.SymbolPath.CIRCLE];
-        var lineSymbol = {
-            path: paths[~~(opacity < 1)],
-            strokeOpacity: opacity,
-            strokeColor: color,
-            strokeWeight: 2,
-            scale: 5
-        };
-        var length = google.maps.geometry.spherical.computeLength(polyline.getPath());
-        var offset = Math.min(100, ((distance / length) * 100)) + '%';
-        polyline.setOptions({icons: [{icon: lineSymbol, offset: offset}]});
+
+        marker.gmSymbol.path = paths[~~(opacity < 1)];
+        marker.gmSymbol.strokeOpacity = opacity;
+        marker.gmSymbol.rotation = distance.heading;
+
+        marker.gmMarker.setOptions({icon: marker.gmSymbol, position: distance.position});
+
+        if (marker.gmPolyline.getMap() === undefined) {
+            marker.gmPolyline.setMap(state.gm);
+        }
     }
 
-    this.removePolyline = function (polyline) {
-        polyline.setMap(null);
+    function getPathPositionAndHeading(path, distanceFromStart) {
+        var cumulDistance = 0;
+
+        for (var i = 1; i < path.getLength(); i++) {
+            var p1 = path.getAt(i - 1);
+            var p2 = path.getAt(i);
+            var distanceInc = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+            cumulDistance += distanceInc;
+            if (cumulDistance > distanceFromStart) {
+                var distanceFromP1 = (distanceFromStart - (cumulDistance - distanceInc));
+                var fraction = distanceFromP1 / distanceInc;
+                var position = google.maps.geometry.spherical.interpolate(p1, p2, fraction);
+                var heading = google.maps.geometry.spherical.computeHeading(p1, p2);
+                return {position: position, heading: heading};
+            }
+        }
+
+        return {position: path.getAt(path.getLength() - 1), heading: 0};
     }
 
-    this.setPolylineVisibility = function (polyline, isVisible) {
-        polyline.setVisible(isVisible);
+    this.removeMarker = function (marker) {
+        marker.gmMarker.setMap(null);
+        marker.gmMarker = null;
+        marker.gmPolyline.setMap(null);
+        marker.gmPolyline = null;
+    }
+
+    this.setMarkerVisibility = function (marker, isVisible) {
+        marker.gmMarker.setVisible(isVisible);
+        marker.gmPolyline.setVisible(isVisible);
     }
 
     this.getDistances = function (path, pathIndexes) {

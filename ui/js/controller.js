@@ -116,7 +116,7 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
         var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
         s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
         s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
-        s.polyline = map.addPolyline(tripPath, tripTypeInfo.isVisible);
+        s.marker = map.addMarker(tripPath, tripTypeInfo.isVisible, tripTypeInfo.color);
         s.startTime = gtfsTrip.getStartTime();
         s.tripType = gtfsTrip.getType();
         return s;
@@ -180,15 +180,15 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
         var secondsFromStart = secondsAfterMidnight - (state.startTime * 60);
 
         if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
-            map.removePolyline(state.polyline);
+            map.removeMarker(state.marker);
             tripState = 'exit';
         } else if ((secondsFromStart >= -fadeSeconds) &&
             (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
             var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
             console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
                         state.startTime, secondsFromStart, distance);
-            var opacity = getPolylineOpacity(secondsFromStart, fadeSeconds);
-            map.updatePolyline(state.polyline, distance, tripTypeInfo.color, opacity);
+            var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
+            map.updateMarker(state.marker, distance, opacity);
             tripState = 'active';
         } else {
             tripState = 'waiting';
@@ -229,7 +229,7 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
         return Math.round(distance);
     }
 
-    function getPolylineOpacity(secondsFromStart, fadeSeconds) {
+    function getMarkerOpacity(secondsFromStart, fadeSeconds) {
         if (secondsFromStart < 0) {
             return (fadeSeconds + secondsFromStart) / fadeSeconds;
         } else if (secondsFromStart > state.lastArrivalSeconds) {
@@ -240,6 +240,6 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
     }
 
     this.updateVisibility = function () {
-        map.setPolylineVisibility(state.polyline, tripTypeInfo.isVisible);
+        map.setMarkerVisibility(state.marker, tripTypeInfo.isVisible);
     }
 }
