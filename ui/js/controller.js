@@ -116,7 +116,8 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
         var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
         s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
         s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
-        s.marker = map.addMarker(tripPath, tripTypeInfo.isVisible, tripTypeInfo.color);
+        s.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
+                                 tripTypeInfo.color);
         s.startTime = gtfsTrip.getStartTime();
         s.tripType = gtfsTrip.getType();
         return s;

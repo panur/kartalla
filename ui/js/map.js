@@ -12,6 +12,7 @@ function Map() {
         var s = {};
         s.initialZL = 10;
         s.initialLatLng = new google.maps.LatLng(60.273969, 24.791911);
+        s.polylineCache = {}
         return s;
     }
 
@@ -46,24 +47,31 @@ function Map() {
         return google.maps.geometry.encoding.decodePath(encodedPath);
     }
 
-    this.addMarker = function (path, isVisible, color) {
+    this.addMarker = function (path, pathId, isVisible, color) {
         var gmMarker = new google.maps.Marker({
             map: state.gm,
-            visible: isVisible,
+            visible: isVisible
         });
         var gmSymbol = {
             strokeColor: color,
             strokeWeight: 2,
             scale: 5
         };
-        var gmPolyline = new google.maps.Polyline({
-            path: path,
-            visible: isVisible,
-            strokeColor: 'black',
-            strokeOpacity: 1.0,
-            strokeWeight: 1
-        });
-        return {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline};
+        if (state.polylineCache[pathId] === undefined) {
+            var newPolyline = new google.maps.Polyline({
+                path: path,
+                visible: isVisible,
+                strokeColor: 'black',
+                strokeOpacity: 1.0,
+                strokeWeight: 1
+            });
+            state.polylineCache[pathId] = {polyline: newPolyline, count: 1};
+        } else {
+            state.polylineCache[pathId].count += 1;
+        }
+
+        var gmPolyline = state.polylineCache[pathId].polyline;
+        return {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline, pathId: pathId};
     }
 
     this.updateMarker = function (marker, distanceFromStart, opacity) {
@@ -98,14 +106,21 @@ function Map() {
             }
         }
 
-        return {position: path.getAt(path.getLength() - 1), heading: 0};
+        var p1 = path.getAt(path.getLength() - 2);
+        var p2 = path.getAt(path.getLength() - 1);
+        return {position: p2, heading: google.maps.geometry.spherical.computeHeading(p1, p2)};
     }
 
     this.removeMarker = function (marker) {
         marker.gmMarker.setMap(null);
         marker.gmMarker = null;
-        marker.gmPolyline.setMap(null);
-        marker.gmPolyline = null;
+
+        state.polylineCache[marker.pathId].count -= 1;
+        if (state.polylineCache[marker.pathId].count == 0) {
+            marker.gmPolyline.setMap(null);
+            marker.gmPolyline = null;
+            delete state.polylineCache[marker.pathId];
+        }
     }
 
     this.setMarkerVisibility = function (marker, isVisible) {

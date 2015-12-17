@@ -113,7 +113,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
     var that = this;
 
     this.getId = function () {
-        return serviceId + '_' + gtfsRoute.getId();
+        return gtfsRoute.getId() + '_' + serviceId;
     }
 
     this.getType = function () {
@@ -203,7 +203,7 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     var that = this;
 
     this.getId = function () {
-        return directionId + '_' + gtfsService.getId();
+        return gtfsService.getId() + '_' + directionId;
     }
 
     this.getType = function () {
@@ -213,6 +213,10 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     // 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
     this.getShape = function () {
         return gtfsService.getShape(rootDirection[0]);
+    }
+
+    this.getShapeId = function () {
+        return that.getId() + ':' + rootDirection[0];
     }
 
     this.getActiveTrips = function (fromMinutesAfterMidnight, toMinutesAfterMidnight) {
@@ -263,7 +267,7 @@ function GtfsTrip(tripId, gtfsDirection, startTime, stopTimes) {
     var that = this;
 
     this.getId = function () {
-        return tripId + '_' + gtfsDirection.getId();
+        return gtfsDirection.getId() + '_' + tripId;
     }
 
     this.getType = function () {
@@ -280,6 +284,10 @@ function GtfsTrip(tripId, gtfsDirection, startTime, stopTimes) {
 
     this.getShape = function () {
         return gtfsDirection.getShape();
+    }
+
+    this.getShapeId = function () {
+        return gtfsDirection.getShapeId();
     }
 
     this.getStopDistances = function () {
