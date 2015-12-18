@@ -14,6 +14,7 @@ function UiBar() {
         state.tripTypeInfos = tripTypeInfos;
 
         var uiBarElement = document.getElementById('ui_bar');
+        uiBarElement.innerHTML = '';
 
         var line1Element = createElement('div');
         line1Element.appendChild(createElement('span', 'clock'));
@@ -50,8 +51,13 @@ function UiBar() {
     }
 
     function getStatisticsTitle(tripTypeName) {
-        return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
-                'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
+        if (document.documentElement.getAttribute('lang') === 'fi') {
+            return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
+                    'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
+        } else {
+            return {'bus': 'buses', 'train': 'trains', 'tram': 'trams',
+                    'metro': 'metros', 'ferry': 'ferries'}[tripTypeName];
+        }
     }
 
     function createTripTypeVisibilityElement(tripTypeName, tripType) {

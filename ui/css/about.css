@@ -1,0 +1,19 @@
+a:link {
+    color: #0000FF;
+    background-color: #FFFFFF;
+}
+
+a:link:hover {
+    color: #FFFFFF;
+    background-color: #0000FF;
+}
+
+a:visited {
+    color: #606060;
+    background-color: #FFFFFF;
+}
+
+a:visited:hover {
+    color: #FFFFFF;
+    background-color: #606060;
+}
