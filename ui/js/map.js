@@ -74,7 +74,7 @@ function Map() {
         return {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline, pathId: pathId};
     }
 
-    this.updateMarker = function (marker, distanceFromStart, opacity) {
+    this.updateMarker = function (marker, distanceFromStart, opacity, title) {
         var distance = getPathPositionAndHeading(marker.gmPolyline.getPath(), distanceFromStart);
         var paths = [google.maps.SymbolPath.FORWARD_CLOSED_ARROW, google.maps.SymbolPath.CIRCLE];
 
@@ -82,7 +82,8 @@ function Map() {
         marker.gmSymbol.strokeOpacity = opacity;
         marker.gmSymbol.rotation = distance.heading;
 
-        marker.gmMarker.setOptions({icon: marker.gmSymbol, position: distance.position});
+        marker.gmMarker.setOptions({icon: marker.gmSymbol, position: distance.position,
+                                    title: title});
 
         if (marker.gmPolyline.getMap() === undefined) {
             marker.gmPolyline.setMap(state.gm);

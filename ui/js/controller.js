@@ -120,6 +120,8 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
                                  tripTypeInfo.color);
         s.startTime = gtfsTrip.getStartTime();
         s.tripType = gtfsTrip.getType();
+        s.tripInfo = createTripInfo(gtfsTrip.getName(), s.startTime, s.lastArrivalSeconds,
+                                    stopDistances[stopDistances.length - 1], stopTimes.length / 2);
         return s;
     }
 
@@ -189,7 +191,8 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
             console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
                         state.startTime, secondsFromStart, distance);
             var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
-            map.updateMarker(state.marker, distance, opacity);
+            updateTripInfo(secondsFromStart, distance);
+            map.updateMarker(state.marker, distance, opacity, getMarkerTitle());
             tripState = 'active';
         } else {
             tripState = 'waiting';
@@ -242,5 +245,51 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
 
     this.updateVisibility = function () {
         map.setMarkerVisibility(state.marker, tripTypeInfo.isVisible);
+    }
+
+    function createTripInfo(tripName, startTimeMinutesAfterMidnight, durationSeconds,
+                            distanceMeters, stops) {
+        var startTime = minutesToString(startTimeMinutesAfterMidnight);
+        var duration = durationSeconds / 60;
+        var lastArrivalTime = minutesToString(startTimeMinutesAfterMidnight + duration);
+        var totalDistance = Math.round(distanceMeters / 1000);
+        return {'route': tripName, 'startTime': startTime, 'lastArrivalTime': lastArrivalTime,
+                'totalDuration': duration, 'duration': null,
+                'totalDistance': totalDistance, 'distance': null,
+                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
+    }
+
+    function minutesToString(minutesAfterMidnight) {
+        var date = new Date((minutesAfterMidnight * 60) * 1000);
+        var timeString = date.toUTCString();
+        timeString = timeString.substr(17, 5); /* Thu, 01 Jan 1970 04:32:54 GMT */
+        return timeString; /* 04:32 */
+    }
+
+    function updateTripInfo(secondsFromStart, metersFromStart) {
+        var minutesFromStart = (secondsFromStart / 60).toFixed(1);
+        var kmsFromStart = (metersFromStart / 1000).toFixed(1);
+        state.tripInfo.duration = minutesFromStart + ' / ' + state.tripInfo.totalDuration;
+        state.tripInfo.distance = kmsFromStart + ' / ' + state.tripInfo.totalDistance;
+    }
+
+    function getMarkerTitle() {
+        var titleItems = ['route', 'startTime', 'lastArrivalTime', 'duration', 'distance',
+                          'averageSpeed', 'stops'];
+        var markerTitle = ''
+        for (var i = 0; i < titleItems.length; i++) {
+            markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
+                                                  state.tripInfo[titleItems[i]];
+            if (i < (titleItems.length - 1)) {
+                markerTitle += '\n'
+            }
+        }
+        return markerTitle;
+    }
+
+    function getMarkerTitleItemName(markerTitleItem) {
+        return {'route': 'Linja', 'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
+                'duration': 'Kesto (min)', 'distance': 'Matka (km)',
+                'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
     }
 }

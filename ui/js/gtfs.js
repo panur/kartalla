@@ -116,6 +116,10 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         return gtfsRoute.getId() + '_' + serviceId;
     }
 
+    this.getName = function () {
+        return gtfsRoute.getName();
+    }
+
     this.getType = function () {
         return gtfsRoute.getType();
     }
@@ -206,6 +210,10 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
         return gtfsService.getId() + '_' + directionId;
     }
 
+    this.getName = function () {
+        return gtfsService.getName();
+    }
+
     this.getType = function () {
         return gtfsService.getType();
     }
@@ -268,6 +276,10 @@ function GtfsTrip(tripId, gtfsDirection, startTime, stopTimes) {
 
     this.getId = function () {
         return gtfsDirection.getId() + '_' + tripId;
+    }
+
+    this.getName = function () {
+        return gtfsDirection.getName();
     }
 
     this.getType = function () {
