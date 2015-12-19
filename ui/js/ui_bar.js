@@ -6,11 +6,13 @@ function UiBar() {
 
     function getState() {
         var s = {};
+        s.lang = null;
         s.tripTypeInfos = null;
         return s;
     }
 
-    this.init = function (tripTypeInfos) {
+    this.init = function (lang, tripTypeInfos) {
+        state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
 
         var uiBarElement = document.getElementById('ui_bar');
@@ -23,6 +25,8 @@ function UiBar() {
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div');
+        line2Element.appendChild(createLanguageElement());
+        line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createJsonDataElement());
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
@@ -51,7 +55,7 @@ function UiBar() {
     }
 
     function getStatisticsTitle(tripTypeName) {
-        if (document.documentElement.getAttribute('lang') === 'fi') {
+        if (state.lang === 'fi') {
             return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
                     'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
         } else {
@@ -72,20 +76,42 @@ function UiBar() {
     }
 
     function updateTripTypeVisibilityElement(visibilityElement, isVisible) {
-        visibilityElement.textContent = {false: ' (n)', true: ' (p)'}[isVisible];
-        visibilityElement.title = {false: 'näytä', true: 'piilota'}[isVisible];
+        var showText = {'en': 'show', 'fi': 'näytä'}[state.lang];
+        var hideText = {'en': 'hide', 'fi': 'piilota'}[state.lang];
+        visibilityElement.title = {false: showText, true: hideText}[isVisible];
+        visibilityElement.textContent = ' (' + visibilityElement.title.charAt(0) + ')';
+    }
+
+    function createLanguageElement() {
+        var languageElement = createElement('span');
+        if (state.lang === 'fi') {
+            languageElement.appendChild(createTextElement('Kieli: suomi / '));
+            var linkElement = createElement('a', undefined, 'English');
+            linkElement.href = 'index.en.html';
+            linkElement.title = 'show English version of this page';
+            languageElement.appendChild(linkElement);
+        } else {
+            languageElement.appendChild(createTextElement('Language: '));
+            var linkElement = createElement('a', undefined, 'suomi');
+            linkElement.href = 'index.fi.html';
+            linkElement.title = 'näytä sivun suomenkielinen versio';
+            languageElement.appendChild(linkElement);
+            languageElement.appendChild(createTextElement(' / English'));
+        }
+        return languageElement;
     }
 
     function createJsonDataElement() {
         var jsonDataElement = createElement('span');
         jsonDataElement.appendChild(createTextElement('Data: '));
-        jsonDataElement.appendChild(createElement('span', 'downloadStatus'));
+        jsonDataElement.appendChild(createElement('span', 'dataStatus'));
         return jsonDataElement;
     }
 
     function createAboutLinkElement() {
-        var aboutLinkElement = createElement('a', undefined, 'tietoja');
-        aboutLinkElement.href = 'about/';
+        var linkName = {'en': 'about', 'fi': 'tietoja'}[state.lang];
+        var aboutLinkElement = createElement('a', undefined, linkName);
+        aboutLinkElement.href = linkName + '.html';
         return aboutLinkElement;
     }
 
@@ -109,11 +135,44 @@ function UiBar() {
     }
 
     this.updateDownloadProgress = function (progressEvent) {
-        var downloadStatus = 'ladataan...';
-        if (progressEvent.lengthComputable) {
-            downloadStatus = Math.round(100 * (progressEvent.loaded / progressEvent.total));
+        var loaded = getMegaBytes(progressEvent.loaded);
+        var statusText = {'en': 'downloaded (megabytes)', 'fi': 'ladattu (megatavua)'}[state.lang];
+        setElementText('dataStatus', statusText + ' ' + loaded + '...');
+    }
+
+    function getMegaBytes(bytes) {
+        return ((bytes / 1024) / 1024).toFixed(1);
+    }
+
+    this.setDataInfo = function (modified, created, downloadDuration, sizeBytes) {
+        setElementText('dataStatus', 'OK');
+        var infoElement = createElement('span', undefined, '*');
+        infoElement.className = 'dataInfo';
+        infoElement.title = getDataInfoTitle({'gtfsDate': modified, 'jsonDate': created,
+            'download': downloadDuration, 'size': getMegaBytes(sizeBytes)});
+        document.getElementById('dataStatus').appendChild(infoElement);
+    }
+
+    function getDataInfoTitle(dataInfo) {
+        var titleItems = ['gtfsDate', 'jsonDate', 'download', 'size'];
+        var dataInfoTitle = ''
+        for (var i = 0; i < titleItems.length; i++) {
+            dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' + dataInfo[titleItems[i]];
+            if (i < (titleItems.length - 1)) {
+                dataInfoTitle += '\n'
+            }
         }
-        setElementText('downloadStatus', downloadStatus);
+        return dataInfoTitle;
+    }
+
+    function getDataInfoItemName(dataInfoItem) {
+        if (state.lang === 'fi') {
+            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'download': 'Lataus (sekuntia)',
+                    'size': 'Koko (megatavua)'}[dataInfoItem];
+        } else {
+            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'download': 'Download (seconds)',
+                    'size': 'Size (megabytes)'}[dataInfoItem];
+        }
     }
 
     this.updateClock = function (date) {

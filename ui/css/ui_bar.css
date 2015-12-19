@@ -8,6 +8,11 @@ span.visibilityButton {
     cursor: pointer;
 }
 
+span.dataInfo {
+    cursor: help;
+    color: teal;
+}
+
 a:link {
     color: #0000FF;
     background-color: #FFFFFF;

@@ -9,7 +9,7 @@ function main() {
     var timing = new Timing(uiBar, controller);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
-    uiBar.init(tripTypeInfos);
+    uiBar.init(getLang(), tripTypeInfos);
     controller.init(tripTypeInfos);
     timing.init();
     map.init();
@@ -17,6 +17,14 @@ function main() {
     initResizeHandler();
 
     downloadGtfsJsonData('json/gtfs.json');
+
+    function getLang() {
+        if (document.documentElement.getAttribute('lang') === 'fi') {
+            return 'fi';
+        } else {
+            return 'en';
+        }
+    }
 
     function downloadGtfsJsonData(filename) {
         var readyEvent = document.createEvent('Event');
@@ -26,15 +34,15 @@ function main() {
         var startTime = new Date();
         var gtfsJsonData = null;
 
-        utils.downloadUrl(filename, uiBar.updateDownloadProgress, function (data) {
-            gtfsJsonData = JSON.parse(data);
+        utils.downloadUrl(filename, uiBar.updateDownloadProgress, function (responseText) {
+            gtfsJsonData = responseText;
             document.dispatchEvent(readyEvent);
         });
 
         function downloadIsReady() {
-            console.log('GTFS JSON downloading took %d ms',
-                        Math.round((new Date()).getTime() - startTime.getTime()));
-            gtfs.init(gtfsJsonData);
+            var duration = (((new Date()).getTime() - startTime.getTime()) / 1000).toFixed(1);
+            uiBar.setDataInfo('tbd', 'tbd', duration, gtfsJsonData.length);
+            gtfs.init(JSON.parse(gtfsJsonData));
             timing.downloadIsReady();
         }
     }
