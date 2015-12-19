@@ -11,18 +11,21 @@
 
 <h1>Kartalla - Tietoja</h1>
 
-<p>Viimeksi päivitetty 2015-12-18.</p>
+<p>Viimeksi päivitetty 2015-12-19.</p>
 
 <h2>Yleistä</h2>
 
 <p>
-tulossa...
+Kartalla näyttää tosiaikaisesti Helsingin seudun joukkoliikennevälineiden sijainnin
+<a href="https://www.hsl.fi/">HSL</a>:n avoimena datana julkaisemien aikataulu- ja reittitietojen
+perusteella. Näytetty sijainti ei siis perustu mitattuun paikkatietoon eli poikkeamat todelliseen
+sijaintiin ovat mahdollisia ja luultavia.
 </p>
 
-<h2>Muita karttoja</h2>
+<h2 id="karttoja">Muita karttoja</h2>
 
 <p>
-Joukkoliikenteen mitatun paikkatiedon perusteella näyttäviä karttoja.
+Joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella näyttäviä karttoja.
 </p>
 
 <ul>
@@ -46,7 +49,7 @@ Joukkoliikenteen mitatun paikkatiedon perusteella näyttäviä karttoja.
     <ul>
     <li>Bussit Tampereella.</li>
     </ul></li>
-  <li><a href="http://reittiopas.foli.fi/bin/help.exe/3finn?tpl=fullmap">Lissu Liikenteenseuranta</a>
+  <li><a href="http://reittiopas.foli.fi/bin/help.exe/3finn?tpl=fullmap">Föli kartalla</a>
     <ul>
     <li>Bussit Turussa.</li>
     </ul></li>
@@ -56,10 +59,49 @@ Joukkoliikenteen mitatun paikkatiedon perusteella näyttäviä karttoja.
     </ul></li>
 </ul>
 
-<h2>Tekninen toteutus</h2>
+<h2 id="toteutus">Tekninen toteutus</h2>
 
 <p>
-tulossa...
+Kartalla muodostuu kahdesta osasta: <a href="#gtfs2json">gtfs2json</a> ja selaimessa toimiva
+graafinen <a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa HSL:n julkaiseman
+<a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen datan
+jälkimmäiselle soveltuvaan muotoon.
+</p>
+
+<h3 id="gtfs2json">gtfs2json</h3>
+
+<p>
+gtfs2json tiivistää GTFS-tiedostot (calendar.txt, calendar_dates.txt, routes.txt, shapes.txt,
+stop_times.txt, stops.txt, trips.txt) yhdeksi <a href="http://www.json.org/">JSON</a>-tiedostoksi.
+GTFS-tiedostojen koko on noin 600 megatavua (pakattuna 60 megatavua) ja tuotetun JSON-tiedoston koko
+on noin 3 megatavua. Tiivistäminen tapahtuu karsimalla GTFS-tiedostoista tarpeettomia osia ja
+esittämällä tarpeelliset osat tiiviimmin. gtfs2json on toteutettu
+<a href="https://www.python.org/">Python</a>-ohjelmointikielellä (versio 2.7).
+</p>
+
+<h3 id="kayttoliittyma">Käyttöliittymä</h3>
+
+<p>
+Selaimessa toimiva käyttöliittymä lataa gtfs2json-ohjelman tuottaman JSON-tiedoston palvelimelta ja
+esittää sen perusteella joukkoliikennevälineiden sijainnin kartalla käyttäen
+<a href="https://developers.google.com/maps/documentation/javascript/">Google Maps JavaScript
+API</a>:a. JSON-tiedosto ladataan palvelimelta pakattuna mikäli selain tukee
+<a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>-tekniikka. Tällöin
+siirrettävän tiedon määrä on noin 0,5 megatavua. Tämän jälkeen verkosta ei ladata muuta kuin
+mahdollisesti lisää karttadataa Googlen palvelimelta. Käyttöliittymä on toteutettu
+<a href="http://javascript.crockford.com/">JavaScript</a>-ohjelmointikielellä sekä
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a>- ja
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a>-tekniikoilla.
+</p>
+
+<p>
+tulossa url-parametrit
+</p>
+
+<h2 id="yhteystiedot">Yhteystiedot</h2>
+
+<p>
+Panu Ranta, <a href="mailto:panu.ranta@iki.fi">panu.ranta@iki.fi</a>
 </p>
 
 </body>
