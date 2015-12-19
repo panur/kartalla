@@ -16,10 +16,10 @@
 <h2>Yleistä</h2>
 
 <p>
-Kartalla näyttää tosiaikaisesti Helsingin seudun joukkoliikennevälineiden sijainnin
-<a href="https://www.hsl.fi/">HSL</a>:n avoimena datana julkaisemien aikataulu- ja reittitietojen
-perusteella. Näytetty sijainti ei siis perustu mitattuun paikkatietoon eli poikkeamat todelliseen
-sijaintiin ovat mahdollisia ja luultavia.
+<a href="index.fi.html">Kartalla</a> näyttää tosiaikaisesti Helsingin seudun
+joukkoliikennevälineiden sijainnin <a href="https://www.hsl.fi/">HSL</a>:n avoimena datana
+julkaisemien aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis perustu mitattuun
+paikkatietoon eli poikkeamat todelliseen sijaintiin ovat mahdollisia ja luultavia.
 </p>
 
 <h2 id="karttoja">Muita karttoja</h2>
@@ -29,34 +29,34 @@ Joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella näyttävi�
 </p>
 
 <ul>
-  <li><a href="http://dev.hsl.fi/live">Live demo</a>
-    <ul>
-    <li>Osa HSL:n reiteistä.</li>
-    </ul></li>
-  <li><a href="http://live.mattersoft.fi/hsl/">HSL LIVE</a>
-    <ul>
-    <li>Osa HSL:n reiteistä.</li>
-    </ul></li>
-  <li><a href="http://sporat.fi/">Raitiovaunut kartalla livenä</a>
-    <ul>
-    <li>HSL:n raitiovaunut.</li>
-    </ul></li>
-  <li><a href="https://www.vr.fi/cs/vr/fi/junat_kartalla">Junat kartalla - VR</a>
-    <ul>
-    <li>VR:n junat.</li>
-    </ul></li>
-  <li><a href="http://lissu.tampere.fi/">Lissu Liikenteenseuranta</a>
-    <ul>
-    <li>Bussit Tampereella.</li>
-    </ul></li>
-  <li><a href="http://reittiopas.foli.fi/bin/help.exe/3finn?tpl=fullmap">Föli kartalla</a>
-    <ul>
-    <li>Bussit Turussa.</li>
-    </ul></li>
-  <li><a href="http://www.flightradar24.com/">Flightradar24</a>
-    <ul>
-    <li>Lentokoneet.</li>
-    </ul></li>
+    <li><a href="http://dev.hsl.fi/live">Live demo</a>
+        <ul>
+        <li>Osa HSL:n reiteistä.</li>
+        </ul></li>
+    <li><a href="http://live.mattersoft.fi/hsl/">HSL LIVE</a>
+        <ul>
+        <li>Osa HSL:n reiteistä.</li>
+        </ul></li>
+    <li><a href="http://sporat.fi/">Raitiovaunut kartalla livenä</a>
+        <ul>
+        <li>HSL:n raitiovaunut.</li>
+        </ul></li>
+    <li><a href="https://www.vr.fi/cs/vr/fi/junat_kartalla">Junat kartalla - VR</a>
+        <ul>
+        <li>VR:n junat.</li>
+        </ul></li>
+    <li><a href="http://lissu.tampere.fi/">Lissu Liikenteenseuranta</a>
+        <ul>
+        <li>Bussit Tampereella.</li>
+        </ul></li>
+    <li><a href="http://reittiopas.foli.fi/bin/help.exe/3finn?tpl=fullmap">Föli kartalla</a>
+        <ul>
+        <li>Bussit Turussa.</li>
+        </ul></li>
+    <li><a href="http://www.flightradar24.com/">Flightradar24</a>
+        <ul>
+        <li>Lentokoneet.</li>
+        </ul></li>
 </ul>
 
 <h2 id="toteutus">Tekninen toteutus</h2>
@@ -94,9 +94,62 @@ mahdollisesti lisää karttadataa Googlen palvelimelta. Käyttöliittymä on tot
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a>-tekniikoilla.
 </p>
 
+<h3 id="parametrit">Parametrit</h3>
+
 <p>
-tulossa url-parametrit
+Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
 </p>
+
+<ul>
+    <li><var>lat</var>
+        <ul>
+        <li>leveyspiiri <a href="https://fi.wikipedia.org/wiki/WGS84">WGS84</a>-järjestelmässä</li>
+        <li>oletusarvo: 60.273969</li>
+        </ul></li>
+    <li><var>lng</var>
+        <ul>
+        <li>pituuspiiri <a href="https://fi.wikipedia.org/wiki/WGS84">WGS84</a>-järjestelmässä</li>
+        <li>oletusarvo: 24.791911</li>
+        </ul></li>
+    <li><var>zoom</var>
+        <ul>
+        <li>zoom-taso välillä 8-16 (kaukaa lähelle)</li>
+        <li>oletusarvo: 10</li>
+        </ul></li>
+    <li><var>date</var>
+        <ul>
+        <li>päivämäärä muodossa VVVVKKPP</li>
+        <li>oletusarvo: nykyhetki</li>
+        </ul></li>
+    <li><var>time</var>
+        <ul>
+        <li>aika muodossa TTMMSS</li>
+        <li>oletusarvo: nykyhetki</li>
+        </ul></li>
+</ul>
+
+<p>
+Esimerkkejä parametrien käytöstä.
+</p>
+
+<ul>
+    <li><a href="index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
+        <ul>
+        <li><a href="http://aikataulut.reittiopas.fi/pysakit/fi/3010501.html">Kauniainen</a> läheltä</li>
+        </ul></li>
+    <li><a href="index.fi.html?time=231000">index.fi.html?time=231000</a>
+        <ul>
+        <li>tänään kello 23:10:00</li>
+        </ul></li>
+    <li><a href="index.fi.html?date=20151224">index.fi.html?date=20151224</a>
+        <ul>
+        <li>jouluaatto nykyiseen kellonaikaan</li>
+        </ul></li>
+    <li><a href="index.fi.html?date=20151224&amp;time=160030">index.fi.html?date=20151224&amp;time=160030</a>
+        <ul>
+        <li>jouluaatto kello 16:00:30</li>
+        </ul></li>
+</ul>
 
 <h2 id="yhteystiedot">Yhteystiedot</h2>
 

@@ -1,4 +1,4 @@
-/* Author: Panu Ranta, panu.ranta@iki.fi */
+/* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
 /* Show markers on Google Maps
 API Reference: https://developers.google.com/maps/documentation/javascript/reference
@@ -10,13 +10,12 @@ function Map() {
 
     function getState() {
         var s = {};
-        s.initialZL = 10;
-        s.initialLatLng = new google.maps.LatLng(60.273969, 24.791911);
+        s.gm = null;
         s.polylineCache = {}
         return s;
     }
 
-    this.init = function () {
+    this.init = function (lat, lng, zoomLevel) {
         var gmElement = document.getElementById('map_canvas');
         var gmOptions = {
             mapTypeId: google.maps.MapTypeId.ROADMAP,
@@ -35,7 +34,7 @@ function Map() {
 
         state.gm = new google.maps.Map(gmElement, gmOptions);
 
-        state.gm.setOptions({center: state.initialLatLng, zoom: state.initialZL});
+        state.gm.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
     }
 
     this.resize = function (newHeight) {

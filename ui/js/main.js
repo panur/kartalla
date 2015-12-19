@@ -1,6 +1,7 @@
-/* Author: Panu Ranta, panu.ranta@iki.fi */
+/* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
 function main() {
+    var config = new Config();
     var utils = new Utils();
     var uiBar = new UiBar();
     var map = new Map();
@@ -9,22 +10,14 @@ function main() {
     var timing = new Timing(uiBar, controller);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
-    uiBar.init(getLang(), tripTypeInfos);
+    uiBar.init(config.lang, tripTypeInfos);
     controller.init(tripTypeInfos);
-    timing.init();
-    map.init();
+    timing.init(config);
+    map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
 
     initResizeHandler();
 
-    downloadGtfsJsonData('json/gtfs.json');
-
-    function getLang() {
-        if (document.documentElement.getAttribute('lang') === 'fi') {
-            return 'fi';
-        } else {
-            return 'en';
-        }
-    }
+    downloadGtfsJsonData(config.json_url);
 
     function downloadGtfsJsonData(filename) {
         var readyEvent = document.createEvent('Event');
@@ -71,15 +64,16 @@ function Timing(uiBar, controller) {
         s.startReal = null;
         s.tickMs = 1000;
         s.speedMultiplier = 15;
+        s.stopAfter = null;
         s.intervalId = null;
         s.downloadIsReady = false;
         return s;
     }
 
-    this.init = function () {
-        state.startFake = new Date('2015-12-24T05:42:00'); // tbd
+    this.init = function (config) {
+        state.startFake = config.startDate;
         state.startReal = new Date();
-        console.log('start, real: %o, fake: %o', state.startReal, state.startFake);
+        state.stopAfter = config.stopAfter;
         state.intervalId = window.setInterval(function () {processTick();}, state.tickMs);
         uiBar.updateClock(getNowDate());
     }
@@ -87,14 +81,15 @@ function Timing(uiBar, controller) {
     function processTick() {
         var nowDate = getNowDate();
 
-        if ((nowDate.getTime() - state.startFake.getTime()) > 1250000) {
-            window.clearInterval(state.intervalId); // tbd
-            console.log('stopped');
-        }
-
         uiBar.updateClock(nowDate);
+
         if (state.downloadIsReady) {
             controller.update(nowDate);
+        }
+
+        if ((state.stopAfter != null) && isTimeToStop(nowDate)) {
+            window.clearInterval(state.intervalId);
+            console.log('stopped after %d minutes', state.stopAfter);
         }
     }
 
@@ -102,6 +97,11 @@ function Timing(uiBar, controller) {
         var realMsFromStart = (new Date()).getTime() - state.startReal.getTime();
         var fakeMsFromStart = realMsFromStart * state.speedMultiplier;
         return new Date(state.startFake.getTime() + fakeMsFromStart);
+    }
+
+    function isTimeToStop(nowDate) {
+        var minutesSinceStart = ((nowDate.getTime() - state.startFake.getTime()) / 1000) / 60;
+        return minutesSinceStart > state.stopAfter;
     }
 
     this.downloadIsReady = function () {
@@ -121,11 +121,11 @@ function TripTypeInfos(controller, uiBar) {
 
     function createTypes() {
         var types = {}; // by name
-        types.bus = {isVisible: true, color: 'blue', count: 0};
-        types.train = {isVisible: false, color: 'red', count: 0};
+        types.bus = {isVisible: false, color: 'blue', count: 0};
+        types.train = {isVisible: true, color: 'red', count: 0};
         types.tram = {isVisible: false, color: 'green', count: 0};
         types.metro = {isVisible: false, color: 'orange', count: 0};
-        types.ferry = {isVisible: false, color: 'purple', count: 0};
+        types.ferry = {isVisible: true, color: 'purple', count: 0};
         return types;
     }
 
