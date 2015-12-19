@@ -11,7 +11,7 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     uiBar.init(config.lang, tripTypeInfos);
-    controller.init(tripTypeInfos);
+    controller.init(config.lang, tripTypeInfos);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
 
@@ -135,6 +135,10 @@ function TripTypeInfos(controller, uiBar) {
 
     this.getTypes = function () {
         return state.types;
+    }
+
+    this.getNames = function () {
+        return ['bus', 'train', 'tram', 'metro', 'ferry'];
     }
 
     this.resetStatistics = function () {

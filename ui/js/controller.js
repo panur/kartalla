@@ -1,4 +1,4 @@
-/* Author: Panu Ranta, panu.ranta@iki.fi */
+/* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
 'use strict';  // tbd
 
@@ -8,6 +8,7 @@ function Controller(gtfs, map) {
 
     function getState() {
         var s = {};
+        s.lang = null;
         s.tripTypeInfos = null;
         s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
@@ -16,7 +17,8 @@ function Controller(gtfs, map) {
         return s;
     }
 
-    this.init = function (tripTypeInfos) {
+    this.init = function (lang, tripTypeInfos) {
+        state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
     }
 
@@ -58,7 +60,7 @@ function Controller(gtfs, map) {
 
     this.updateTripTypeVisibility = function (tripTypeName) {
         for (var tripId in state.activeTrips) {
-            if (state.activeTrips[tripId].getType() == tripTypeName) {
+            if (state.activeTrips[tripId].getType() === tripTypeName) {
                 state.activeTrips[tripId].updateVisibility();
             }
         }
@@ -287,8 +289,15 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
     }
 
     function getMarkerTitleItemName(markerTitleItem) {
-        return {'route': 'Linja', 'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
-                'duration': 'Kesto (min)', 'distance': 'Matka (km)',
-                'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
+        if (state.lang === 'fi') {
+            return {'route': 'Linja', 'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
+                    'duration': 'Kesto (min)', 'distance': 'Matka (km)',
+                    'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
+        } else {
+            return {'route': 'Route', 'startTime': 'Departure time',
+                    'lastArrivalTime': 'Arrival time', 'duration': 'Duration (min)',
+                    'distance': 'Distance (km)', 'averageSpeed': 'Average speed (km/h)',
+                    'stops': 'Stops'}[markerTitleItem];
+        }
     }
 }

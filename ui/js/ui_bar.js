@@ -1,4 +1,4 @@
-/* Author: Panu Ranta, panu.ranta@iki.fi */
+/* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
 function UiBar() {
     var that = this;
@@ -21,7 +21,7 @@ function UiBar() {
         var line1Element = createElement('div');
         line1Element.appendChild(createElement('span', 'clock'));
         line1Element.appendChild(createTextElement(' | '));
-        line1Element.appendChild(createTripTypeElement(tripTypeInfos.getTypes()));
+        line1Element.appendChild(createTripTypeElement());
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div');
@@ -34,21 +34,25 @@ function UiBar() {
     }
 
     function createTripTypeElement(tripTypes) {
+        var tripTypes = state.tripTypeInfos.getTypes();
+        var tripTypeNames = state.tripTypeInfos.getNames();
         var tripTypeElement = createElement('span');
 
-        for (var tripTypeName in tripTypes) {
+        for (var i = 0; i < tripTypeNames.length; i++) {
+            var tripTypeName = tripTypeNames[i];
             var statisticsTitle = getStatisticsTitle(tripTypeName);
-            if (tripTypeElement.hasChildNodes()) {
-                statisticsTitle = ', ' + statisticsTitle;
-            }
             var titleElement = createTextElement(statisticsTitle + ': ');
             titleElement.style.color = tripTypes[tripTypeName].color;
             tripTypeElement.appendChild(titleElement);
             var elementId = tripTypeName + 'Count';
             tripTypeElement.appendChild(createElement('span', elementId, '-'));
+            tripTypeElement.appendChild(createTextElement(' '));
             var tripTypeVisibilityElement =
                 createTripTypeVisibilityElement(tripTypeName, tripTypes[tripTypeName]);
             tripTypeElement.appendChild(tripTypeVisibilityElement);
+            if (i < (tripTypeNames.length - 1)) {
+                tripTypeElement.appendChild(createTextElement(', '));
+            }
         }
 
         return tripTypeElement;
@@ -79,7 +83,7 @@ function UiBar() {
         var showText = {'en': 'show', 'fi': 'näytä'}[state.lang];
         var hideText = {'en': 'hide', 'fi': 'piilota'}[state.lang];
         visibilityElement.title = {false: showText, true: hideText}[isVisible];
-        visibilityElement.textContent = ' (' + visibilityElement.title.charAt(0) + ')';
+        visibilityElement.textContent = '(' + visibilityElement.title.charAt(0) + ')';
     }
 
     function createLanguageElement() {
