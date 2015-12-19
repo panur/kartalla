@@ -261,9 +261,8 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
 
     function minutesToString(minutesAfterMidnight) {
         var date = new Date((minutesAfterMidnight * 60) * 1000);
-        var timeString = date.toUTCString();
-        timeString = timeString.substr(17, 5); /* Thu, 01 Jan 1970 04:32:54 GMT */
-        return timeString; /* 04:32 */
+        var timeString = date.toISOString(); /* YYYY-MM-DDTHH:mm:ss.sssZ */
+        return timeString.substr(11, 5); /* HH:MM */
     }
 
     function updateTripInfo(secondsFromStart, metersFromStart) {

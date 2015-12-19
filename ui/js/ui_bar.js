@@ -144,13 +144,34 @@ function UiBar() {
         return ((bytes / 1024) / 1024).toFixed(1);
     }
 
-    this.setDataInfo = function (modified, created, downloadDuration, sizeBytes) {
+    this.setDataInfo = function (dtfsEpoch, jsonEpoch, downloadDuration, sizeBytes) {
         setElementText('dataStatus', 'OK');
         var infoElement = createElement('span', undefined, '*');
         infoElement.className = 'dataInfo';
-        infoElement.title = getDataInfoTitle({'gtfsDate': modified, 'jsonDate': created,
-            'download': downloadDuration, 'size': getMegaBytes(sizeBytes)});
+        infoElement.title = getDataInfoTitle({'gtfsDate': epochToString(dtfsEpoch, false),
+            'jsonDate': epochToString(jsonEpoch, true), 'download': downloadDuration,
+            'size': getMegaBytes(sizeBytes)});
         document.getElementById('dataStatus').appendChild(infoElement);
+    }
+
+    function epochToString(epoch, isTimeIncluded) {
+        return dateToString(new Date(epoch * 1000), isTimeIncluded);
+    }
+
+    function dateToString(d, isTimeIncluded) {
+        function pad(number) {
+            if (number < 10) {
+                return '0' + number;
+            } else {
+                return number;
+            }
+        }
+        var dateString = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        if (isTimeIncluded) {
+            dateString +=
+                ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+        return dateString;
     }
 
     function getDataInfoTitle(dataInfo) {
@@ -176,7 +197,7 @@ function UiBar() {
     }
 
     this.updateClock = function (date) {
-        setElementText('clock', date.toLocaleDateString() + ' ' + date.toLocaleTimeString());
+        setElementText('clock', dateToString(date, true));
     }
 
     this.updateStatistics = function () {

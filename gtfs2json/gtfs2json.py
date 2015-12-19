@@ -16,6 +16,7 @@ import logging
 import os
 import resource
 import sys
+import time
 
 import polyline
 
@@ -28,6 +29,7 @@ def _main():
 
     _init_logging()
 
+    start_time = time.time()
     logging.debug('started {}'.format(sys.argv))
 
     print 'parsing shapes...'
@@ -48,9 +50,11 @@ def _main():
     print 'adding shapes to routes...'
     _add_shapes_to_routes(routes, shapes, stops)
     print 'creating output file...'
-    _create_output_file(routes, args.output_file)
+    _create_output_file(routes, args.output_file,
+                        _get_gtfs_epoch(os.path.join(args.input_dir, 'routes.txt')))
 
-    print 'max mem: {} megabytes'.format(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024)
+    logging.debug('took {} secods, max mem: {}'.format(
+        int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 
 def _init_logging():
@@ -351,13 +355,19 @@ def _add_shape_to_route(route, direction, shape, stop_distances, stats):
         stats['bytes'] += len(encoded_shape['points'])
 
 
-def _create_output_file(routes, output_filename):
+def _get_gtfs_epoch(routes_txt):
+    return int(os.stat(routes_txt).st_mtime)
+
+
+def _create_output_file(routes, output_filename, gtfs_epoch):
     array_keys = _get_array_keys()
     output_dates = _get_output_dates(routes)
     output_routes = _get_output_routes(array_keys, output_dates, routes)
 
     output_data = [None] * len(array_keys['root'])
     output_data[array_keys['root']['array_keys']] = array_keys
+    output_data[array_keys['root']['gtfs_epoch']] = gtfs_epoch
+    output_data[array_keys['root']['json_epoch']] = int(time.time())
     output_data[array_keys['root']['dates']] = output_dates
     output_data[array_keys['root']['routes']] = output_routes
 
@@ -367,7 +377,8 @@ def _create_output_file(routes, output_filename):
 
 def _get_array_keys():
     array_keys = {}
-    array_keys['root'] = {'array_keys': 0, 'dates': 1, 'routes': 2}
+    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'dates': 3,
+                          'routes': 4}
     array_keys['route'] = {'name': 0, 'type': 1, 'shapes': 2, 'directions': 3, 'services': 4}
     array_keys['direction'] = {'shape_i': 0, 'stop_distances': 1, 'is_departure_times': 2,
                                'stop_times': 3, 'trips': 4}
@@ -448,7 +459,7 @@ def _get_output_direction(array_keys, service, direction_id, direction, stats):
     is_departure_times = _is_departure_times_in_service(service)
     output_stop_times = _get_service_stop_times(service, direction_id, is_departure_times)
     stats['stop_times'] += len(output_stop_times)
-    # stop times must be set before these
+    # stop times must be set before this
     output_trips = _get_output_trips(array_keys, service['trips'], direction_id)
     output_direction = [None] * len(array_keys['direction'])
     output_direction[array_keys['direction']['shape_i']] = direction['shape_i']

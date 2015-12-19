@@ -41,8 +41,9 @@ function main() {
 
         function downloadIsReady() {
             var duration = (((new Date()).getTime() - startTime.getTime()) / 1000).toFixed(1);
-            uiBar.setDataInfo('tbd', 'tbd', duration, gtfsJsonData.length);
             gtfs.init(JSON.parse(gtfsJsonData));
+            uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(), duration,
+                              gtfsJsonData.length);
             timing.downloadIsReady();
         }
     }

@@ -26,6 +26,14 @@ function Gtfs() {
         return that.getArrayKeys('root')[keyId];
     }
 
+    this.getDtfsEpoch = function () {
+        return state.root[getArrayKey('gtfs_epoch')];
+    }
+
+    this.getJsonEpoch = function () {
+        return state.root[getArrayKey('json_epoch')];
+    }
+
     this.getDates = function () {
         return state.root[getArrayKey('dates')];
     }
@@ -44,33 +52,33 @@ function Gtfs() {
     }
 
     // For '#$%1~!$2!~!!$3' return [0, 1, 2, 14, 91, 92, 15, 182, 183, 16].
-    this.string_to_integer_list = function (string) {
-        var integer_list = [];
-        var integer_value = 0;
-        var mult_chr = 33; // 33='!'
-        var min_chr = 35;  // 35='#', not 34='"' because it takes three characters in JSON
-        var max_chr = 126; // 126='~'
-        var max_value = max_chr - min_chr;
+    this.stringToIntegerList = function (string) {
+        var integerList = [];
+        var integerValue = 0;
+        var multChr = 33; // 33='!'
+        var minChr = 35;  // 35='#', not 34='"' because it takes three characters in JSON
+        var maxChr = 126; // 126='~'
+        var maxValue = maxChr - minChr;
         for (var i = 0; i < string.length; i++) {
             var charCode = string.charCodeAt(i);
-            if (charCode === mult_chr) {
-                integer_value += max_value;
+            if (charCode === multChr) {
+                integerValue += maxValue;
             } else {
-                integer_value += charCode - min_chr;
-                integer_list.push(integer_value);
-                integer_value = 0;
+                integerValue += charCode - minChr;
+                integerList.push(integerValue);
+                integerValue = 0;
             }
         }
-        return integer_list;
+        return integerList;
     }
 
     // For [10, 1, 11, 3] return [0, 10, 11, 22, 25]
-    this.unpack_delta_list = function (integer_list) {
-        var unpacked_list = [0];
-        for (var i = 0; i < integer_list.length; i++) {
-            unpacked_list.push(unpacked_list[i] + integer_list[i]);
+    this.unpackDeltaList = function (integerList) {
+        var unpackedList = [0];
+        for (var i = 0; i < integerList.length; i++) {
+            unpackedList.push(unpackedList[i] + integerList[i]);
         }
-        return unpacked_list;
+        return unpackedList;
     }
 }
 
@@ -259,9 +267,9 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
         var firstStartTime = directionTrips[getTripArrayKey('first_start_time')];
         var startTimesString = directionTrips[getTripArrayKey('start_times')];
         var startTimes =
-            gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(startTimesString));
+            gtfsRoot.unpackDeltaList(gtfsRoot.stringToIntegerList(startTimesString));
         var stopTimesIndexesString = directionTrips[getTripArrayKey('stop_times_indexes')];
-        var stopTimesIndexes = gtfsRoot.string_to_integer_list(stopTimesIndexesString);
+        var stopTimesIndexes = gtfsRoot.stringToIntegerList(stopTimesIndexesString);
 
         for (var i = 0; i < startTimes.length; i++) {
             var startTime = firstStartTime + startTimes[i];
@@ -278,8 +286,8 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     function getStopTimes(stopTimesI) {
         var isDepartureTimes = rootDirection[getArrayKey('is_departure_times')];
         var stopTimeDeltas =
-            gtfsRoot.string_to_integer_list(rootDirection[getArrayKey('stop_times')][stopTimesI]);
-        var stopTimes = gtfsRoot.unpack_delta_list(stopTimeDeltas);
+            gtfsRoot.stringToIntegerList(rootDirection[getArrayKey('stop_times')][stopTimesI]);
+        var stopTimes = gtfsRoot.unpackDeltaList(stopTimeDeltas);
         if (isDepartureTimes === 0) {
             stopTimes = addDepartureTimes(stopTimes);
         }
@@ -297,7 +305,7 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
 
     this.getStopDistances = function () {
         var stopDistancesString = rootDirection[getArrayKey('stop_distances')];
-        return gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(stopDistancesString));
+        return gtfsRoot.unpackDeltaList(gtfsRoot.stringToIntegerList(stopDistancesString));
     }
 }
 
