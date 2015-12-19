@@ -9,21 +9,30 @@ function Gtfs() {
     function getState() {
         var s = {};
         s.root = null;
+        s.arrayKeys = null;
         return s;
     }
 
     this.init = function (jsonData) {
         state.root = jsonData;
+        state.arrayKeys = state.root[0];
     }
 
-    // 0=dates, 1=routes
+    this.getArrayKeys = function (node) {
+        return state.arrayKeys[node];
+    }
+
+    function getArrayKey(keyId) {
+        return that.getArrayKeys('root')[keyId];
+    }
+
     this.getDates = function () {
-        return state.root[0];
+        return state.root[getArrayKey('dates')];
     }
 
     this.getRoutes = function () {
         var routes = [];
-        for (var i = 0; i < state.root[1].length; i++) {
+        for (var i = 0; i < state.root[getArrayKey('routes')].length; i++) {
             var route = new GtfsRoute(i, that, getRootRoute(i));
             routes.push(route);
         }
@@ -31,7 +40,7 @@ function Gtfs() {
     }
 
     function getRootRoute(routeIndex) {
-        return state.root[1][routeIndex];
+        return state.root[getArrayKey('routes')][routeIndex];
     }
 
     // For '#$%1~!$2!~!!$3' return [0, 1, 2, 14, 91, 92, 15, 182, 183, 16].
@@ -87,25 +96,28 @@ function GtfsRoute(routeId, gtfsRoot, rootRoute) {
         return getServices()[serviceIndex];
     }
 
-    // 0=name, 1=type, 2=shapes, 3=directions, 4=services
+    function getArrayKey(keyId) {
+        return gtfsRoot.getArrayKeys('route')[keyId];
+    }
+
     this.getName = function () {
-        return rootRoute[0];
+        return rootRoute[getArrayKey('name')];
     }
 
     this.getType = function () {
-        return rootRoute[1];
+        return rootRoute[getArrayKey('type')];
     }
 
     this.getShape = function (shapeIndex) {
-        return rootRoute[2][shapeIndex];
+        return rootRoute[getArrayKey('shapes')][shapeIndex];
     }
 
     this.getDirections = function () {
-        return rootRoute[3];
+        return rootRoute[getArrayKey('directions')];
     }
 
     function getServices() {
-        return rootRoute[4];
+        return rootRoute[getArrayKey('services')];
     }
 }
 
@@ -169,23 +181,30 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         return routeDirections[directionsI];
     }
 
-    // 0=start_date_i, 1=end_date_i, 2=weekday, 3=exception_dates, 4=directions_i
+    function getArrayKey(keyId) {
+        return gtfsRoot.getArrayKeys('service')[keyId];
+    }
+
+    function getExceptionDatesArrayKey(keyId) {
+        return gtfsRoot.getArrayKeys('exception_dates')[keyId];
+    }
+
     function getStartDay() {
-        return gtfsRoot.getDates()[rootService[0]];
+        return gtfsRoot.getDates()[rootService[getArrayKey('start_date_i')]];
     }
 
     function getEndDay() {
-        return gtfsRoot.getDates()[rootService[1]];
+        return gtfsRoot.getDates()[rootService[getArrayKey('end_date_i')]];
     }
 
     function getWeekDay() {
-        return rootService[2]; // 0=Monday
+        return rootService[getArrayKey('weekday')]; // 0=Monday
     }
 
     function getExceptionDates() {
-        var exceptionDates = rootService[3];
-        var addedDates = exceptionDates[0];
-        var removedDates = exceptionDates[1];
+        var exceptionDates = rootService[getArrayKey('exception_dates')];
+        var addedDates = exceptionDates[getExceptionDatesArrayKey('added')];
+        var removedDates = exceptionDates[getExceptionDatesArrayKey('removed')];
         return {added: getDateStrings(addedDates), removed: getDateStrings(removedDates)};
     }
 
@@ -199,7 +218,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
     }
 
     function getDirectionsI() {
-        return rootService[4];
+        return rootService[getArrayKey('directions_i')];
     }
 }
 
@@ -218,22 +237,31 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
         return gtfsService.getType();
     }
 
-    // 0=shape_i, 1=stop_distances, 2=is_departure_times, 3=stop_times, 4=trips
+    function getArrayKey(keyId) {
+        return gtfsRoot.getArrayKeys('direction')[keyId];
+    }
+
+    function getTripArrayKey(keyId) {
+        return gtfsRoot.getArrayKeys('trip')[keyId];
+    }
+
     this.getShape = function () {
-        return gtfsService.getShape(rootDirection[0]);
+        return gtfsService.getShape(rootDirection[getArrayKey('shape_i')]);
     }
 
     this.getShapeId = function () {
-        return that.getId() + ':' + rootDirection[0];
+        return that.getId() + ':' + rootDirection[getArrayKey('shape_i')];
     }
 
     this.getActiveTrips = function (fromMinutesAfterMidnight, toMinutesAfterMidnight) {
         var activeTrips = [];
-        var directionTrips = rootDirection[4];
-        var firstStartTime = directionTrips[0];
+        var directionTrips = rootDirection[getArrayKey('trips')];
+        var firstStartTime = directionTrips[getTripArrayKey('first_start_time')];
+        var startTimesString = directionTrips[getTripArrayKey('start_times')];
         var startTimes =
-            gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(directionTrips[1]));
-        var stopTimesIndexes = gtfsRoot.string_to_integer_list(directionTrips[2]);
+            gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(startTimesString));
+        var stopTimesIndexesString = directionTrips[getTripArrayKey('stop_times_indexes')];
+        var stopTimesIndexes = gtfsRoot.string_to_integer_list(stopTimesIndexesString);
 
         for (var i = 0; i < startTimes.length; i++) {
             var startTime = firstStartTime + startTimes[i];
@@ -248,8 +276,9 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     }
 
     function getStopTimes(stopTimesI) {
-        var isDepartureTimes = rootDirection[2];
-        var stopTimeDeltas = gtfsRoot.string_to_integer_list(rootDirection[3][stopTimesI]);
+        var isDepartureTimes = rootDirection[getArrayKey('is_departure_times')];
+        var stopTimeDeltas =
+            gtfsRoot.string_to_integer_list(rootDirection[getArrayKey('stop_times')][stopTimesI]);
         var stopTimes = gtfsRoot.unpack_delta_list(stopTimeDeltas);
         if (isDepartureTimes === 0) {
             stopTimes = addDepartureTimes(stopTimes);
@@ -267,7 +296,8 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     }
 
     this.getStopDistances = function () {
-        return gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(rootDirection[1]));
+        var stopDistancesString = rootDirection[getArrayKey('stop_distances')];
+        return gtfsRoot.unpack_delta_list(gtfsRoot.string_to_integer_list(stopDistancesString));
     }
 }
 
