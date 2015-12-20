@@ -1,4 +1,6 @@
-/* Author: Panu Ranta, panu.ranta@iki.fi */
+/* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
+
+'use strict';
 
 function Utils() {
     var that = this;

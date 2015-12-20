@@ -1,5 +1,7 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
+'use strict';
+
 function main() {
     var config = new Config();
     var utils = new Utils();
@@ -11,7 +13,7 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     uiBar.init(config.lang, tripTypeInfos);
-    controller.init(config.lang, tripTypeInfos);
+    controller.init(config.lang, config.onlyRoutes, tripTypeInfos);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
 

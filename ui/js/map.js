@@ -4,6 +4,8 @@
 API Reference: https://developers.google.com/maps/documentation/javascript/reference
 */
 
+'use strict';
+
 function Map() {
     var that = this;
     var state = getState();

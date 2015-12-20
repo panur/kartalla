@@ -1,5 +1,7 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
+'use strict';
+
 function UiBar() {
     var that = this;
     var state = getState();

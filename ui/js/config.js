@@ -1,7 +1,9 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
+'use strict';
+
 function Config() {
-    var supportedParams = ['lat', 'lng', 'zoom', 'date', 'time', '_stop'];
+    var supportedParams = ['lat', 'lng', 'zoom', 'date', 'time', 'routes', '_file', '_stop'];
     var urlParams = getUrlParams();
     this.stopAfter = urlParams._stop || null;
     this.mapLat = urlParams.lat || 60.273969;
@@ -9,7 +11,8 @@ function Config() {
     this.mapZoomLevel = Number(urlParams.zoom) || 10;
     this.startDate = getStartDate();
     this.lang = getLang();
-    this.json_url = 'json/gtfs.json';
+    this.onlyRoutes = getOnlyRoutes();
+    this.json_url = getJsonUrl();
 
     function getUrlParams() {
         var params = {};
@@ -56,12 +59,16 @@ function Config() {
             var re = /\d+\.\d+/;
             return re.test(parameterValue);
         } else if (parameterName === 'zoom') {
-            return (parameterValue > 7) && (parameterValue < 17);
+            var re = /\d+/;
+            return re.test(parameterValue) && (parameterValue > 7) && (parameterValue < 17);
         } else if (parameterName === 'date') {
-            var re = /\d\d\d\d\d\d\d\d/; /* YYYYMMDD */
+            var re = /\d{8}/; /* YYYYMMDD */
             return re.test(parameterValue);
         } else if (parameterName === 'time') {
-            var re = /\d\d\d\d\d\d/; /* HHMMSS */
+            var re = /\d{6}/; /* HHMMSS */
+            return re.test(parameterValue);
+        } else if ((parameterName === 'routes') || (parameterName === '_file')) {
+            var re = /\w+/;
             return re.test(parameterValue);
         } else if (parameterName === '_stop') {
             var re = /\d+/;
@@ -92,6 +99,22 @@ function Config() {
             return 'fi';
         } else {
             return 'en';
+        }
+    }
+
+    function getOnlyRoutes() {
+        if (urlParams.routes != undefined) {
+            return urlParams.routes.split('_');
+        } else {
+            return null;
+        }
+    }
+
+    function getJsonUrl() {
+        if (urlParams._file != undefined) {
+            return 'json/' + urlParams._file + '.json';
+        } else {
+            return 'json/gtfs.json';
         }
     }
 }

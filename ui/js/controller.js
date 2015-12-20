@@ -1,6 +1,6 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html */
 
-'use strict';  // tbd
+'use strict';
 
 function Controller(gtfs, map) {
     var that = this;
@@ -9,6 +9,7 @@ function Controller(gtfs, map) {
     function getState() {
         var s = {};
         s.lang = null;
+        s.onlyRoutes = null;
         s.tripTypeInfos = null;
         s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
@@ -17,8 +18,9 @@ function Controller(gtfs, map) {
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos) {
+    this.init = function (lang, onlyRoutes, tripTypeInfos) {
         state.lang = lang;
+        state.onlyRoutes = onlyRoutes;
         state.tripTypeInfos = tripTypeInfos;
     }
 
@@ -79,7 +81,8 @@ function Controller(gtfs, map) {
         var activeServices = [];
         var routes = gtfs.getRoutes();
         for (var i = 0; i < routes.length; i++) {
-            if (routes[i].getName() == '132') { // tbd
+            if ((state.onlyRoutes === null) ||
+                (state.onlyRoutes.indexOf(routes[i].getName()) != -1)) {
                 activeServices = activeServices.concat(routes[i].getActiveServices(dateString));
             }
         }
