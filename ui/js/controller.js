@@ -13,7 +13,7 @@ function Controller(gtfs, map) {
         s.tripTypeInfos = null;
         s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
-        s.activeServices = [];
+        s.activeServices = {};
         s.activeTrips = {};
         return s;
     }
@@ -27,26 +27,33 @@ function Controller(gtfs, map) {
     this.update = function (nowDate) {
         var nowDateString = getDateString(nowDate);
 
+        if (((Object.keys(state.activeServices)).length === 0) && (nowDate.getHours() < 6)) {
+            /* if we start soon after midnight (let's assume 6 hours to be safe) we need to start
+            with yesterday's services */
+            var yesterdayDate = new Date(nowDate.getTime() - (24 * 60 * 60 * 1000));
+            updateActiveServices(getDateString(yesterdayDate), yesterdayDate);
+        }
+
         if (state.activeServicesDateString != nowDateString) {
-            state.activeServices = getActiveServices(nowDateString);
+            updateActiveServices(nowDateString, nowDate);
             state.activeServicesDateString = nowDateString;
         }
 
         if (nowDate.getTime() > state.nextTripUpdate) {
+            deleteOldServices(nowDate);
             var updatePeriodInMinutes = 10;
             state.nextTripUpdate = nowDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
-            var minutesAfterMidnight = Math.round(getSecondsAfterMidnight(nowDate) / 60);
-            updateActiveTrips(minutesAfterMidnight, minutesAfterMidnight + updatePeriodInMinutes);
+            updateActiveTrips(nowDate, updatePeriodInMinutes);
         }
 
-        updateTrips(nowDate);
+        updateTripsOnMap(nowDate);
     }
 
-    function updateTrips(nowDate) {
+    function updateTripsOnMap(nowDate) {
         state.tripTypeInfos.resetStatistics();
         var tripsToBeDeleted = [];
         for (var tripId in state.activeTrips) {
-            var tripState = state.activeTrips[tripId].update(getSecondsAfterMidnight(nowDate));
+            var tripState = state.activeTrips[tripId].updateOnMap(nowDate);
             if (tripState === 'exit') {
                 tripsToBeDeleted.push(tripId);
             } else if (tripState === 'active') {
@@ -55,7 +62,7 @@ function Controller(gtfs, map) {
         }
         for (var i = 0; i < tripsToBeDeleted.length; i++) {
             delete state.activeTrips[tripsToBeDeleted[i]];
-            console.log('deleted: %o', tripsToBeDeleted[i]);
+            console.log('deleted trip: %o', tripsToBeDeleted[i]);
         }
         state.tripTypeInfos.refreshStatistics();
     }
@@ -69,45 +76,113 @@ function Controller(gtfs, map) {
     }
 
     function getDateString(date) {
-        return '' + date.getFullYear() + (date.getMonth() + 1) + date.getDate();
+        function pad(number) {
+            if (number < 10) {
+                return '0' + number;
+            } else {
+                return number;
+            }
+        }
+        return '' + date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate());
     }
 
-    function getSecondsAfterMidnight(date) {
-        var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
-        return (minutesAfterMidnight * 60) + date.getSeconds();
-    }
-
-    function getActiveServices(dateString) { // dateString = YYYYMMDD
-        var activeServices = [];
+    function updateActiveServices(dateString, date) { // dateString = YYYYMMDD
+        var numNewServices = 0;
         var routes = gtfs.getRoutes();
         for (var i = 0; i < routes.length; i++) {
             if ((state.onlyRoutes === null) ||
                 (state.onlyRoutes.indexOf(routes[i].getName()) != -1)) {
-                activeServices = activeServices.concat(routes[i].getActiveServices(dateString));
+                var activeServices = routes[i].getActiveServices(dateString);
+                for (var j = 0; j < activeServices.length; j++) {
+                    var serviceId = activeServices[j].getId();
+                    var activeService = new ControllerService();
+                    activeService.init(activeServices[j], date);
+                    state.activeServices[serviceId] = activeService;
+                    numNewServices += 1;
+                }
             }
         }
-        console.log('found %d active services for %s', activeServices.length, dateString);
-        return activeServices;
+
+        console.log('found %d new active services for %s', numNewServices, dateString);
     }
 
-    function updateActiveTrips(fromMinutesAfterMidnight, toMinutesAfterMidnight) {
+    function deleteOldServices(nowDate) {
+        var servicesToBeDeleted = [];
+        for (var serviceId in state.activeServices) {
+            if (state.activeServices[serviceId].isTimeToDelete(nowDate)) {
+                servicesToBeDeleted.push(serviceId);
+            }
+        }
+        for (var i = 0; i < servicesToBeDeleted.length; i++) {
+            delete state.activeServices[servicesToBeDeleted[i]];
+        }
+        if (servicesToBeDeleted.length > 0) {
+            console.log('deleted %d services', servicesToBeDeleted.length);
+        }
+    }
+
+    function updateActiveTrips(nowDate, updatePeriodInMinutes) {
         var numNewTrips = 0;
-        for (var i = 0; i < state.activeServices.length; i++) {
-            var activeTrips = state.activeServices[i].getActiveTrips(fromMinutesAfterMidnight,
-                                                                     toMinutesAfterMidnight);
+        for (var serviceId in state.activeServices) {
+            var activeTrips =
+                state.activeServices[serviceId].getActiveTrips(nowDate, updatePeriodInMinutes);
             for (var j = 0; j < activeTrips.length; j++) {
                 var tripId = activeTrips[j].getId();
                 if (state.activeTrips[tripId] === undefined) {
                     var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
+                    var serviceStartDate = state.activeServices[serviceId].getStartDate();
                     var activeTrip = new ControllerTrip(map);
-                    activeTrip.init(state.lang, activeTrips[j], tripTypeInfo);
+                    activeTrip.init(activeTrips[j], serviceStartDate, state.lang, tripTypeInfo);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
             }
         }
-        console.log('found %d new active trips from %d to %d',
-                    numNewTrips, fromMinutesAfterMidnight, toMinutesAfterMidnight);
+        console.log('found %d new active trips for %o', numNewTrips, nowDate.toLocaleString());
+    }
+}
+
+function ControllerService() {
+    var that = this;
+    var state = getState();
+
+    function getState() {
+        var s = {};
+        s.gtfsService = null;
+        s.startDate = null;
+        return s;
+    }
+
+    this.init = function (gtfsService, startDate) {
+        state.gtfsService = gtfsService;
+        state.startDate = startDate;
+    }
+
+    this.isTimeToDelete = function (nowDate) {
+        if (nowDate.getDate() != state.startDate.getDate()) {
+            if (nowDate.getHours() >= 6) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    this.getActiveTrips = function (nowDate, updatePeriodInMinutes) {
+        var fromMinutesAfterMidnight = getMinutesAfterMidnight(nowDate);
+        if (nowDate.getDate() != state.startDate.getDate()) {
+            /* GTFS clock does not wrap around after 24 hours (or 24 * 60 = 1440 minutes) */
+            fromMinutesAfterMidnight += 24 * 60;
+        }
+        return state.gtfsService.getActiveTrips(fromMinutesAfterMidnight,
+            fromMinutesAfterMidnight + updatePeriodInMinutes);
+    }
+
+    function getMinutesAfterMidnight(date) {
+        return (date.getHours() * 60) + date.getMinutes(); // possible values: 0 - 1439
+    }
+
+    this.getStartDate = function () {
+        return state.startDate;
     }
 }
 
@@ -117,6 +192,7 @@ function ControllerTrip(map) {
 
     function getState() {
         var s = {};
+        s.serviceStartDate = null;
         s.lang = null;
         s.timesAndDistances = null;
         s.lastArrivalSeconds = null;
@@ -128,7 +204,8 @@ function ControllerTrip(map) {
         return s;
     }
 
-    this.init = function (lang, gtfsTrip, tripTypeInfo) {
+    this.init = function (gtfsTrip, serviceStartDate, lang, tripTypeInfo) {
+        state.serviceStartDate = serviceStartDate;
         state.lang = lang;
         var tripPath = map.decodePath(gtfsTrip.getShape());
         var stopTimes = gtfsTrip.getStopTimes();
@@ -199,10 +276,10 @@ function ControllerTrip(map) {
         return state.tripType;
     }
 
-    this.update = function (secondsAfterMidnight) {
+    this.updateOnMap = function (nowDate) {
         var tripState = '';
         var fadeSeconds = 60;
-        var secondsFromStart = secondsAfterMidnight - (state.startTime * 60);
+        var secondsFromStart = getSecondsFromStart(nowDate);
 
         if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
             map.removeMarker(state.marker);
@@ -221,6 +298,20 @@ function ControllerTrip(map) {
         }
 
         return tripState;
+    }
+
+    function getSecondsFromStart(nowDate) {
+        var secondsAfterMidnight = getSecondsAfterMidnight(nowDate);
+        if (nowDate.getDate() != state.serviceStartDate.getDate()) {
+            /* GTFS clock does not wrap around after 24 hours (or 24 * 60 * 60 = 86 400 seconds) */
+            secondsAfterMidnight += 24 * 60 * 60;
+        }
+        return secondsAfterMidnight - (state.startTime * 60);
+    }
+
+    function getSecondsAfterMidnight(date) {
+        var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
+        return (minutesAfterMidnight * 60) + date.getSeconds(); // possible values: 0 - 86 399
     }
 
     function getDistanceFromStart(secondsFromStart, timesAndDistances) {
@@ -283,8 +374,8 @@ function ControllerTrip(map) {
 
     function minutesToString(minutesAfterMidnight) {
         var date = new Date((minutesAfterMidnight * 60) * 1000);
-        var timeString = date.toISOString(); /* YYYY-MM-DDTHH:mm:ss.sssZ */
-        return timeString.substr(11, 5); /* HH:MM */
+        var timeString = date.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
+        return timeString.substr(11, 5); // HH:MM
     }
 
     function updateTripInfo(secondsFromStart, metersFromStart) {
