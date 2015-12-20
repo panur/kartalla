@@ -62,7 +62,9 @@ function Controller(gtfs, map) {
         }
         for (var i = 0; i < tripsToBeDeleted.length; i++) {
             delete state.activeTrips[tripsToBeDeleted[i]];
-            console.log('deleted trip: %o', tripsToBeDeleted[i]);
+        }
+        if (tripsToBeDeleted.length > 0) {
+            console.log('deleted %d trips', tripsToBeDeleted.length);
         }
         state.tripTypeInfos.refreshStatistics();
     }
@@ -218,9 +220,9 @@ function ControllerTrip(map) {
         state.startTime = gtfsTrip.getStartTime();
         state.tripType = gtfsTrip.getType();
         state.tripInfo =
-            createTripInfo(gtfsTrip.getName(), gtfsTrip.getLongName(), state.startTime,
-                           state.lastArrivalSeconds, stopDistances[stopDistances.length - 1],
-                           stopTimes.length / 2);
+            createTripInfo(gtfsTrip.getName(), gtfsTrip.getDirection(), gtfsTrip.getLongName(),
+                           state.startTime, state.lastArrivalSeconds,
+                           stopDistances[stopDistances.length - 1], stopTimes.length / 2);
         state.tripTypeInfo = tripTypeInfo;
     }
 
@@ -360,16 +362,17 @@ function ControllerTrip(map) {
         map.setMarkerVisibility(state.marker, state.tripTypeInfo.isVisible);
     }
 
-    function createTripInfo(tripName, tripLongName, startTimeMinutesAfterMidnight, durationSeconds,
-                            distanceMeters, stops) {
+    function createTripInfo(tripName, direction, tripLongName, startTimeMinutesAfterMidnight,
+                            durationSeconds, distanceMeters, stops) {
         var startTime = minutesToString(startTimeMinutesAfterMidnight);
         var duration = durationSeconds / 60;
         var lastArrivalTime = minutesToString(startTimeMinutesAfterMidnight + duration);
         var totalDistance = Math.round(distanceMeters / 1000);
-        return {'routeName': tripName, 'route': tripLongName, 'startTime': startTime,
-                'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
-                'totalDistance': totalDistance, 'distance': null,
-                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
+        return {'routeName': tripName, 'route': tripLongName, 'direction': direction,
+                'startTime': startTime, 'lastArrivalTime': lastArrivalTime,
+                'totalDuration': duration, 'duration': null, 'totalDistance': totalDistance,
+                'distance': null, 'averageSpeed': Math.round(totalDistance / (duration / 60)),
+                'stops': stops};
     }
 
     function minutesToString(minutesAfterMidnight) {
@@ -379,15 +382,15 @@ function ControllerTrip(map) {
     }
 
     function updateTripInfo(secondsFromStart, metersFromStart) {
-        var minutesFromStart = (secondsFromStart / 60).toFixed(1);
+        var minutesFromStart = Math.max(0, (secondsFromStart / 60).toFixed(1));
         var kmsFromStart = (metersFromStart / 1000).toFixed(1);
         state.tripInfo.duration = minutesFromStart + ' / ' + state.tripInfo.totalDuration;
         state.tripInfo.distance = kmsFromStart + ' / ' + state.tripInfo.totalDistance;
     }
 
     function getMarkerTitle() {
-        var titleItems = ['routeName', 'route', 'startTime', 'lastArrivalTime', 'duration',
-                          'distance', 'averageSpeed', 'stops'];
+        var titleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
+                          'duration', 'distance', 'averageSpeed', 'stops'];
         var markerTitle = ''
         for (var i = 0; i < titleItems.length; i++) {
             markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
@@ -401,15 +404,15 @@ function ControllerTrip(map) {
 
     function getMarkerTitleItemName(markerTitleItem) {
         if (state.lang === 'fi') {
-            return {'routeName': 'Linja', 'route': 'Reitti', 'startTime': 'Lähtöaika',
-                    'lastArrivalTime': 'Tuloaika', 'duration': 'Kesto (min)',
-                    'distance': 'Matka (km)', 'averageSpeed': 'Keskinopeus (km/h)',
-                    'stops': 'Pysäkkejä'}[markerTitleItem];
+            return {'routeName': 'Linja', 'route': 'Reitti', 'direction': 'Suunta',
+                    'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
+                    'duration': 'Kesto (min)', 'distance': 'Matka (km)',
+                    'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
         } else {
-            return {'routeName': 'Route name', 'route': 'Route', 'startTime': 'Departure time',
-                    'lastArrivalTime': 'Arrival time', 'duration': 'Duration (min)',
-                    'distance': 'Distance (km)', 'averageSpeed': 'Average speed (km/h)',
-                    'stops': 'Stops'}[markerTitleItem];
+            return {'routeName': 'Route name', 'route': 'Route', 'direction': 'Direction',
+                    'startTime': 'Departure time', 'lastArrivalTime': 'Arrival time',
+                    'duration': 'Duration (min)', 'distance': 'Distance (km)',
+                    'averageSpeed': 'Average speed (km/h)', 'stops': 'Stops'}[markerTitleItem];
         }
     }
 }
