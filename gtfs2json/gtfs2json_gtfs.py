@@ -79,7 +79,8 @@ def _parse_routes(routes_txt):
             # create new route
             routes[row['route_id']] = {
                 'route_id': row['route_id'],
-                'name': row['route_short_name'],
+                'name': _get_route_name(row),
+                'long_name': row['route_long_name'],
                 'type': route_types.get(row['route_type'], row['route_type']),
                 'services': {},  # by service_id
                 'shapes': []
@@ -88,6 +89,13 @@ def _parse_routes(routes_txt):
     logging.debug('parsed {} routes'.format(len(routes)))
 
     return routes
+
+
+def _get_route_name(row):  # row in routes.txt
+    if row['route_short_name'] != '':
+        return row['route_short_name']
+    else:
+        return row['route_id']  # metro routes do not have short names
 
 
 def _add_services_trips_to_routes(routes, trips_txt):

@@ -33,7 +33,8 @@ def _get_array_keys():
     array_keys = {}
     array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'dates': 3,
                           'routes': 4}
-    array_keys['route'] = {'name': 0, 'type': 1, 'shapes': 2, 'directions': 3, 'services': 4}
+    array_keys['route'] = {'name': 0, 'long_name': 1, 'type': 2, 'shapes': 3, 'directions': 4,
+                           'services': 5}
     array_keys['direction'] = {'shape_i': 0, 'stop_distances': 1, 'is_departure_times': 2,
                                'stop_times': 3, 'trips': 4}
     array_keys['service'] = {'start_date_i': 0, 'end_date_i': 1, 'weekday': 2, 'exception_dates': 3,
@@ -69,6 +70,7 @@ def _get_output_routes(array_keys, output_dates, routes):
         output_services = _get_output_services(array_keys, route['services'], output_dates)
         output_route = [None] * len(array_keys['route'])
         output_route[array_keys['route']['name']] = route['name']
+        output_route[array_keys['route']['long_name']] = route['long_name']
         output_route[array_keys['route']['type']] = route['type']
         output_route[array_keys['route']['shapes']] = route['shapes']
         output_route[array_keys['route']['directions']] = output_directions['directions']

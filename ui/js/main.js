@@ -65,7 +65,7 @@ function Timing(uiBar, controller) {
         s.startFake = null;
         s.startReal = null;
         s.tickMs = 1000;
-        s.speedMultiplier = 15;
+        s.speedMultiplier = 15; // tbd
         s.stopAfter = null;
         s.intervalId = null;
         s.downloadIsReady = false;

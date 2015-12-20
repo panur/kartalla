@@ -99,7 +99,8 @@ function Controller(gtfs, map) {
                 var tripId = activeTrips[j].getId();
                 if (state.activeTrips[tripId] === undefined) {
                     var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
-                    var activeTrip = new ControllerTrip(map, activeTrips[j], tripTypeInfo);
+                    var activeTrip = new ControllerTrip(map);
+                    activeTrip.init(state.lang, activeTrips[j], tripTypeInfo);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
@@ -110,24 +111,40 @@ function Controller(gtfs, map) {
     }
 }
 
-function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
+function ControllerTrip(map) {
     var that = this;
     var state = getState();
 
     function getState() {
         var s = {};
+        s.lang = null;
+        s.timesAndDistances = null;
+        s.lastArrivalSeconds = null;
+        s.marker = null;
+        s.startTime = null;
+        s.tripType = null;
+        s.tripInfo = null;
+        s.tripTypeInfo = null;
+        return s;
+    }
+
+    this.init = function (lang, gtfsTrip, tripTypeInfo) {
+        state.lang = lang;
         var tripPath = map.decodePath(gtfsTrip.getShape());
         var stopTimes = gtfsTrip.getStopTimes();
         var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
-        s.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
-        s.lastArrivalSeconds = s.timesAndDistances[s.timesAndDistances.length - 1].arrival * 60;
-        s.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
-                                 tripTypeInfo.color);
-        s.startTime = gtfsTrip.getStartTime();
-        s.tripType = gtfsTrip.getType();
-        s.tripInfo = createTripInfo(gtfsTrip.getName(), s.startTime, s.lastArrivalSeconds,
-                                    stopDistances[stopDistances.length - 1], stopTimes.length / 2);
-        return s;
+        state.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
+        state.lastArrivalSeconds =
+            state.timesAndDistances[state.timesAndDistances.length - 1].arrival * 60;
+        state.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
+                                     tripTypeInfo.color);
+        state.startTime = gtfsTrip.getStartTime();
+        state.tripType = gtfsTrip.getType();
+        state.tripInfo =
+            createTripInfo(gtfsTrip.getName(), gtfsTrip.getLongName(), state.startTime,
+                           state.lastArrivalSeconds, stopDistances[stopDistances.length - 1],
+                           stopTimes.length / 2);
+        state.tripTypeInfo = tripTypeInfo;
     }
 
     /* Merge stop times (arrival/departure) and distances into list of objects with unique arrival
@@ -249,17 +266,17 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
     }
 
     this.updateVisibility = function () {
-        map.setMarkerVisibility(state.marker, tripTypeInfo.isVisible);
+        map.setMarkerVisibility(state.marker, state.tripTypeInfo.isVisible);
     }
 
-    function createTripInfo(tripName, startTimeMinutesAfterMidnight, durationSeconds,
+    function createTripInfo(tripName, tripLongName, startTimeMinutesAfterMidnight, durationSeconds,
                             distanceMeters, stops) {
         var startTime = minutesToString(startTimeMinutesAfterMidnight);
         var duration = durationSeconds / 60;
         var lastArrivalTime = minutesToString(startTimeMinutesAfterMidnight + duration);
         var totalDistance = Math.round(distanceMeters / 1000);
-        return {'route': tripName, 'startTime': startTime, 'lastArrivalTime': lastArrivalTime,
-                'totalDuration': duration, 'duration': null,
+        return {'routeName': tripName, 'route': tripLongName, 'startTime': startTime,
+                'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
                 'totalDistance': totalDistance, 'distance': null,
                 'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
     }
@@ -278,8 +295,8 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
     }
 
     function getMarkerTitle() {
-        var titleItems = ['route', 'startTime', 'lastArrivalTime', 'duration', 'distance',
-                          'averageSpeed', 'stops'];
+        var titleItems = ['routeName', 'route', 'startTime', 'lastArrivalTime', 'duration',
+                          'distance', 'averageSpeed', 'stops'];
         var markerTitle = ''
         for (var i = 0; i < titleItems.length; i++) {
             markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
@@ -293,11 +310,12 @@ function ControllerTrip(map, gtfsTrip, tripTypeInfo) {
 
     function getMarkerTitleItemName(markerTitleItem) {
         if (state.lang === 'fi') {
-            return {'route': 'Linja', 'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
-                    'duration': 'Kesto (min)', 'distance': 'Matka (km)',
-                    'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
+            return {'routeName': 'Linja', 'route': 'Reitti', 'startTime': 'Lähtöaika',
+                    'lastArrivalTime': 'Tuloaika', 'duration': 'Kesto (min)',
+                    'distance': 'Matka (km)', 'averageSpeed': 'Keskinopeus (km/h)',
+                    'stops': 'Pysäkkejä'}[markerTitleItem];
         } else {
-            return {'route': 'Route', 'startTime': 'Departure time',
+            return {'routeName': 'Route name', 'route': 'Route', 'startTime': 'Departure time',
                     'lastArrivalTime': 'Arrival time', 'duration': 'Duration (min)',
                     'distance': 'Distance (km)', 'averageSpeed': 'Average speed (km/h)',
                     'stops': 'Stops'}[markerTitleItem];
