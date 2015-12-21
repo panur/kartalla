@@ -297,7 +297,7 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
             }
         }
         return activeTrips;
-    }
+    };
 
     function getStopTimes(stopTimesI) {
         var isDepartureTimes = rootDirection[getArrayKey('is_departure_times')];

@@ -182,11 +182,11 @@ function UiBar() {
 
     function getDataInfoTitle(dataInfo) {
         var titleItems = ['gtfsDate', 'jsonDate', 'download', 'size'];
-        var dataInfoTitle = ''
+        var dataInfoTitle = '';
         for (var i = 0; i < titleItems.length; i++) {
             dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' + dataInfo[titleItems[i]];
             if (i < (titleItems.length - 1)) {
-                dataInfoTitle += '\n'
+                dataInfoTitle += '\n';
             }
         }
         return dataInfoTitle;
@@ -209,7 +209,7 @@ function UiBar() {
     this.updateStatistics = function () {
         var tripTypes = state.tripTypeInfos.getTypes();
         for (var tripTypeName in tripTypes) {
-            var elementId = tripTypeName + 'Count'
+            var elementId = tripTypeName + 'Count';
             setElementText(elementId, tripTypes[tripTypeName].count);
         }
     };

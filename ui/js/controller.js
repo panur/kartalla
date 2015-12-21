@@ -267,7 +267,7 @@ function ControllerTrip(map) {
 
             if (distance !== undefined) {
                 timesAndDistances.push({arrival: arrivalTime, departure: departureTime,
-                                        distance: distance})
+                                        distance: distance});
             }
         }
         return timesAndDistances;
@@ -409,12 +409,12 @@ function ControllerTrip(map) {
     function getMarkerTitle() {
         var titleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
                           'duration', 'distance', 'averageSpeed', 'stops'];
-        var markerTitle = ''
+        var markerTitle = '';
         for (var i = 0; i < titleItems.length; i++) {
             markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
                                                   state.tripInfo[titleItems[i]];
             if (i < (titleItems.length - 1)) {
-                markerTitle += '\n'
+                markerTitle += '\n';
             }
         }
         return markerTitle;

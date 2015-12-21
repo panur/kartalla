@@ -16,10 +16,10 @@ function Utils() {
                     responseHandler(request.responseText);
                     request.onreadystatechange = function () {};
                 } else {
-                    console.error('unexpected status: ' + status)
+                    console.error('unexpected status: ' + status);
                 }
             }
-        }
+        };
 
         request.open('GET', url, true);
         if (url.indexOf('.json') !== -1) {

@@ -13,7 +13,7 @@ function Map() {
     function getState() {
         var s = {};
         s.gm = null;
-        s.polylineCache = {}
+        s.polylineCache = {};
         s.markers = {};
         s.nextMarkerId = 0;
         s.previousSymbolScale = null;
@@ -108,7 +108,7 @@ function Map() {
 
         var gmPolyline = state.polylineCache[pathId].polyline;
         var marker = {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline,
-            pathId: pathId, markerId: state.nextMarkerId}
+            pathId: pathId, markerId: state.nextMarkerId};
         state.markers[state.nextMarkerId] = marker;
         state.nextMarkerId += 1;
         return marker;
@@ -171,7 +171,7 @@ function Map() {
     };
 
     this.getDistances = function (path, pathIndexes) {
-        var distances = [0]
+        var distances = [0];
         var distanceFromStart = 0;
 
         for (var i = 1, j = 1; i < path.length; i++) {
