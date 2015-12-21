@@ -14,6 +14,9 @@ function Map() {
         var s = {};
         s.gm = null;
         s.polylineCache = {}
+        s.markers = {};
+        s.nextMarkerId = 0;
+        s.previousSymbolScale = null;
         return s;
     }
 
@@ -35,8 +38,40 @@ function Map() {
         };
 
         state.gm = new google.maps.Map(gmElement, gmOptions);
-
         state.gm.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
+        state.gm.addListener('zoom_changed', zoomChanged);
+        state.previousSymbolScale = getSymbolScale();
+    }
+
+    function getSymbolScale() {
+        var zoom = state.gm.getZoom();
+        if (zoom < 11) {
+            return 1;
+        } else if (zoom < 12) {
+            return 2;
+        } else if (zoom < 14) {
+            return 3;
+        } else {
+            return 4;
+        }
+    }
+
+    function zoomChanged() {
+        var newScale = getSymbolScale();
+        if (newScale != state.previousSymbolScale) {
+            updateSymbolScales(newScale);
+        }
+        state.previousSymbolScale = newScale;
+    }
+
+    function updateSymbolScales(newScale) {
+        for (var markerId in state.markers) {
+            var marker = state.markers[markerId];
+            if (marker.gmSymbol.path != undefined) {
+                marker.gmSymbol.scale = newScale;
+                marker.gmMarker.setOptions({icon: marker.gmSymbol});
+            }
+        }
     }
 
     this.resize = function (newHeight) {
@@ -56,7 +91,7 @@ function Map() {
         var gmSymbol = {
             strokeColor: color,
             strokeWeight: 2,
-            scale: 5
+            scale: getSymbolScale()
         };
         if (state.polylineCache[pathId] === undefined) {
             var newPolyline = new google.maps.Polyline({
@@ -72,7 +107,11 @@ function Map() {
         }
 
         var gmPolyline = state.polylineCache[pathId].polyline;
-        return {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline, pathId: pathId};
+        var marker = {gmMarker: gmMarker, gmSymbol: gmSymbol, gmPolyline: gmPolyline,
+            pathId: pathId, markerId: state.nextMarkerId}
+        state.markers[state.nextMarkerId] = marker;
+        state.nextMarkerId += 1;
+        return marker;
     }
 
     this.updateMarker = function (marker, distanceFromStart, opacity, title) {
@@ -116,9 +155,10 @@ function Map() {
     this.removeMarker = function (marker) {
         marker.gmMarker.setMap(null);
         marker.gmMarker = null;
+        delete state.markers[marker.markerId];
 
         state.polylineCache[marker.pathId].count -= 1;
-        if (state.polylineCache[marker.pathId].count == 0) {
+        if (state.polylineCache[marker.pathId].count === 0) {
             marker.gmPolyline.setMap(null);
             marker.gmPolyline = null;
             delete state.polylineCache[marker.pathId];
@@ -139,7 +179,7 @@ function Map() {
             var p2 = path[i];
             var distanceInc = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
             distanceFromStart += distanceInc;
-            if (i == pathIndexes[j]) {
+            if (i === pathIndexes[j]) {
                 j += 1;
                 distances.push(Math.round(distanceFromStart));
             }
