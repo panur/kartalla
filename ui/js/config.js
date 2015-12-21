@@ -3,13 +3,16 @@
 'use strict';
 
 function Config() {
-    var supportedParams = ['lat', 'lng', 'zoom', 'date', 'time', 'routes', '_file', '_stop'];
+    var supportedParams =
+        ['lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval', 'routes', '_file', '_stop'];
     var urlParams = getUrlParams();
     this.stopAfter = urlParams._stop || null;
     this.mapLat = urlParams.lat || 60.273969;
     this.mapLng = urlParams.lng || 24.791911;
     this.mapZoomLevel = Number(urlParams.zoom) || 10;
     this.startDate = getStartDate();
+    this.speed = urlParams.speed || 1;
+    this.interval = urlParams.interval || 5;
     this.lang = getLang();
     this.onlyRoutes = getOnlyRoutes();
     this.json_url = getJsonUrl();
@@ -59,14 +62,17 @@ function Config() {
             var re = /\d+\.\d+/;
             return re.test(parameterValue);
         } else if (parameterName === 'zoom') {
-            var re = /\d+/;
-            return re.test(parameterValue) && (parameterValue > 7) && (parameterValue < 17);
+            return checkValueInterval(parameterValue, 8, 16);
         } else if (parameterName === 'date') {
-            var re = /\d{8}/; /* YYYYMMDD */
+            var re = /\d{8}/; // YYYYMMDD
             return re.test(parameterValue);
         } else if (parameterName === 'time') {
-            var re = /\d{6}/; /* HHMMSS */
+            var re = /\d{6}/; // HHMMSS
             return re.test(parameterValue);
+        } else if (parameterName === 'speed') {
+            return checkValueInterval(parameterValue, 1, 100);
+        } else if (parameterName === 'interval') {
+            return checkValueInterval(parameterValue, 1, 10);
         } else if ((parameterName === 'routes') || (parameterName === '_file')) {
             var re = /\w+/;
             return re.test(parameterValue);
@@ -74,6 +80,11 @@ function Config() {
             var re = /\d+/;
             return re.test(parameterValue);
         }
+    }
+
+    function checkValueInterval(paramValue, minValue, maxValue) {
+        var re = /\d+/;
+        return re.test(paramValue) && (paramValue >= minValue) && (paramValue <= maxValue);
     }
 
     function getStartDate() {

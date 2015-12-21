@@ -11,6 +11,7 @@ function Controller(gtfs, map) {
         s.lang = null;
         s.onlyRoutes = null;
         s.tripTypeInfos = null;
+        s.markerUpdateInterval = null;
         s.nextTripUpdate = 0;
         s.activeServicesDateString = null;
         s.activeServices = {};
@@ -18,42 +19,44 @@ function Controller(gtfs, map) {
         return s;
     }
 
-    this.init = function (lang, onlyRoutes, tripTypeInfos) {
+    this.init = function (lang, onlyRoutes, tripTypeInfos, markerUpdateInterval) {
         state.lang = lang;
         state.onlyRoutes = onlyRoutes;
         state.tripTypeInfos = tripTypeInfos;
+        state.markerUpdateInterval = markerUpdateInterval;
     }
 
-    this.update = function (nowDate) {
-        var nowDateString = getDateString(nowDate);
+    this.update = function (mapDate) {
+        var mapDateString = getDateString(mapDate);
 
-        if (((Object.keys(state.activeServices)).length === 0) && (nowDate.getHours() < 6)) {
+        if (((Object.keys(state.activeServices)).length === 0) && (mapDate.getHours() < 6)) {
             /* if we start soon after midnight (let's assume 6 hours to be safe) we need to start
             with yesterday's services */
-            var yesterdayDate = new Date(nowDate.getTime() - (24 * 60 * 60 * 1000));
+            var yesterdayDate = new Date(mapDate.getTime() - (24 * 60 * 60 * 1000));
             updateActiveServices(getDateString(yesterdayDate), yesterdayDate);
         }
 
-        if (state.activeServicesDateString != nowDateString) {
-            updateActiveServices(nowDateString, nowDate);
-            state.activeServicesDateString = nowDateString;
+        if (state.activeServicesDateString != mapDateString) {
+            updateActiveServices(mapDateString, mapDate);
+            state.activeServicesDateString = mapDateString;
         }
 
-        if (nowDate.getTime() > state.nextTripUpdate) {
-            deleteOldServices(nowDate);
+        if (mapDate.getTime() > state.nextTripUpdate) {
+            deleteOldServices(mapDate);
             var updatePeriodInMinutes = 10;
-            state.nextTripUpdate = nowDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
-            updateActiveTrips(nowDate, updatePeriodInMinutes);
+            state.nextTripUpdate = mapDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
+            updateActiveTrips(mapDate, updatePeriodInMinutes);
         }
 
-        updateTripsOnMap(nowDate);
+        updateTripsOnMap(mapDate);
     }
 
-    function updateTripsOnMap(nowDate) {
+    function updateTripsOnMap(mapDate) {
         state.tripTypeInfos.resetStatistics();
         var tripsToBeDeleted = [];
+        var realTime = (new Date()).getTime();
         for (var tripId in state.activeTrips) {
-            var tripState = state.activeTrips[tripId].updateOnMap(nowDate);
+            var tripState = state.activeTrips[tripId].updateOnMap(mapDate, realTime);
             if (tripState === 'exit') {
                 tripsToBeDeleted.push(tripId);
             } else if (tripState === 'active') {
@@ -108,10 +111,10 @@ function Controller(gtfs, map) {
         console.log('found %d new active services for %s', numNewServices, dateString);
     }
 
-    function deleteOldServices(nowDate) {
+    function deleteOldServices(mapDate) {
         var servicesToBeDeleted = [];
         for (var serviceId in state.activeServices) {
-            if (state.activeServices[serviceId].isTimeToDelete(nowDate)) {
+            if (state.activeServices[serviceId].isTimeToDelete(mapDate)) {
                 servicesToBeDeleted.push(serviceId);
             }
         }
@@ -123,24 +126,25 @@ function Controller(gtfs, map) {
         }
     }
 
-    function updateActiveTrips(nowDate, updatePeriodInMinutes) {
+    function updateActiveTrips(mapDate, updatePeriodInMinutes) {
         var numNewTrips = 0;
         for (var serviceId in state.activeServices) {
             var activeTrips =
-                state.activeServices[serviceId].getActiveTrips(nowDate, updatePeriodInMinutes);
+                state.activeServices[serviceId].getActiveTrips(mapDate, updatePeriodInMinutes);
             for (var j = 0; j < activeTrips.length; j++) {
                 var tripId = activeTrips[j].getId();
                 if (state.activeTrips[tripId] === undefined) {
                     var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
                     var serviceStartDate = state.activeServices[serviceId].getStartDate();
                     var activeTrip = new ControllerTrip(map);
-                    activeTrip.init(activeTrips[j], serviceStartDate, state.lang, tripTypeInfo);
+                    activeTrip.init(activeTrips[j], serviceStartDate, state.lang, tripTypeInfo,
+                                    state.markerUpdateInterval);
                     state.activeTrips[tripId] = activeTrip;
                     numNewTrips += 1;
                 }
             }
         }
-        console.log('found %d new active trips for %o', numNewTrips, nowDate.toLocaleString());
+        console.log('found %d new active trips for %o', numNewTrips, mapDate.toLocaleString());
     }
 }
 
@@ -160,18 +164,18 @@ function ControllerService() {
         state.startDate = startDate;
     }
 
-    this.isTimeToDelete = function (nowDate) {
-        if (nowDate.getDate() != state.startDate.getDate()) {
-            if (nowDate.getHours() >= 6) {
+    this.isTimeToDelete = function (mapDate) {
+        if (mapDate.getDate() != state.startDate.getDate()) {
+            if (mapDate.getHours() >= 6) {
                 return true;
             }
         }
         return false;
     }
 
-    this.getActiveTrips = function (nowDate, updatePeriodInMinutes) {
-        var fromMinutesAfterMidnight = getMinutesAfterMidnight(nowDate);
-        if (nowDate.getDate() != state.startDate.getDate()) {
+    this.getActiveTrips = function (mapDate, updatePeriodInMinutes) {
+        var fromMinutesAfterMidnight = getMinutesAfterMidnight(mapDate);
+        if (mapDate.getDate() != state.startDate.getDate()) {
             /* GTFS clock does not wrap around after 24 hours (or 24 * 60 = 1440 minutes) */
             fromMinutesAfterMidnight += 24 * 60;
         }
@@ -203,10 +207,12 @@ function ControllerTrip(map) {
         s.tripType = null;
         s.tripInfo = null;
         s.tripTypeInfo = null;
+        s.markerUpdateInterval = null;
+        s.nextMarkerUpdateTime = null;
         return s;
     }
 
-    this.init = function (gtfsTrip, serviceStartDate, lang, tripTypeInfo) {
+    this.init = function (gtfsTrip, serviceStartDate, lang, tripTypeInfo, markerUpdateInterval) {
         state.serviceStartDate = serviceStartDate;
         state.lang = lang;
         var tripPath = map.decodePath(gtfsTrip.getShape());
@@ -224,6 +230,9 @@ function ControllerTrip(map) {
                            state.startTime, state.lastArrivalSeconds,
                            stopDistances[stopDistances.length - 1], stopTimes.length / 2);
         state.tripTypeInfo = tripTypeInfo;
+        state.markerUpdateInterval = markerUpdateInterval * 1000;
+        state.nextMarkerUpdateTime =
+            (new Date()).getTime() + (Math.random() * state.markerUpdateInterval);
     }
 
     /* Merge stop times (arrival/departure) and distances into list of objects with unique arrival
@@ -278,22 +287,22 @@ function ControllerTrip(map) {
         return state.tripType;
     }
 
-    this.updateOnMap = function (nowDate) {
+    this.updateOnMap = function (mapDate, realTime) {
         var tripState = '';
         var fadeSeconds = 60;
-        var secondsFromStart = getSecondsFromStart(nowDate);
+        var secondsFromStart = getSecondsFromStart(mapDate);
 
         if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
             map.removeMarker(state.marker);
             tripState = 'exit';
         } else if ((secondsFromStart >= -fadeSeconds) &&
             (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
-            var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
-            console.log('updating trip: startTime=%d, secondsFromStart=%d, distance=%d',
-                        state.startTime, secondsFromStart, distance);
-            var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
-            updateTripInfo(secondsFromStart, distance);
-            map.updateMarker(state.marker, distance, opacity, getMarkerTitle());
+            if (isTimeToUpdateMarker(realTime)) {
+                var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
+                var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
+                updateTripInfo(secondsFromStart, distance);
+                map.updateMarker(state.marker, distance, opacity, getMarkerTitle());
+            }
             tripState = 'active';
         } else {
             tripState = 'waiting';
@@ -302,9 +311,9 @@ function ControllerTrip(map) {
         return tripState;
     }
 
-    function getSecondsFromStart(nowDate) {
-        var secondsAfterMidnight = getSecondsAfterMidnight(nowDate);
-        if (nowDate.getDate() != state.serviceStartDate.getDate()) {
+    function getSecondsFromStart(mapDate) {
+        var secondsAfterMidnight = getSecondsAfterMidnight(mapDate);
+        if (mapDate.getDate() != state.serviceStartDate.getDate()) {
             /* GTFS clock does not wrap around after 24 hours (or 24 * 60 * 60 = 86 400 seconds) */
             secondsAfterMidnight += 24 * 60 * 60;
         }
@@ -314,6 +323,15 @@ function ControllerTrip(map) {
     function getSecondsAfterMidnight(date) {
         var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
         return (minutesAfterMidnight * 60) + date.getSeconds(); // possible values: 0 - 86 399
+    }
+
+    function isTimeToUpdateMarker(realTime) {
+        if (realTime > state.nextMarkerUpdateTime) {
+            state.nextMarkerUpdateTime += state.markerUpdateInterval;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     function getDistanceFromStart(secondsFromStart, timesAndDistances) {

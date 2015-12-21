@@ -13,7 +13,7 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     uiBar.init(config.lang, tripTypeInfos);
-    controller.init(config.lang, config.onlyRoutes, tripTypeInfos);
+    controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
 
@@ -62,10 +62,10 @@ function Timing(uiBar, controller) {
 
     function getState() {
         var s = {};
-        s.startFake = null;
-        s.startReal = null;
+        s.startMapDate = null;
+        s.startRealDate = null;
         s.tickMs = 1000;
-        s.speedMultiplier = 15; // tbd
+        s.speedMultiplier = null;
         s.stopAfter = null;
         s.intervalId = null;
         s.downloadIsReady = false;
@@ -73,36 +73,37 @@ function Timing(uiBar, controller) {
     }
 
     this.init = function (config) {
-        state.startFake = config.startDate;
-        state.startReal = new Date();
+        state.startMapDate = config.startDate;
+        state.startRealDate = new Date();
+        state.speedMultiplier = config.speed;
         state.stopAfter = config.stopAfter;
         state.intervalId = window.setInterval(function () {processTick();}, state.tickMs);
-        uiBar.updateClock(getNowDate());
+        uiBar.updateClock(getMapDate());
     }
 
     function processTick() {
-        var nowDate = getNowDate();
+        var mapDate = getMapDate();
 
-        uiBar.updateClock(nowDate);
+        uiBar.updateClock(mapDate);
 
         if (state.downloadIsReady) {
-            controller.update(nowDate);
+            controller.update(mapDate);
         }
 
-        if ((state.stopAfter != null) && isTimeToStop(nowDate)) {
+        if ((state.stopAfter != null) && isTimeToStop(mapDate)) {
             window.clearInterval(state.intervalId);
             console.log('stopped after %d minutes', state.stopAfter);
         }
     }
 
-    function getNowDate() {
-        var realMsFromStart = (new Date()).getTime() - state.startReal.getTime();
-        var fakeMsFromStart = realMsFromStart * state.speedMultiplier;
-        return new Date(state.startFake.getTime() + fakeMsFromStart);
+    function getMapDate() {
+        var realMsFromStart = (new Date()).getTime() - state.startRealDate.getTime();
+        var mapMsFromStart = realMsFromStart * state.speedMultiplier;
+        return new Date(state.startMapDate.getTime() + mapMsFromStart);
     }
 
-    function isTimeToStop(nowDate) {
-        var minutesSinceStart = ((nowDate.getTime() - state.startFake.getTime()) / 1000) / 60;
+    function isTimeToStop(mapDate) {
+        var minutesSinceStart = ((mapDate.getTime() - state.startMapDate.getTime()) / 1000) / 60;
         return minutesSinceStart > state.stopAfter;
     }
 
