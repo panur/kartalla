@@ -10,7 +10,7 @@ function Utils() {
         request.addEventListener('progress', progressHandler);
 
         request.onreadystatechange = function () {
-            if (request.readyState == 4) {
+            if (request.readyState === 4) {
                 var status = request.status;
                 if ((status === 0) || (status === 200)) {
                     responseHandler(request.responseText);
@@ -22,9 +22,9 @@ function Utils() {
         }
 
         request.open('GET', url, true);
-        if (url.indexOf('.json') != -1) {
+        if (url.indexOf('.json') !== -1) {
             request.overrideMimeType('application/json');
         }
         request.send();
-    }
+    };
 }

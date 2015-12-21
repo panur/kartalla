@@ -33,9 +33,9 @@ function UiBar() {
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
         uiBarElement.appendChild(line2Element);
-    }
+    };
 
-    function createTripTypeElement(tripTypes) {
+    function createTripTypeElement() {
         var tripTypes = state.tripTypeInfos.getTypes();
         var tripTypeNames = state.tripTypeInfos.getNames();
         var tripTypeElement = createElement('span');
@@ -123,10 +123,10 @@ function UiBar() {
 
     function createElement(elementType, elementId, textContent) {
         var newElement = document.createElement(elementType);
-        if (elementId != undefined) {
+        if (elementId !== undefined) {
             newElement.id = elementId;
         }
-        if (textContent != undefined) {
+        if (textContent !== undefined) {
             newElement.textContent = textContent;
         }
         return newElement;
@@ -144,7 +144,7 @@ function UiBar() {
         var loaded = getMegaBytes(progressEvent.loaded);
         var statusText = {'en': 'downloaded (megabytes)', 'fi': 'ladattu (megatavua)'}[state.lang];
         setElementText('dataStatus', statusText + ' ' + loaded + '...');
-    }
+    };
 
     function getMegaBytes(bytes) {
         return ((bytes / 1024) / 1024).toFixed(1);
@@ -158,7 +158,7 @@ function UiBar() {
             'jsonDate': epochToString(jsonEpoch, true), 'download': downloadDuration,
             'size': getMegaBytes(sizeBytes)});
         document.getElementById('dataStatus').appendChild(infoElement);
-    }
+    };
 
     function epochToString(epoch, isTimeIncluded) {
         return dateToString(new Date(epoch * 1000), isTimeIncluded);
@@ -204,7 +204,7 @@ function UiBar() {
 
     this.updateClock = function (date) {
         setElementText('clock', dateToString(date, true));
-    }
+    };
 
     this.updateStatistics = function () {
         var tripTypes = state.tripTypeInfos.getTypes();
@@ -212,5 +212,5 @@ function UiBar() {
             var elementId = tripTypeName + 'Count'
             setElementText(elementId, tripTypes[tripTypeName].count);
         }
-    }
+    };
 }

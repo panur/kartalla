@@ -41,7 +41,7 @@ function Map() {
         state.gm.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
         state.gm.addListener('zoom_changed', zoomChanged);
         state.previousSymbolScale = getSymbolScale();
-    }
+    };
 
     function getSymbolScale() {
         var zoom = state.gm.getZoom();
@@ -58,7 +58,7 @@ function Map() {
 
     function zoomChanged() {
         var newScale = getSymbolScale();
-        if (newScale != state.previousSymbolScale) {
+        if (newScale !== state.previousSymbolScale) {
             updateSymbolScales(newScale);
         }
         state.previousSymbolScale = newScale;
@@ -67,7 +67,7 @@ function Map() {
     function updateSymbolScales(newScale) {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId];
-            if (marker.gmSymbol.path != undefined) {
+            if (marker.gmSymbol.path !== undefined) {
                 marker.gmSymbol.scale = newScale;
                 marker.gmMarker.setOptions({icon: marker.gmSymbol});
             }
@@ -77,11 +77,11 @@ function Map() {
     this.resize = function (newHeight) {
         state.gm.getDiv().style.height = newHeight + 'px';
         google.maps.event.trigger(state.gm, 'resize');
-    }
+    };
 
     this.decodePath = function (encodedPath) {
         return google.maps.geometry.encoding.decodePath(encodedPath);
-    }
+    };
 
     this.addMarker = function (path, pathId, isVisible, color) {
         var gmMarker = new google.maps.Marker({
@@ -112,7 +112,7 @@ function Map() {
         state.markers[state.nextMarkerId] = marker;
         state.nextMarkerId += 1;
         return marker;
-    }
+    };
 
     this.updateMarker = function (marker, distanceFromStart, opacity, title) {
         var distance = getPathPositionAndHeading(marker.gmPolyline.getPath(), distanceFromStart);
@@ -128,7 +128,7 @@ function Map() {
         if (marker.gmPolyline.getMap() === undefined) {
             marker.gmPolyline.setMap(state.gm);
         }
-    }
+    };
 
     function getPathPositionAndHeading(path, distanceFromStart) {
         var cumulDistance = 0;
@@ -163,12 +163,12 @@ function Map() {
             marker.gmPolyline = null;
             delete state.polylineCache[marker.pathId];
         }
-    }
+    };
 
     this.setMarkerVisibility = function (marker, isVisible) {
         marker.gmMarker.setVisible(isVisible);
         marker.gmPolyline.setVisible(isVisible);
-    }
+    };
 
     this.getDistances = function (path, pathIndexes) {
         var distances = [0]
@@ -186,5 +186,5 @@ function Map() {
         }
 
         return distances;
-    }
+    };
 }

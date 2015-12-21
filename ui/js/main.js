@@ -79,7 +79,7 @@ function Timing(uiBar, controller) {
         state.stopAfter = config.stopAfter;
         state.intervalId = window.setInterval(function () {processTick();}, state.tickMs);
         uiBar.updateClock(getMapDate());
-    }
+    };
 
     function processTick() {
         var mapDate = getMapDate();
@@ -90,7 +90,7 @@ function Timing(uiBar, controller) {
             controller.update(mapDate);
         }
 
-        if ((state.stopAfter != null) && isTimeToStop(mapDate)) {
+        if ((state.stopAfter !== null) && isTimeToStop(mapDate)) {
             window.clearInterval(state.intervalId);
             console.log('stopped after %d minutes', state.stopAfter);
         }
@@ -109,7 +109,7 @@ function Timing(uiBar, controller) {
 
     this.downloadIsReady = function () {
         state.downloadIsReady = true;
-    }
+    };
 }
 
 function TripTypeInfos(controller, uiBar) {
@@ -134,28 +134,28 @@ function TripTypeInfos(controller, uiBar) {
 
     this.getType = function (tripTypeName) {
         return state.types[tripTypeName];
-    }
+    };
 
     this.getTypes = function () {
         return state.types;
-    }
+    };
 
     this.getNames = function () {
         return ['bus', 'train', 'tram', 'metro', 'ferry'];
-    }
+    };
 
     this.resetStatistics = function () {
         for (var tripTypeName in state.types) {
             state.types[tripTypeName].count = 0;
         }
-    }
+    };
 
     this.refreshStatistics = function () {
         uiBar.updateStatistics();
-    }
+    };
 
     this.toggleVisibility = function (tripTypeName) {
         state.types[tripTypeName].isVisible = !state.types[tripTypeName].isVisible;
         controller.updateTripTypeVisibility(tripTypeName);
-    }
+    };
 }

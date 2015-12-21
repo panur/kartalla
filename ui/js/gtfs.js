@@ -16,11 +16,11 @@ function Gtfs() {
     this.init = function (jsonData) {
         state.root = jsonData;
         state.arrayKeys = state.root[0];
-    }
+    };
 
     this.getArrayKeys = function (node) {
         return state.arrayKeys[node];
-    }
+    };
 
     function getArrayKey(keyId) {
         return that.getArrayKeys('root')[keyId];
@@ -28,15 +28,15 @@ function Gtfs() {
 
     this.getDtfsEpoch = function () {
         return state.root[getArrayKey('gtfs_epoch')];
-    }
+    };
 
     this.getJsonEpoch = function () {
         return state.root[getArrayKey('json_epoch')];
-    }
+    };
 
     this.getDates = function () {
         return state.root[getArrayKey('dates')];
-    }
+    };
 
     this.getRoutes = function () {
         var routes = [];
@@ -45,7 +45,7 @@ function Gtfs() {
             routes.push(route);
         }
         return routes;
-    }
+    };
 
     function getRootRoute(routeIndex) {
         return state.root[getArrayKey('routes')][routeIndex];
@@ -70,7 +70,7 @@ function Gtfs() {
             }
         }
         return integerList;
-    }
+    };
 
     // For [10, 1, 11, 3] return [0, 10, 11, 22, 25]
     this.unpackDeltaList = function (integerList) {
@@ -79,7 +79,7 @@ function Gtfs() {
             unpackedList.push(unpackedList[i] + integerList[i]);
         }
         return unpackedList;
-    }
+    };
 }
 
 function GtfsRoute(routeId, gtfsRoot, rootRoute) {
@@ -87,7 +87,7 @@ function GtfsRoute(routeId, gtfsRoot, rootRoute) {
 
     this.getId = function () {
         return routeId;
-    }
+    };
 
     this.getActiveServices = function (dateString) { // dateString = YYYYMMDD
         var activeServices = [];
@@ -98,7 +98,7 @@ function GtfsRoute(routeId, gtfsRoot, rootRoute) {
             }
         }
         return activeServices;
-    }
+    };
 
     function getRootService(serviceIndex) {
         return getServices()[serviceIndex];
@@ -110,23 +110,23 @@ function GtfsRoute(routeId, gtfsRoot, rootRoute) {
 
     this.getName = function () {
         return rootRoute[getArrayKey('name')];
-    }
+    };
 
     this.getLongName = function () {
         return rootRoute[getArrayKey('long_name')];
-    }
+    };
 
     this.getType = function () {
         return rootRoute[getArrayKey('type')];
-    }
+    };
 
     this.getShape = function (shapeIndex) {
         return rootRoute[getArrayKey('shapes')][shapeIndex];
-    }
+    };
 
     this.getDirections = function () {
         return rootRoute[getArrayKey('directions')];
-    }
+    };
 
     function getServices() {
         return rootRoute[getArrayKey('services')];
@@ -138,30 +138,30 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
 
     this.getId = function () {
         return gtfsRoute.getId() + '_' + serviceId;
-    }
+    };
 
     this.getName = function () {
         return gtfsRoute.getName();
-    }
+    };
 
     this.getLongName = function () {
         return gtfsRoute.getLongName();
-    }
+    };
 
     this.getType = function () {
         return gtfsRoute.getType();
-    }
+    };
 
     this.getShape = function (shapeIndex) {
         return gtfsRoute.getShape(shapeIndex);
-    }
+    };
 
     this.isActive = function (dateString) {  // dateString = YYYYMMDD
         var exceptionDates = getExceptionDates();
 
-        if (exceptionDates.added.indexOf(dateString) != -1) {
+        if (exceptionDates.added.indexOf(dateString) !== -1) {
             return true;
-        } else if (exceptionDates.removed.indexOf(dateString) != -1) {
+        } else if (exceptionDates.removed.indexOf(dateString) !== -1) {
             return false;
         } else if (getWeekDay() === getDateWeekDay(dateString)) {
             var startDay = getStartDay();
@@ -170,7 +170,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         } else {
             return false;
         }
-    }
+    };
 
     function getDateWeekDay(dateString) { // dateString = YYYYMMDD
         var date = new Date(dateString.substring(0, 4), dateString.substring(4, 6) - 1,
@@ -189,7 +189,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
             }
         }
         return activeTrips;
-    }
+    };
 
     function getServiceDirections() {
         var directionsI = getDirectionsI();
@@ -243,23 +243,23 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
 
     this.getId = function () {
         return gtfsService.getId() + '_' + directionId;
-    }
+    };
 
     this.getName = function () {
         return gtfsService.getName();
-    }
+    };
 
     this.getLongName = function () {
         return gtfsService.getLongName();
-    }
+    };
 
     this.getDirection = function () {
         return ['->', '<-'][directionId];
-    }
+    };
 
     this.getType = function () {
         return gtfsService.getType();
-    }
+    };
 
     function getArrayKey(keyId) {
         return gtfsRoot.getArrayKeys('direction')[keyId];
@@ -271,11 +271,11 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
 
     this.getShape = function () {
         return gtfsService.getShape(rootDirection[getArrayKey('shape_i')]);
-    }
+    };
 
     this.getShapeId = function () {
         return that.getId() + ':' + rootDirection[getArrayKey('shape_i')];
-    }
+    };
 
     this.getActiveTrips = function (fromMinutesAfterMidnight, toMinutesAfterMidnight) {
         var activeTrips = [];
@@ -322,7 +322,7 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     this.getStopDistances = function () {
         var stopDistancesString = rootDirection[getArrayKey('stop_distances')];
         return gtfsRoot.unpackDeltaList(gtfsRoot.stringToIntegerList(stopDistancesString));
-    }
+    };
 }
 
 function GtfsTrip(tripId, gtfsDirection, startTime, stopTimes) {
@@ -330,41 +330,41 @@ function GtfsTrip(tripId, gtfsDirection, startTime, stopTimes) {
 
     this.getId = function () {
         return gtfsDirection.getId() + '_' + tripId;
-    }
+    };
 
     this.getName = function () {
         return gtfsDirection.getName();
-    }
+    };
 
     this.getLongName = function () {
         return gtfsDirection.getLongName();
-    }
+    };
 
     this.getDirection = function () {
         return gtfsDirection.getDirection();
-    }
+    };
 
     this.getType = function () {
         return gtfsDirection.getType();
-    }
+    };
 
     this.getStartTime = function () {
         return startTime;
-    }
+    };
 
     this.getStopTimes = function () {
         return stopTimes;
-    }
+    };
 
     this.getShape = function () {
         return gtfsDirection.getShape();
-    }
+    };
 
     this.getShapeId = function () {
         return gtfsDirection.getShapeId();
-    }
+    };
 
     this.getStopDistances = function () {
         return gtfsDirection.getStopDistances();
-    }
+    };
 }

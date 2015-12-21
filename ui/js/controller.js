@@ -24,7 +24,7 @@ function Controller(gtfs, map) {
         state.onlyRoutes = onlyRoutes;
         state.tripTypeInfos = tripTypeInfos;
         state.markerUpdateInterval = markerUpdateInterval;
-    }
+    };
 
     this.update = function (mapDate) {
         var mapDateString = getDateString(mapDate);
@@ -36,7 +36,7 @@ function Controller(gtfs, map) {
             updateActiveServices(getDateString(yesterdayDate), yesterdayDate);
         }
 
-        if (state.activeServicesDateString != mapDateString) {
+        if (state.activeServicesDateString !== mapDateString) {
             updateActiveServices(mapDateString, mapDate);
             state.activeServicesDateString = mapDateString;
         }
@@ -49,7 +49,7 @@ function Controller(gtfs, map) {
         }
 
         updateTripsOnMap(mapDate);
-    }
+    };
 
     function updateTripsOnMap(mapDate) {
         state.tripTypeInfos.resetStatistics();
@@ -78,7 +78,7 @@ function Controller(gtfs, map) {
                 state.activeTrips[tripId].updateVisibility();
             }
         }
-    }
+    };
 
     function getDateString(date) {
         function pad(number) {
@@ -96,7 +96,7 @@ function Controller(gtfs, map) {
         var routes = gtfs.getRoutes();
         for (var i = 0; i < routes.length; i++) {
             if ((state.onlyRoutes === null) ||
-                (state.onlyRoutes.indexOf(routes[i].getName()) != -1)) {
+                (state.onlyRoutes.indexOf(routes[i].getName()) !== -1)) {
                 var activeServices = routes[i].getActiveServices(dateString);
                 for (var j = 0; j < activeServices.length; j++) {
                     var serviceId = activeServices[j].getId();
@@ -162,26 +162,26 @@ function ControllerService() {
     this.init = function (gtfsService, startDate) {
         state.gtfsService = gtfsService;
         state.startDate = startDate;
-    }
+    };
 
     this.isTimeToDelete = function (mapDate) {
-        if (mapDate.getDate() != state.startDate.getDate()) {
+        if (mapDate.getDate() !== state.startDate.getDate()) {
             if (mapDate.getHours() >= 6) {
                 return true;
             }
         }
         return false;
-    }
+    };
 
     this.getActiveTrips = function (mapDate, updatePeriodInMinutes) {
         var fromMinutesAfterMidnight = getMinutesAfterMidnight(mapDate);
-        if (mapDate.getDate() != state.startDate.getDate()) {
+        if (mapDate.getDate() !== state.startDate.getDate()) {
             /* GTFS clock does not wrap around after 24 hours (or 24 * 60 = 1440 minutes) */
             fromMinutesAfterMidnight += 24 * 60;
         }
         return state.gtfsService.getActiveTrips(fromMinutesAfterMidnight,
             fromMinutesAfterMidnight + updatePeriodInMinutes);
-    }
+    };
 
     function getMinutesAfterMidnight(date) {
         return (date.getHours() * 60) + date.getMinutes(); // possible values: 0 - 1439
@@ -189,7 +189,7 @@ function ControllerService() {
 
     this.getStartDate = function () {
         return state.startDate;
-    }
+    };
 }
 
 function ControllerTrip(map) {
@@ -233,7 +233,7 @@ function ControllerTrip(map) {
         state.markerUpdateInterval = markerUpdateInterval * 1000;
         state.nextMarkerUpdateTime =
             (new Date()).getTime() + (Math.random() * state.markerUpdateInterval);
-    }
+    };
 
     /* Merge stop times (arrival/departure) and distances into list of objects with unique arrival
     time (to simplify the calculation of distance from start when given seconds from start). The
@@ -250,11 +250,11 @@ function ControllerTrip(map) {
             var departureTime = times[(i * 2) + 1];
             var distance = distances[i];
             if (arrivalTime === times[0]) {
-                if (i != 0) {
+                if (i !== 0) {
                     distance = undefined; // skip if same as 1st but not 1st
                 }
             } else if (arrivalTime === times[times.length - 2]) {
-                if (i != (distances.length - 1)) {
+                if (i !== (distances.length - 1)) {
                     distance = undefined; // skip if same as last but not last
                 }
             } else {
@@ -265,7 +265,7 @@ function ControllerTrip(map) {
                 }
             }
 
-            if (distance != undefined) {
+            if (distance !== undefined) {
                 timesAndDistances.push({arrival: arrivalTime, departure: departureTime,
                                         distance: distance})
             }
@@ -285,7 +285,7 @@ function ControllerTrip(map) {
 
     this.getType = function () {
         return state.tripType;
-    }
+    };
 
     this.updateOnMap = function (mapDate, realTime) {
         var tripState = '';
@@ -309,11 +309,11 @@ function ControllerTrip(map) {
         }
 
         return tripState;
-    }
+    };
 
     function getSecondsFromStart(mapDate) {
         var secondsAfterMidnight = getSecondsAfterMidnight(mapDate);
-        if (mapDate.getDate() != state.serviceStartDate.getDate()) {
+        if (mapDate.getDate() !== state.serviceStartDate.getDate()) {
             /* GTFS clock does not wrap around after 24 hours (or 24 * 60 * 60 = 86 400 seconds) */
             secondsAfterMidnight += 24 * 60 * 60;
         }
@@ -378,7 +378,7 @@ function ControllerTrip(map) {
 
     this.updateVisibility = function () {
         map.setMarkerVisibility(state.marker, state.tripTypeInfo.isVisible);
-    }
+    };
 
     function createTripInfo(tripName, direction, tripLongName, startTimeMinutesAfterMidnight,
                             durationSeconds, distanceMeters, stops) {
