@@ -67,8 +67,8 @@ function Map() {
     function updateSymbolScales(newScale) {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId];
+            marker.gmSymbol.scale = newScale;
             if (marker.gmSymbol.path !== undefined) {
-                marker.gmSymbol.scale = newScale;
                 marker.gmMarker.setOptions({icon: marker.gmSymbol});
             }
         }
