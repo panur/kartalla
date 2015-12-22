@@ -11,24 +11,209 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2015-12-18.</p>
+<p>Last updated 2015-12-22.</p>
 
-<h2>General</h2>
+<h2 id="overview">Overview</h2>
 
 <p>
-tbd...
+<a href="index.en.html">Kartalla</a> displays in real-time the location of public transport vehicles
+in Helsinki region based on the route and timetable information published by
+<a href="https://www.hsl.fi/en">HSL</a> as open data. The displayed location is not based on
+measured location (like for example
+<a href="https://en.wikipedia.org/wiki/Global_Positioning_System">GPS</a> position) and therefore it
+may and is even likely to differ from the actual location.
 </p>
 
-<h2>Other Maps</h2>
-
 <p>
-tbd...
+The location is presented as an icon colored based on the type of the vehicle (bus, train, tram,
+metro or ferry). The visibility of the icons by type can be controlled by the buttons below the map.
+The form of the icon is a circle for one minute before the departure time and one minute after the
+arrival time. In between the form of the icon is an array pointing into the direction the vehicle is
+moving to. Information like in the following example is shown when pointer is moved over an icon.
 </p>
 
-<h2>Implementation Details</h2>
+<ul>
+    <li>Route name: 550</li>
+    <li>Route: Itäkeskus-Westendinasema</li>
+    <li>Direction: -></li>
+    <li>Departure time: 05:20</li>
+    <li>Arrival time: 06:08</li>
+    <li>Duration (min): 23.3 / 48</li>
+    <li>Distance (km): 12.4 / 27</li>
+    <li>Average speed (km/h): 34</li>
+    <li>Stops: 40</li>
+</ul>
+
+<h2 id="maps">Other Maps</h2>
 
 <p>
-tbd...
+Here are some maps displaying the location of public transport vehicles based on measured location.
+</p>
+
+<ul>
+    <li><a href="http://dev.hsl.fi/live">Live demo</a>
+        <ul>
+        <li>Some routes operated by HSL.</li>
+        </ul></li>
+    <li><a href="http://live.mattersoft.fi/hsl/Default.aspx?lang=en">HSL LIVE</a>
+        <ul>
+        <li>Some routes operated by HSL.</li>
+        </ul></li>
+    <li><a href="http://sporat.fi/">Raitiovaunut kartalla livenä</a>
+        <ul>
+        <li>Trams in Helsinki.</li>
+        </ul></li>
+    <li><a href="https://www.vr.fi/cs/vr/en/live_train_map">Live train map - VR</a>
+        <ul>
+        <li>Trains in Finland.</li>
+        </ul></li>
+    <li><a href="http://lissu.tampere.fi/?stop=&amp;lang=en">Tampere Traffic Monitor</a>
+        <ul>
+        <li>Busses in Tampere.</li>
+        </ul></li>
+    <li><a href="http://reittiopas.foli.fi/bin/help.exe/3engn?tpl=fullmap">Föli on the map</a>
+        <ul>
+        <li>Busses in Turku.</li>
+        </ul></li>
+    <li><a href="http://www.flightradar24.com/">Flightradar24</a>
+        <ul>
+        <li>Airplanes.</li>
+        </ul></li>
+</ul>
+
+<h2 id="details">Implementation Details</h2>
+
+<p>
+<a href="index.en.html">Kartalla</a> consists of two parts: <a href="#gtfs2json">gtfs2json</a>
+and browser based graphical <a href="#ui">user interface</a>. The former formats the route and
+timetable data published by HSL in
+<a href="https://developers.google.com/transit/gtfs/reference">GTFS</a> format into compressed
+format more suitable for the latter to use.
+</p>
+
+<h3 id="gtfs2json">gtfs2json</h3>
+
+<p>
+gtfs2json compresses GTFS files (calendar.txt, calendar_dates.txt, routes.txt, shapes.txt,
+stop_times.txt, stops.txt, trips.txt) into one <a href="http://www.json.org/">JSON</a> file.
+The size of GTFS files is about 600 megabytes (60 megabytes in
+<a href="https://en.wikipedia.org/wiki/Zip_%28file_format%29">ZIP</a> format) and the size  of the
+JSON file is about 3 megabytes. The high compression ration is achieved by skipping irrelevant parts
+in GTFS files and encoding the relevant parts in less verbose form. gtfs2json is implemented in
+<a href="https://www.python.org/">Python</a> programming language (version 2.7).
+</p>
+
+<h3 id="ui">User Interface</h3>
+
+<p>
+The browser based user interface downloads from a web server the JSON file created by gtfs2json. It
+then displays the locations of the public transport vehicles as icons on a map using
+<a href="https://developers.google.com/maps/documentation/javascript/">Google Maps JavaScript
+API</a>. The JSON file is downloaded as a compressed file if the browser supports
+<a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>. In that case size of
+the downloaded file is about 0.5 megabytes. After the JSON file has been downloaded no more data is
+downloaded except maybe more map data from Google's servers. The user interface is implemented in
+<a href="http://javascript.crockford.com/">JavaScript</a> programming language and it utilizes
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a> and
+<a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a> technologies.
+</p>
+
+<p>
+Information like in the following example is shown when pointer is moved over the * symbol in the
+Data section below the map.
+</p>
+
+<ul>
+    <li>GTFS: 2015-11-18</li>
+    <li>JSON: 2015-12-20 10:23:34</li>
+    <li>Download (seconds): 1.3</li>
+    <li>Size (megabytes): 2.8</li>
+</ul>
+
+<h2 id="parameters">Parameters</h2>
+
+<p>
+The user interface can be controlled with the following URL parameters.
+</p>
+
+<ul>
+    <li><var>lat</var>
+        <ul>
+        <li>latitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
+        <li>defaul value: 60.273969</li>
+        </ul></li>
+    <li><var>lng</var>
+        <ul>
+        <li>longitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
+        <li>defaul value: 24.791911</li>
+        </ul></li>
+    <li><var>zoom</var>
+        <ul>
+        <li>zoom level in range 8-16 (from far to near)</li>
+        <li>defaul value: 10</li>
+        </ul></li>
+    <li><var>date</var>
+        <ul>
+        <li>date in YYYYMMDD format</li>
+        <li>defaul value: today</li>
+        </ul></li>
+    <li><var>time</var>
+        <ul>
+        <li>time in HHMMSS format</li>
+        <li>defaul value: now</li>
+        </ul></li>
+    <li><var>speed</var>
+        <ul>
+        <li>clock speed (compared to real time) in range 1-100</li>
+        <li>defaul value: 1</li>
+        </ul></li>
+    <li><var>interval</var>
+        <ul>
+        <li>icon update interval (in seconds) in range 1-10</li>
+        <li>defaul value: 5</li>
+        </ul></li>
+    <li><var>routes</var>
+        <ul>
+        <li>routes to be shown (separated by underscore)</li>
+        <li>defaul value: - (all routes are shown)</li>
+        </ul></li>
+    <li><var>_file</var>, <var>_stop</var>
+        <ul>
+        <li>debugging parameters</li>
+        </ul></li>
+</ul>
+
+<p>
+Following are examples of the usage of the parameters.
+</p>
+
+<ul>
+    <li><a href="index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
+        <ul>
+        <li><a href="http://aikataulut.reittiopas.fi/pysakit/fi/3010501.html">Kauniainen</a> zoomed closely</li>
+        </ul></li>
+    <li><a href="index.en.html?time=231000">index.en.html?time=231000</a>
+        <ul>
+        <li>today at 23:10:00</li>
+        </ul></li>
+    <li><a href="index.en.html?date=20151224">index.en.html?date=20151224</a>
+        <ul>
+        <li>Christmas Eve at current time</li>
+        </ul></li>
+    <li><a href="index.en.html?date=20151224&amp;time=160030">index.en.html?date=20151224&amp;time=160030</a>
+        <ul>
+        <li>Christmas Eve at 16:00:30</li>
+        </ul></li>
+    <li><a href="index.en.html?routes=I_P_615">index.en.html?routes=I_P_615</a>
+        <ul>
+        <li>airport trains and bus</li>
+        </ul></li>
+</ul>
+
+<h2 id="contact">Contact Information</h2>
+
+<p>
+Panu Ranta, <a href="mailto:panu.ranta@iki.fi">panu.ranta@iki.fi</a>
 </p>
 
 </body>

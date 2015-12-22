@@ -13,13 +13,14 @@
 
 <p>Viimeksi päivitetty 2015-12-22.</p>
 
-<h2>Yleistä</h2>
+<h2 id="yleista">Yleistä</h2>
 
 <p>
 <a href="index.fi.html">Kartalla</a> näyttää tosiaikaisesti Helsingin seudun
 joukkoliikennevälineiden sijainnin <a href="https://www.hsl.fi/">HSL</a>:n avoimena datana
 julkaisemien aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis perustu mitattuun
-paikkatietoon eli poikkeamat todelliseen sijaintiin ovat mahdollisia ja luultavia.
+paikkatietoon (esimerkiksi <a href="https://fi.wikipedia.org/wiki/GPS">GPS</a>-sijaintiin) eli
+poikkeamat todelliseen sijaintiin ovat mahdollisia ja luultavia.
 </p>
 
 <p>
@@ -45,7 +46,8 @@ tulee näkyviin seuraavan esimerkin mukaisia tietoja.
 <h2 id="karttoja">Muita karttoja</h2>
 
 <p>
-Joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella näyttäviä karttoja.
+Seuraavassa on joitakin joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella
+näyttäviä karttoja.
 </p>
 
 <ul>
@@ -82,10 +84,11 @@ Joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella näyttävi�
 <h2 id="toteutus">Tekninen toteutus</h2>
 
 <p>
-<a href="index.fi.html">Kartalla</a> muodostuu kahdesta osasta: <a href="#gtfs2json">gtfs2json</a>
-ja selaimessa toimiva graafinen <a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa
-HSL:n julkaiseman <a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen
-datan jälkimmäiselle soveltuvaan muotoon.
+<a href="index.fi.html">Kartalla</a> muodostuu kahdesta osasta, jotka ovat
+<a href="#gtfs2json">gtfs2json</a> ja selaimessa toimiva graafinen
+<a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa HSL:n julkaiseman
+<a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen datan
+jälkimmäiselle soveltuvaan muotoon.
 </p>
 
 <h3 id="gtfs2json">gtfs2json</h3>
@@ -93,10 +96,11 @@ datan jälkimmäiselle soveltuvaan muotoon.
 <p>
 gtfs2json tiivistää GTFS-tiedostot (calendar.txt, calendar_dates.txt, routes.txt, shapes.txt,
 stop_times.txt, stops.txt, trips.txt) yhdeksi <a href="http://www.json.org/">JSON</a>-tiedostoksi.
-GTFS-tiedostojen koko on noin 600 megatavua (pakattuna 60 megatavua) ja tuotetun JSON-tiedoston koko
-on noin 3 megatavua. Tiivistäminen tapahtuu karsimalla GTFS-tiedostoista tarpeettomia osia ja
-esittämällä tarpeelliset osat tiiviimmin. gtfs2json on toteutettu
-<a href="https://www.python.org/">Python</a>-ohjelmointikielellä (versio 2.7).
+GTFS-tiedostojen koko on noin 600 megatavua (<a href="https://fi.wikipedia.org/wiki/ZIP">ZIP</a>-
+pakattuna 60 megatavua) ja tuotetun JSON-tiedoston koko on noin 3 megatavua. Tiivistäminen tapahtuu
+karsimalla GTFS-tiedostoista tarpeettomia osia ja esittämällä tarpeelliset osat tiiviimmin.
+gtfs2json on toteutettu <a href="https://www.python.org/">Python</a>-ohjelmointikielellä (versio
+2.7).
 </p>
 
 <h3 id="kayttoliittyma">Käyttöliittymä</h3>
