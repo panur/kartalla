@@ -4,6 +4,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html
 """
 
 import math
+import sys
 
 
 def encode(points, fixed_indexes):
@@ -122,3 +123,14 @@ def _encode_signed_number(num):
     if num < 0:
         sgn_num = ~sgn_num
     return _encode_number(sgn_num)
+
+
+def get_point_index(points, point, previous_index):
+    """Find index of the point in points that is closest to point after previous_index."""
+    min_dist = {'i': None, 'v': sys.maxint}
+    for i in range(previous_index, len(points)):
+        dist = _dist(points[i], point)
+        if dist < min_dist['v']:
+            min_dist['i'] = i
+            min_dist['v'] = dist
+    return min_dist['i']

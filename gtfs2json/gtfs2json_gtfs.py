@@ -310,17 +310,10 @@ def _get_stop_distances(shape, direction_stops, stops):
                 previous_index = 0
             else:
                 previous_index = stop_distances[-1]
-            point_index = _get_point_index(shape, stops[stop_id], previous_index)
+            point_index = polyline.get_point_index(shape, stops[stop_id], previous_index)
             stop_distances.append(point_index)
 
     return stop_distances
-
-
-def _get_point_index(points, point, previous_index):
-    for i in range(previous_index, len(points)):
-        if points[i] == point:
-            return i
-    logging.error('No point index for {}'.format(point))
 
 
 def _add_shape_to_route(route, direction, shape, stop_distances, stats):
