@@ -11,7 +11,7 @@
 
 <h1>Kartalla - Tietoja</h1>
 
-<p>Viimeksi päivitetty 2015-12-21.</p>
+<p>Viimeksi päivitetty 2015-12-22.</p>
 
 <h2>Yleistä</h2>
 
@@ -21,6 +21,26 @@ joukkoliikennevälineiden sijainnin <a href="https://www.hsl.fi/">HSL</a>:n avoi
 julkaisemien aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis perustu mitattuun
 paikkatietoon eli poikkeamat todelliseen sijaintiin ovat mahdollisia ja luultavia.
 </p>
+
+<p>
+Sijainti esitetään kuvakkeena, jonka väri kertoo liikennevälineen tyypin (bussi, juna, raitiovaunu,
+metro tai lautta). Kuvakkeiden näkyvyyttä tyypeittäin voi säätää kartan alalaidan painikkeilla.
+Kuvakkeen muoto on ympyrä minuutin ennen lähtöaikaa ja minuutin tuloajan jälkeen. Näiden välillä
+muotona on kulkuvälineen kulkusuunnan osoittava nuoli. Siirtämällä osoittimen kuvakkeen päälle
+tulee näkyviin seuraavan esimerkin mukaisia tietoja.
+</p>
+
+<ul>
+    <li>Linja: 550</li>
+    <li>Reitti: Itäkeskus-Westendinasema</li>
+    <li>Suunta: -></li>
+    <li>Lähtöaika: 05:20</li>
+    <li>Tuloaika: 06:08</li>
+    <li>Kesto (min): 23.3 / 48</li>
+    <li>Matka (km): 12.4 / 27</li>
+    <li>Keskinopeus (km/h): 34</li>
+    <li>Pysäkkejä: 40</li>
+</ul>
 
 <h2 id="karttoja">Muita karttoja</h2>
 
@@ -62,10 +82,10 @@ Joukkoliikennevälineiden sijainnin mitatun paikkatiedon perusteella näyttävi�
 <h2 id="toteutus">Tekninen toteutus</h2>
 
 <p>
-Kartalla muodostuu kahdesta osasta: <a href="#gtfs2json">gtfs2json</a> ja selaimessa toimiva
-graafinen <a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa HSL:n julkaiseman
-<a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen datan
-jälkimmäiselle soveltuvaan muotoon.
+<a href="index.fi.html">Kartalla</a> muodostuu kahdesta osasta: <a href="#gtfs2json">gtfs2json</a>
+ja selaimessa toimiva graafinen <a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa
+HSL:n julkaiseman <a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen
+datan jälkimmäiselle soveltuvaan muotoon.
 </p>
 
 <h3 id="gtfs2json">gtfs2json</h3>
@@ -94,7 +114,19 @@ mahdollisesti lisää karttadataa Googlen palvelimelta. Käyttöliittymä on tot
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a>-tekniikoilla.
 </p>
 
-<h3 id="parametrit">Parametrit</h3>
+<p>
+Siirtämällä osoittimen kartan alalaidan Data-osiossa *-symbolin päälle tulee näkyviin seuraavan
+esimerkin mukaisia tietoja käytetystä aineistosta.
+</p>
+
+<ul>
+    <li>GTFS: 2015-11-18</li>
+    <li>JSON: 2015-12-20 10:23:34</li>
+    <li>Lataus (sekuntia): 1.3</li>
+    <li>Koko (megatavua): 2.8</li>
+</ul>
+
+<h2 id="parametrit">Parametrit</h2>
 
 <p>
 Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
