@@ -150,13 +150,13 @@ function UiBar() {
         return ((bytes / 1024) / 1024).toFixed(1);
     }
 
-    this.setDataInfo = function (dtfsEpoch, jsonEpoch, downloadDuration, sizeBytes) {
+    this.setDataInfo = function (dtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed) {
         setElementText('dataStatus', 'OK');
         var infoElement = createElement('span', undefined, '*');
         infoElement.className = 'dataInfo';
         infoElement.title = getDataInfoTitle({'gtfsDate': epochToString(dtfsEpoch, false),
-            'jsonDate': epochToString(jsonEpoch, true), 'download': downloadDuration,
-            'size': getMegaBytes(sizeBytes)});
+            'jsonDate': epochToString(jsonEpoch, true), 'size': getMegaBytes(sizeBytes),
+            'duration': downloadDuration, 'compressed': isCompressed});
         document.getElementById('dataStatus').appendChild(infoElement);
     };
 
@@ -181,10 +181,11 @@ function UiBar() {
     }
 
     function getDataInfoTitle(dataInfo) {
-        var titleItems = ['gtfsDate', 'jsonDate', 'download', 'size'];
+        var titleItems = ['gtfsDate', 'jsonDate', 'size', 'duration', 'compressed'];
         var dataInfoTitle = '';
         for (var i = 0; i < titleItems.length; i++) {
-            dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' + dataInfo[titleItems[i]];
+            dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' +
+                getDataInfoItemValue(dataInfo[titleItems[i]]);
             if (i < (titleItems.length - 1)) {
                 dataInfoTitle += '\n';
             }
@@ -194,11 +195,25 @@ function UiBar() {
 
     function getDataInfoItemName(dataInfoItem) {
         if (state.lang === 'fi') {
-            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'download': 'Lataus (sekuntia)',
-                    'size': 'Koko (megatavua)'}[dataInfoItem];
+            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'size': 'Koko (megatavua)',
+                    'duration': 'Lataus (sekuntia)',
+                    'compressed': 'Lataus (pakattu)'}[dataInfoItem];
         } else {
-            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'download': 'Download (seconds)',
-                    'size': 'Size (megabytes)'}[dataInfoItem];
+            return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'size': 'Size (megabytes)',
+                    'duration': 'Download (seconds)',
+                    'compressed': 'Download (compressed)'}[dataInfoItem];
+        }
+    }
+
+    function getDataInfoItemValue(dataInfoItemValue) {
+        if ((dataInfoItemValue === true) || (dataInfoItemValue === false)) {
+            if (state.lang === 'fi') {
+                return {true: 'kyllä', false: 'ei'}[dataInfoItemValue];
+            } else {
+                return {true: 'yes', false: 'no'}[dataInfoItemValue];
+            }
+        } else {
+            return dataInfoItemValue;
         }
     }
 

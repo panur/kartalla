@@ -13,7 +13,7 @@ function Utils() {
             if (request.readyState === 4) {
                 var status = request.status;
                 if ((status === 0) || (status === 200)) {
-                    responseHandler(request.responseText);
+                    responseHandler(request);
                     request.onreadystatechange = function () {};
                 } else {
                     console.error('unexpected status: ' + status);

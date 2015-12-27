@@ -28,19 +28,25 @@ function main() {
         document.addEventListener('gtfsDownloadIsReady', downloadIsReady, false);
 
         var startTime = new Date();
-        var gtfsJsonData = null;
+        var downloadRequest = null;
 
-        utils.downloadUrl(filename, uiBar.updateDownloadProgress, function (responseText) {
-            gtfsJsonData = responseText;
+        utils.downloadUrl(filename, uiBar.updateDownloadProgress, function (request) {
+            downloadRequest = request;
             document.dispatchEvent(readyEvent);
         });
 
         function downloadIsReady() {
             var duration = (((new Date()).getTime() - startTime.getTime()) / 1000).toFixed(1);
-            gtfs.init(JSON.parse(gtfsJsonData));
-            uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(), duration,
-                              gtfsJsonData.length);
+            gtfs.init(JSON.parse(downloadRequest.responseText));
+            uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(),
+                              downloadRequest.responseText.length, duration,
+                              isDownloadCompressed());
             timing.downloadIsReady();
+        }
+
+        function isDownloadCompressed() {
+            var contentEncoding = downloadRequest.getResponseHeader('Content-Encoding');
+            return ((contentEncoding !== null) && (contentEncoding === 'gzip'));
         }
     }
 
