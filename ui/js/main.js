@@ -9,9 +9,10 @@ function main() {
     var map = new Map();
     var gtfs = new Gtfs();
     var controller = new Controller(gtfs, map);
-    var timing = new Timing(uiBar, controller);
+    var timing = new Timing(controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
+    tripTypeInfos.init(config.visibleTypes);
     uiBar.init(config.lang, tripTypeInfos);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
@@ -56,7 +57,7 @@ function main() {
     }
 }
 
-function Timing(uiBar, controller) {
+function Timing(controller, uiBar) {
     var that = this;
     var state = getState();
 
@@ -118,17 +119,24 @@ function TripTypeInfos(controller, uiBar) {
 
     function getState() {
         var s = {};
-        s.types = createTypes();
+        s.types = null;
         return s;
     }
 
+    this.init = function (visibleTypes) {
+        state.types = createTypes();
+        for (var typeName in state.types) {
+            state.types[typeName].isVisible = (visibleTypes.indexOf(typeName) != -1);
+        }
+    }
+
     function createTypes() {
-        var types = {}; // by name
+        var types = {};
         types.bus = {isVisible: false, color: 'blue', count: 0};
-        types.train = {isVisible: true, color: 'red', count: 0};
+        types.train = {isVisible: false, color: 'red', count: 0};
         types.tram = {isVisible: false, color: 'green', count: 0};
         types.metro = {isVisible: false, color: 'orange', count: 0};
-        types.ferry = {isVisible: true, color: 'purple', count: 0};
+        types.ferry = {isVisible: false, color: 'purple', count: 0};
         return types;
     }
 

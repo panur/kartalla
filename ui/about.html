@@ -11,7 +11,7 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2015-12-22.</p>
+<p>Last updated 2015-12-27.</p>
 
 <h2 id="overview">Overview</h2>
 
@@ -141,42 +141,47 @@ The user interface can be controlled with the following URL parameters.
     <li><var>lat</var>
         <ul>
         <li>latitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
-        <li>defaul value: 60.273969</li>
+        <li>default value: 60.273969</li>
         </ul></li>
     <li><var>lng</var>
         <ul>
         <li>longitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
-        <li>defaul value: 24.791911</li>
+        <li>default value: 24.791911</li>
         </ul></li>
     <li><var>zoom</var>
         <ul>
         <li>zoom level in range 8-16 (from far to near)</li>
-        <li>defaul value: 10</li>
+        <li>default value: 10</li>
         </ul></li>
     <li><var>date</var>
         <ul>
         <li>date in YYYYMMDD format</li>
-        <li>defaul value: today</li>
+        <li>default value: today</li>
         </ul></li>
     <li><var>time</var>
         <ul>
         <li>time in HHMMSS format</li>
-        <li>defaul value: now</li>
+        <li>default value: now</li>
         </ul></li>
     <li><var>speed</var>
         <ul>
         <li>clock speed (compared to real time) in range 1-100</li>
-        <li>defaul value: 1</li>
+        <li>default value: 1</li>
         </ul></li>
     <li><var>interval</var>
         <ul>
         <li>icon update interval (in seconds) in range 1-10</li>
-        <li>defaul value: 5</li>
+        <li>default value: 5</li>
+        </ul></li>
+    <li><var>types</var>
+        <ul>
+        <li>visible vehicle types (separated by underscore)</li>
+        <li>default value: train_ferry</li>
         </ul></li>
     <li><var>routes</var>
         <ul>
         <li>routes to be shown (separated by underscore)</li>
-        <li>defaul value: - (all routes are shown)</li>
+        <li>default value: - (all routes are shown)</li>
         </ul></li>
     <li><var>_file</var>, <var>_stop</var>
         <ul>
@@ -189,23 +194,23 @@ Following are examples of the usage of the parameters.
 </p>
 
 <ul>
-    <li><a href="index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
+    <li><a href="index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">http://14142.net/kartalla/index.en.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
         <ul>
         <li><a href="http://aikataulut.reittiopas.fi/pysakit/fi/3010501.html">Kauniainen</a> zoomed closely</li>
         </ul></li>
-    <li><a href="index.en.html?time=231000">index.en.html?time=231000</a>
+    <li><a href="index.en.html?time=231000&amp;types=tram_metro">http://14142.net/kartalla/index.en.html?time=231000&amp;types=tram_metro</a>
         <ul>
-        <li>today at 23:10:00</li>
+        <li>trams and metros today at 23:10:00</li>
         </ul></li>
-    <li><a href="index.en.html?date=20151224">index.en.html?date=20151224</a>
+    <li><a href="index.en.html?date=20151224">http://14142.net/kartalla/index.en.html?date=20151224</a>
         <ul>
         <li>Christmas Eve at current time</li>
         </ul></li>
-    <li><a href="index.en.html?date=20151224&amp;time=160030">index.en.html?date=20151224&amp;time=160030</a>
+    <li><a href="index.en.html?date=20151224&amp;time=160030">http://14142.net/kartalla/index.en.html?date=20151224&amp;time=160030</a>
         <ul>
         <li>Christmas Eve at 16:00:30</li>
         </ul></li>
-    <li><a href="index.en.html?routes=I_P_615">index.en.html?routes=I_P_615</a>
+    <li><a href="index.en.html?routes=I_P_615">http://14142.net/kartalla/index.en.html?routes=I_P_615</a>
         <ul>
         <li>airport trains and bus</li>
         </ul></li>

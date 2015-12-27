@@ -11,7 +11,7 @@
 
 <h1>Kartalla - Tietoja</h1>
 
-<p>Viimeksi päivitetty 2015-12-22.</p>
+<p>Viimeksi päivitetty 2015-12-27.</p>
 
 <h2 id="yleista">Yleistä</h2>
 
@@ -173,6 +173,11 @@ Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
         <li>kuvakkeiden päivitysväli sekunteina välillä 1-10</li>
         <li>oletusarvo: 5</li>
         </ul></li>
+    <li><var>types</var>
+        <ul>
+        <li>näkyvät kulkuvälinetyypit (bus, train, tram, metro, ferry) alaviivalla eroteltuna</li>
+        <li>oletusarvo: train_ferry</li>
+        </ul></li>
     <li><var>routes</var>
         <ul>
         <li>näytetyt reitit alaviivalla eroteltuna</li>
@@ -189,23 +194,23 @@ Esimerkkejä parametrien käytöstä.
 </p>
 
 <ul>
-    <li><a href="index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
+    <li><a href="index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15">http://14142.net/kartalla/index.fi.html?lat=60.212003&amp;lng=24.732484&amp;zoom=15</a>
         <ul>
         <li><a href="http://aikataulut.reittiopas.fi/pysakit/fi/3010501.html">Kauniainen</a> läheltä</li>
         </ul></li>
-    <li><a href="index.fi.html?time=231000">index.fi.html?time=231000</a>
+    <li><a href="index.fi.html?time=231000&amp;types=tram_metro">http://14142.net/kartalla/index.fi.html?time=231000&amp;types=tram_metro</a>
         <ul>
-        <li>tänään kello 23:10:00</li>
+        <li>ratikat ja metrot tänään kello 23:10:00</li>
         </ul></li>
-    <li><a href="index.fi.html?date=20151224">index.fi.html?date=20151224</a>
+    <li><a href="index.fi.html?date=20151224">http://14142.net/kartalla/index.fi.html?date=20151224</a>
         <ul>
         <li>jouluaatto nykyiseen kellonaikaan</li>
         </ul></li>
-    <li><a href="index.fi.html?date=20151224&amp;time=160030">index.fi.html?date=20151224&amp;time=160030</a>
+    <li><a href="index.fi.html?date=20151224&amp;time=160030">http://14142.net/kartalla/index.fi.html?date=20151224&amp;time=160030</a>
         <ul>
         <li>jouluaatto kello 16:00:30</li>
         </ul></li>
-    <li><a href="index.fi.html?routes=I_P_615">index.fi.html?routes=I_P_615</a>
+    <li><a href="index.fi.html?routes=I_P_615">http://14142.net/kartalla/index.fi.html?routes=I_P_615</a>
         <ul>
         <li>lentokentän junat ja bussi</li>
         </ul></li>

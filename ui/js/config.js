@@ -3,8 +3,8 @@
 'use strict';
 
 function Config() {
-    var supportedParams =
-        ['lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval', 'routes', '_file', '_stop'];
+    var supportedParams = ['lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval', 'types',
+        'routes', '_file', '_stop'];
     var urlParams = getUrlParams();
     this.stopAfter = urlParams._stop || null;
     this.mapLat = urlParams.lat || 60.273969;
@@ -14,6 +14,7 @@ function Config() {
     this.speed = urlParams.speed || 1;
     this.interval = urlParams.interval || 5;
     this.lang = getLang();
+    this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
     this.json_url = getJsonUrl();
 
@@ -73,7 +74,8 @@ function Config() {
             return checkValueInterval(parameterValue, 1, 100);
         } else if (parameterName === 'interval') {
             return checkValueInterval(parameterValue, 1, 10);
-        } else if ((parameterName === 'routes') || (parameterName === '_file')) {
+        } else if ((parameterName === 'types') || (parameterName === 'routes') ||
+                   (parameterName === '_file')) {
             var re = /\w+/;
             return re.test(parameterValue);
         } else if (parameterName === '_stop') {
@@ -110,6 +112,14 @@ function Config() {
             return 'fi';
         } else {
             return 'en';
+        }
+    }
+
+    function getVisibleTypes() {
+        if (urlParams.types !== undefined) {
+            return urlParams.types.split('_');
+        } else {
+            return ['train', 'ferry'];
         }
     }
 
