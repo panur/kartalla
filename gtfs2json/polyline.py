@@ -7,35 +7,41 @@ import math
 import sys
 
 
-def encode(points, fixed_indexes):
+def encode(points, fixed_indexes=None, very_small=0.00001):
     """Encode points into Google's encoded polyline format
     (https://developers.google.com/maps/documentation/utilities/polylinealgorithm). Redundant
     points are dropped except points in fixed_indexes."""
     encoded_polyline = {}
-    (points_to_be_encoded, indexes) = _get_points_to_be_encoded(points, fixed_indexes)
+    if not fixed_indexes:
+        fixed_indexes = [0, len(points) - 1]
+    (points_to_be_encoded, indexes, kept_indexes) = _get_points_to_be_encoded(points, fixed_indexes,
+                                                                              very_small)
     encoded_polyline['num_dropped_points'] = len(points) - len(points_to_be_encoded)
     encoded_polyline['fixed_indexes'] = indexes
+    encoded_polyline['kept_indexes'] = kept_indexes
     encoded_polyline['points'] = _create_encodings(points_to_be_encoded)
     return encoded_polyline
 
 
-def _get_points_to_be_encoded(points, fixed_indexes):
+def _get_points_to_be_encoded(points, fixed_indexes, very_small):
     """Get list of points to be encoded and fixed indexes of encoded points."""
     points_to_be_encoded = []
     encoded_fixed_indexes = [0]
+    kept_indexes = []
 
     for i in range(len(fixed_indexes) - 1):
         sub_points = points[fixed_indexes[i]:(fixed_indexes[i + 1] + 1)]
-        dropped_indexes = _dp_encode(sub_points)
+        dropped_indexes = _dp_encode(sub_points, very_small)
         for j in range(len(dropped_indexes)):
             if (j == 0) or (j == (len(dropped_indexes) - 1)) or (dropped_indexes[j] is False):
                 points_to_be_encoded.append(sub_points[j])
+                kept_indexes.append(fixed_indexes[i] + j)
         encoded_fixed_indexes.append(len(points_to_be_encoded) - 1)
 
-    return (points_to_be_encoded, encoded_fixed_indexes)
+    return (points_to_be_encoded, encoded_fixed_indexes, kept_indexes)
 
 
-def _dp_encode(points, very_small=0.00002):
+def _dp_encode(points, very_small):
     """Determine points to be dropped using Douglas-Peucker algorithm. Based on Mark McClure's
     PolylineEncoder.js."""
     stack = []

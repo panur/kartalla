@@ -317,7 +317,7 @@ def _get_stop_distances(shape, direction_stops, stops):
 
 
 def _add_shape_to_route(route, direction, shape, stop_distances, stats):
-    encoded_shape = polyline.encode(shape, stop_distances)
+    encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     direction['stop_distances'] = encoded_shape['fixed_indexes']
     if encoded_shape['points'] in route['shapes']:
         logging.error('Duplicate shape encoding for route {}'.format(route['name']))
