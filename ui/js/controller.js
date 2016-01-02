@@ -396,7 +396,7 @@ function ControllerTrip(map) {
     function minutesToString(minutesAfterMidnight) {
         var date = new Date((minutesAfterMidnight * 60) * 1000);
         var timeString = date.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
-        return timeString.substr(11, 5); // HH:MM
+        return timeString.substr(11, 5); // HH:mm
     }
 
     function updateTripInfo(secondsFromStart, metersFromStart) {
