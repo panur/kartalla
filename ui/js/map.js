@@ -98,7 +98,7 @@ function Map() {
                 path: path,
                 visible: isVisible,
                 strokeColor: 'black',
-                strokeOpacity: 1.0,
+                strokeOpacity: 0.6,
                 strokeWeight: 1
             });
             state.polylineCache[pathId] = {polyline: newPolyline, count: 1};
@@ -116,9 +116,8 @@ function Map() {
 
     this.updateMarker = function (marker, distanceFromStart, opacity, title) {
         var distance = getPathPositionAndHeading(marker.gmPolyline.getPath(), distanceFromStart);
-        var paths = [google.maps.SymbolPath.FORWARD_CLOSED_ARROW, google.maps.SymbolPath.CIRCLE];
 
-        marker.gmSymbol.path = paths[~~(opacity < 1)];
+        marker.gmSymbol.path = getSymbolPath(distanceFromStart, opacity);
         marker.gmSymbol.strokeOpacity = opacity;
         marker.gmSymbol.rotation = distance.heading;
 
@@ -150,6 +149,18 @@ function Map() {
         var p1 = path.getAt(path.getLength() - 2);
         var p2 = path.getAt(path.getLength() - 1);
         return {position: p2, heading: google.maps.geometry.spherical.computeHeading(p1, p2)};
+    }
+
+    function getSymbolPath(distanceFromStart, opacity) {
+        if (distanceFromStart === 0) {
+            return 'M -1,-1 1,-1 1,1 -1,1 z'; // square
+        } else {
+            if (opacity < 1) {
+                return google.maps.SymbolPath.CIRCLE;
+            } else {
+                return google.maps.SymbolPath.FORWARD_CLOSED_ARROW;
+            }
+        }
     }
 
     this.removeMarker = function (marker) {
