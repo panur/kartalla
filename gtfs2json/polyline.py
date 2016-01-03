@@ -14,8 +14,12 @@ def encode(points, fixed_indexes=None, very_small=0.00001):
     encoded_polyline = {}
     if not fixed_indexes:
         fixed_indexes = [0, len(points) - 1]
-    (points_to_be_encoded, indexes, kept_indexes) = _get_points_to_be_encoded(points, fixed_indexes,
-                                                                              very_small)
+    if len(points) == len(fixed_indexes):
+        (points_to_be_encoded, indexes, kept_indexes) = (points, range(len(points)),
+                                                         range(len(points)))
+    else:
+        (points_to_be_encoded, indexes, kept_indexes) = _get_points_to_be_encoded(
+            points, fixed_indexes, very_small)
     encoded_polyline['num_dropped_points'] = len(points) - len(points_to_be_encoded)
     encoded_polyline['fixed_indexes'] = indexes
     encoded_polyline['kept_indexes'] = kept_indexes

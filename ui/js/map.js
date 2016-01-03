@@ -97,6 +97,7 @@ function Map() {
             var newPolyline = new google.maps.Polyline({
                 path: path,
                 visible: isVisible,
+                geodesic: true,
                 strokeColor: 'black',
                 strokeOpacity: 0.6,
                 strokeWeight: 1

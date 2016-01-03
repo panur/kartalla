@@ -163,7 +163,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
             return true;
         } else if (exceptionDates.removed.indexOf(dateString) !== -1) {
             return false;
-        } else if (getWeekDay() === getDateWeekDay(dateString)) {
+        } else if (isWeekDayInWeekDays(getDateWeekDay(dateString))) {
             var startDay = getStartDay();
             var endDay = getEndDay();
             return ((dateString >= startDay) && (dateString <= endDay));
@@ -176,6 +176,19 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         var date = new Date(dateString.substring(0, 4), dateString.substring(4, 6) - 1,
                             dateString.substring(6, 8));
         return (date.getDay() + 6) % 7; // 0=Monday
+    }
+
+    function isWeekDayInWeekDays(weekDay) {
+        var weekDays = getWeekDays();
+        if (weekDays === null) {
+            return false;
+        } else {
+            if (typeof weekDays === 'number') {
+                return weekDays === weekDay;
+            } else {
+                return weekDays.charAt(weekDay) === '1';
+            }
+        }
     }
 
     this.getActiveTrips = function (fromMinutesAfterMidnight, toMinutesAfterMidnight) {
@@ -213,8 +226,8 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
         return gtfsRoot.getDates()[rootService[getArrayKey('end_date_i')]];
     }
 
-    function getWeekDay() {
-        return rootService[getArrayKey('weekday')]; // 0=Monday
+    function getWeekDays() {
+        return rootService[getArrayKey('weekday')];  // tbd: rename to weekdays
     }
 
     function getExceptionDates() {

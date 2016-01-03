@@ -68,7 +68,9 @@ def _parse_stops(stops_txt):
 def _parse_routes(routes_txt):
     routes = {}  # by route_id
     # 109: https://github.com/HSLdevcom/kalkati2gtfs/commit/d4758fb74d7455ddbf4032175ef8ff51c587ec7f
-    route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '109': 'train'}
+    # let's pretend airplanes (1104) are metros for now
+    route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '109': 'train',
+                   '2': 'train', '704': 'bus', '1104': 'metro'}
 
     with open(routes_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
@@ -104,7 +106,7 @@ def _add_services_trips_to_routes(routes, trips_txt):
         for row in csv_reader:
             if row['route_id'] not in routes:
                 logging.error('No route information for route_id={}'.format(row['route_id']))
-            elif row['direction_id'] not in ['0', '1']:
+            elif ('direction_id' in row) and (row['direction_id'] not in ['0', '1']):
                 logging.error('For route_id={} invalid direction_id: {}'.format(
                     row['route_id'], row['direction_id']))
             else:
@@ -133,16 +135,17 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
             row['route_id'], row['service_id'], row['trip_id']))
     else:
         # create new trip
+        direction_id = row.get('direction_id', '0')
         service['trips'][row['trip_id']] = {
             'route_id': row['route_id'],
             'service_id': row['service_id'],
-            'direction_id': row['direction_id'],
+            'direction_id': direction_id,
             'start_time': 0,  # number of minutes after midnight
             'is_departure_times': False,
             'stop_times': [],  # arrival and departure times for each stop
             'stop_times_i': None
         }
-        _add_shape_id_to_direction(service['directions'][row['direction_id']], row)
+        _add_shape_id_to_direction(service['directions'][direction_id], row)
 
 
 def _create_direction():
@@ -174,7 +177,7 @@ def _add_calendar_to_services(routes, calendar_txt):
                     logging.error('duplicate service_id={} in calendar'.format(row['service_id']))
                 service['start_date'] = row['start_date']
                 service['end_date'] = row['end_date']
-                service['weekday'] = _get_service_weekday(row['service_id'], row)
+                service['weekday'] = _get_service_weekday(row)
 
 
 def _get_services(routes):
@@ -185,12 +188,14 @@ def _get_services(routes):
     return services
 
 
-def _get_service_weekday(service_id, row):  # row in calendar.txt
+def _get_service_weekday(row):  # row in calendar.txt
     days = [row['monday'], row['tuesday'], row['wednesday'], row['thursday'], row['friday'],
             row['saturday'], row['sunday']]
-    if ''.join(sorted(days)) != '0000001':
-        logging.error('For service_id={} invalid week days: {}'.format(service_id, days))
-    return days.index('1')
+    days_string = ''.join(sorted(days))
+    if days_string == '0000001':  # exactly one weekday (HSL)
+        return days.index('1')
+    else:
+        return days_string
 
 
 def _add_calendar_dates_to_services(routes, calendar_dates_txt):
@@ -217,15 +222,15 @@ def _add_calendar_dates_to_services(routes, calendar_dates_txt):
 def _add_stop_times_to_trips(routes, stop_times_txt):
     """Add stops to services and stop times (and start time) to trips."""
     trips = _get_trips(routes)
+    is_seconds_in_time = False
 
     with open(stop_times_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
+            if not is_seconds_in_time:
+                is_seconds_in_time = _is_seconds_in_time(row)
             if row['trip_id'] not in trips:
                 logging.error('No trip information for trip_id={}'.format(row['trip_id']))
-            elif not row['arrival_time'].endswith(':00'):
-                logging.error('In trip_id={} seconds in arrival_time: {}'.format(
-                    row['trip_id'], row['arrival_time']))
             else:
                 trip = trips[row['trip_id']]
                 if len(trip['stop_times']) == 0:
@@ -244,17 +249,25 @@ def _get_trips(routes):
     return trips
 
 
+def _is_seconds_in_time(row):  # row in stop_times.txt
+    for time_type in ['arrival_time', 'departure_time']:
+        if not row[time_type].endswith(':00'):
+            logging.info('Seconds in {}.'.format(time_type))
+            return True
+    return False
+
+
 def _get_minutes(time_string):
     """Get number of minutes after midnight from HH:MM:SS time string."""
-    (hours, minutes) = time_string.split(':')[0:2]
-    return (int(hours) * 60) + int(minutes)
+    (hours, minutes, seconds) = time_string.split(':')
+    return (int(hours) * 60) + int(minutes) + int(round(int(seconds) / 60.0))
 
 
 def _add_stop_times_to_trip(trip, row):  # row in stop_times.txt
     arrival_time = _get_minutes(row['arrival_time'])
     departure_time = _get_minutes(row['departure_time'])
     if departure_time < arrival_time:
-        logging.error('In service_id= {} departure_time < arrival_time: {} < {}'.format(
+        logging.error('In service_id={} departure_time < arrival_time: {} < {}'.format(
             trip['service_id'], row['departure_time'], row['arrival_time']))
     trip['is_departure_times'] = trip['is_departure_times'] or (arrival_time != departure_time)
     trip['stop_times'].append(arrival_time - trip['start_time'])
@@ -317,6 +330,10 @@ def _get_stop_distances(shape, direction_stops, stops):
 
 
 def _add_shape_to_route(route, direction, shape, stop_distances, stats):
+    if len(shape) < len(stop_distances):
+        logging.error('In route {} less points in shape than stops: {} < {}'.format(
+            route['name'], len(shape), len(stop_distances)))
+        return
     encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     direction['stop_distances'] = encoded_shape['fixed_indexes']
     if encoded_shape['points'] in route['shapes']:
