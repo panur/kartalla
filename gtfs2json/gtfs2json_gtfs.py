@@ -172,30 +172,32 @@ def _add_calendar_to_services(routes, calendar_txt):
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['service_id'] in services:
-                service = services[row['service_id']]
-                if service['start_date']:
-                    logging.error('duplicate service_id={} in calendar'.format(row['service_id']))
-                service['start_date'] = row['start_date']
-                service['end_date'] = row['end_date']
-                service['weekday'] = _get_service_weekday(row)
+                for service in services[row['service_id']]:
+                    if service['start_date']:
+                        logging.error('duplicate service_id={} in calendar'.format(
+                            row['service_id']))
+                    service['start_date'] = row['start_date']
+                    service['end_date'] = row['end_date']
+                    service['weekday'] = _get_service_weekday(row)
 
 
 def _get_services(routes):
     services = {}
     for route in routes.itervalues():
         for service_id, service in route['services'].iteritems():
-            services[service_id] = service
+            if service_id not in services:
+                services[service_id] = []
+            services[service_id].append(service)
     return services
 
 
 def _get_service_weekday(row):  # row in calendar.txt
     days = [row['monday'], row['tuesday'], row['wednesday'], row['thursday'], row['friday'],
             row['saturday'], row['sunday']]
-    days_string = ''.join(sorted(days))
-    if days_string == '0000001':  # exactly one weekday (HSL)
+    if ''.join(sorted(days)) == '0000001':  # exactly one weekday (HSL)
         return days.index('1')
     else:
-        return days_string
+        return ''.join(days)
 
 
 def _add_calendar_dates_to_services(routes, calendar_dates_txt):
@@ -205,18 +207,22 @@ def _add_calendar_dates_to_services(routes, calendar_dates_txt):
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['service_id'] in services:
-                service = services[row['service_id']]
-                exception_types = {'1': 'added', '2': 'removed'}
-                if row['exception_type'] in exception_types:
-                    if (row['date'] < service['start_date']) or (row['date'] > service['end_date']):
-                        logging.error('For service_id={} invalid exception date: {}'.format(
-                            row['service_id'], row['date']))
-                    else:
-                        exception_type = exception_types[row['exception_type']]
-                        service['exception_dates'][exception_type].append(row['date'])
-                else:
-                    logging.error('For service_id={} invalid exception_type: {}'.format(
-                        row['service_id'], row['exception_type']))
+                for service in services[row['service_id']]:
+                    _add_calendar_dates_to_service(service, row)
+
+
+def _add_calendar_dates_to_service(service, row):   # row in calendar_dates_txt
+    exception_types = {'1': 'added', '2': 'removed'}
+    if row['exception_type'] in exception_types:
+        if (row['date'] < service['start_date']) or (row['date'] > service['end_date']):
+            logging.error('For service_id={} invalid exception date: {}'.format(
+                row['service_id'], row['date']))
+        else:
+            exception_type = exception_types[row['exception_type']]
+            service['exception_dates'][exception_type].append(row['date'])
+    else:
+        logging.error('For service_id={} invalid exception_type: {}'.format(
+            row['service_id'], row['exception_type']))
 
 
 def _add_stop_times_to_trips(routes, stop_times_txt):

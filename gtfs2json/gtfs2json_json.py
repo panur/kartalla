@@ -67,7 +67,7 @@ def _get_output_dates(routes):
 
 def _get_output_routes(array_keys, output_dates, routes):
     output_routes = []
-    stats = {'route_ids': len(routes), 'service_ids': 0, 'trip_ids': 0, 'shapes': 0,
+    stats = {'route_ids': len(routes), 'services': 0, 'trip_ids': 0, 'shapes': 0,
              'directions': 0, 'stop_times': 0}
 
     for route_id in sorted(routes):
@@ -82,7 +82,7 @@ def _get_output_routes(array_keys, output_dates, routes):
         output_route[array_keys['route']['directions']] = output_directions['directions']
         output_route[array_keys['route']['services']] = output_services
         output_routes.append(output_route)
-        stats['service_ids'] += len(route['services'])
+        stats['services'] += len(route['services'])
         stats['trip_ids'] += output_directions['stats']['trip_ids']
         stats['stop_times'] += output_directions['stats']['stop_times']
         stats['shapes'] += len(route['shapes'])
