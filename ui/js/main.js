@@ -13,7 +13,7 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     tripTypeInfos.init(config.visibleTypes);
-    uiBar.init(config.lang, tripTypeInfos);
+    uiBar.init(config.lang, tripTypeInfos, getMapInfos());
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
@@ -60,6 +60,15 @@ function main() {
                 document.getElementById('ui_bar').clientHeight;
             map.resize(mapHeight);
         }
+    }
+
+    function getMapInfos() {
+        var maps = ['Leaflet', 'Google'];
+        var selectedMap = {true: 'Leaflet', false: 'Google'}[document.URL.indexOf('gmap') === -1];
+        return {maps: maps, selectedMap: selectedMap, changeType : function (newType) {
+            var filePrefix = {'Leaflet': 'index', 'Google': 'gmap'}[newType];
+            window.location = filePrefix + '.' + config.lang + '.html';
+        }};
     }
 }
 

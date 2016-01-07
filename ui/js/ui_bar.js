@@ -13,7 +13,7 @@ function UiBar() {
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos) {
+    this.init = function (lang, tripTypeInfos, mapInfos) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
 
@@ -30,6 +30,8 @@ function UiBar() {
         line2Element.appendChild(createLanguageElement());
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createJsonDataElement());
+        line2Element.appendChild(createTextElement(' | '));
+        line2Element.appendChild(createMapSelectionElement(mapInfos));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
         uiBarElement.appendChild(line2Element);
@@ -93,13 +95,13 @@ function UiBar() {
         if (state.lang === 'fi') {
             languageElement.appendChild(createTextElement('Kieli: suomi / '));
             var linkElement = createElement('a', undefined, 'English');
-            linkElement.href = 'index.en.html';
+            linkElement.href = document.URL.replace('.fi.', '.en.');
             linkElement.title = 'show English version of this page';
             languageElement.appendChild(linkElement);
         } else {
             languageElement.appendChild(createTextElement('Language: '));
             var linkElement = createElement('a', undefined, 'suomi');
-            linkElement.href = 'index.fi.html';
+            linkElement.href = document.URL.replace('.en.', '.fi.');
             linkElement.title = 'näytä sivun suomenkielinen versio';
             languageElement.appendChild(linkElement);
             languageElement.appendChild(createTextElement(' / English'));
@@ -112,6 +114,24 @@ function UiBar() {
         jsonDataElement.appendChild(createTextElement('Data: '));
         jsonDataElement.appendChild(createElement('span', 'dataStatus'));
         return jsonDataElement;
+    }
+
+    function createMapSelectionElement(mapInfos) {
+        var mapSelectionElement = createElement('span');
+        var titleName = {'en': 'Map', 'fi': 'Kartta'}[state.lang];
+        mapSelectionElement.appendChild(createTextElement(titleName + ': '));
+        var selectElement = createElement('select');
+        for (var i = 0; i < mapInfos.maps.length; i++) {
+            var optionElement = createElement('option');
+            optionElement.text = mapInfos.maps[i];
+            optionElement.selected = (mapInfos.maps[i] === mapInfos.selectedMap);
+            selectElement.add(optionElement);
+        }
+        selectElement.onchange = function (event) {
+            mapInfos.changeType(event.target.value);
+        };
+        mapSelectionElement.appendChild(selectElement);
+        return mapSelectionElement;
     }
 
     function createAboutLinkElement() {

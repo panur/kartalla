@@ -11,7 +11,7 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2016-01-02.</p>
+<p>Last updated 2016-01-07.</p>
 
 <h2 id="overview">Overview</h2>
 
@@ -109,12 +109,15 @@ in GTFS files and encoding the relevant parts in less verbose form. gtfs2json is
 
 <p>
 The browser based user interface downloads from a web server the JSON file created by gtfs2json. It
-then displays the locations of the public transport vehicles as icons on a map using
+then displays the locations of the public transport vehicles as icons on a map using either
+<a href="http://leafletjs.com/">Leaflet</a> library (using map data from
+<a href="http://www.mapbox.com">Mapbox</a> or
+<a href="http://www.openstreetmap.org/">OpenStreetMap</a>) or
 <a href="https://developers.google.com/maps/documentation/javascript/">Google Maps JavaScript
 API</a>. The JSON file is downloaded as a compressed file if the browser supports
 <a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>. In that case size of
 the downloaded file is about 0.5 megabytes. After the JSON file has been downloaded no more data is
-downloaded except maybe more map data from Google's servers. The user interface is implemented in
+downloaded except maybe more map data. The user interface is implemented in
 <a href="http://javascript.crockford.com/">JavaScript</a> programming language and it utilizes
 <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a> and
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a> technologies.
