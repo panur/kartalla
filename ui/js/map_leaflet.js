@@ -37,6 +37,11 @@ function Map() {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         });
+        var hsl = L.tileLayer('http://digitransit.fi/hsl-map/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: 'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
+                'Tiles &copy; <a href="http://digitransit.fi/">Digitransit</a>'
+        });
         state.gm = L.map('map_canvas', {
             center: [lat, lng],
             zoom: zoomLevel,
@@ -46,7 +51,8 @@ function Map() {
 
         var baseMaps = {
             'Mapbox': mapbox,
-            'OpenStreetMap': osm
+            'OpenStreetMap': osm,
+            'HSL': hsl
         };
 
         L.control.layers(baseMaps).addTo(state.gm);
