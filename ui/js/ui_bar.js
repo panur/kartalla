@@ -13,7 +13,7 @@ function UiBar() {
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos, mapInfos) {
+    this.init = function (lang, tripTypeInfos, dataSelection, mapSelection) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
 
@@ -29,25 +29,32 @@ function UiBar() {
         var line2Element = createElement('div');
         line2Element.appendChild(createLanguageElement());
         line2Element.appendChild(createTextElement(' | '));
-        line2Element.appendChild(createJsonDataElement());
+        line2Element.appendChild(createJsonDataElement(dataSelection));
         line2Element.appendChild(createTextElement(' | '));
-        line2Element.appendChild(createMapSelectionElement(mapInfos));
+        line2Element.appendChild(createMapSelectionElement(mapSelection));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
         uiBarElement.appendChild(line2Element);
     };
 
+    this.restart = function () {
+        var oldTripTypeElement = document.getElementById('tripType');
+        var newTripTypeElement = createTripTypeElement();
+        oldTripTypeElement.parentNode.replaceChild(newTripTypeElement, oldTripTypeElement);
+    }
+
     function createTripTypeElement() {
         var tripTypes = state.tripTypeInfos.getTypes();
         var tripTypeNames = state.tripTypeInfos.getNames();
-        var tripTypeElement = createElement('span');
+        var tripTypeElement = createElement('span', 'tripType');
 
         for (var i = 0; i < tripTypeNames.length; i++) {
             var tripTypeName = tripTypeNames[i];
             var statisticsTitle = getStatisticsTitle(tripTypeName);
-            var titleElement = createTextElement(statisticsTitle + ': ');
+            var titleElement = createTextElement(statisticsTitle);
             titleElement.style.color = tripTypes[tripTypeName].color;
             tripTypeElement.appendChild(titleElement);
+            tripTypeElement.appendChild(createTextElement(': '));
             var elementId = tripTypeName + 'Count';
             tripTypeElement.appendChild(createElement('span', elementId, '-'));
             tripTypeElement.appendChild(createTextElement(' '));
@@ -65,10 +72,12 @@ function UiBar() {
     function getStatisticsTitle(tripTypeName) {
         if (state.lang === 'fi') {
             return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
-                    'metro': 'metroja', 'ferry': 'lauttoja'}[tripTypeName];
+                    'metro': 'metroja', 'ferry': 'lauttoja',
+                    'airplane': 'lentokoneita'}[tripTypeName];
         } else {
             return {'bus': 'buses', 'train': 'trains', 'tram': 'trams',
-                    'metro': 'metros', 'ferry': 'ferries'}[tripTypeName];
+                    'metro': 'metros', 'ferry': 'ferries',
+                    'airplane': 'airplanes'}[tripTypeName];
         }
     }
 
@@ -109,29 +118,36 @@ function UiBar() {
         return languageElement;
     }
 
-    function createJsonDataElement() {
+    function createJsonDataElement(dataSelection) {
         var jsonDataElement = createElement('span');
-        jsonDataElement.appendChild(createTextElement('Data: '));
+        jsonDataElement.appendChild(createTextElement('Data '));
+        jsonDataElement.appendChild(createSelectionElement(dataSelection));
+        jsonDataElement.appendChild(createTextElement(': '));
         jsonDataElement.appendChild(createElement('span', 'dataStatus'));
         return jsonDataElement;
     }
 
-    function createMapSelectionElement(mapInfos) {
+    function createMapSelectionElement(mapSelection) {
         var mapSelectionElement = createElement('span');
         var titleName = {'en': 'Map', 'fi': 'Kartta'}[state.lang];
         mapSelectionElement.appendChild(createTextElement(titleName + ': '));
+        var selectElement = createSelectionElement(mapSelection);
+        mapSelectionElement.appendChild(selectElement);
+        return mapSelectionElement;
+    }
+
+    function createSelectionElement(selectionData) {
         var selectElement = createElement('select');
-        for (var i = 0; i < mapInfos.maps.length; i++) {
+        for (var i = 0; i < selectionData.values.length; i++) {
             var optionElement = createElement('option');
-            optionElement.text = mapInfos.maps[i];
-            optionElement.selected = (mapInfos.maps[i] === mapInfos.selectedMap);
+            optionElement.text = selectionData.values[i];
+            optionElement.selected = (selectionData.values[i] === selectionData.selectedValue);
             selectElement.add(optionElement);
         }
         selectElement.onchange = function (event) {
-            mapInfos.changeType(event.target.value);
+            selectionData.changeType(event.target.value);
         };
-        mapSelectionElement.appendChild(selectElement);
-        return mapSelectionElement;
+        return selectElement;
     }
 
     function createAboutLinkElement() {
@@ -244,8 +260,10 @@ function UiBar() {
     this.updateStatistics = function () {
         var tripTypes = state.tripTypeInfos.getTypes();
         for (var tripTypeName in tripTypes) {
-            var elementId = tripTypeName + 'Count';
-            setElementText(elementId, tripTypes[tripTypeName].count);
+            if (tripTypes[tripTypeName].isUsed) {
+                var elementId = tripTypeName + 'Count';
+                setElementText(elementId, tripTypes[tripTypeName].count);
+            }
         }
     };
 }

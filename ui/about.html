@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-    <title>Kartalla - Helsinki Region Public Transport</title>
+    <title>Kartalla - Public Transport in Finland</title>
     <link rel="stylesheet" type="text/css" href="css/about.css"/>
   </head>
 
@@ -11,26 +11,26 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2016-01-07.</p>
+<p>Last updated 2016-01-09.</p>
 
 <h2 id="overview">Overview</h2>
 
 <p>
 <a href="index.en.html">Kartalla</a> displays in real-time the location of public transport vehicles
-in Helsinki region based on the route and timetable information published by
-<a href="https://www.hsl.fi/en">HSL</a> as open data. The displayed location is not based on
-measured location (like for example
+in Finland based on the route and timetable information published by
+<a href="https://www.hsl.fi/en">HSL</a> and <a href="http://digitransit.fi/">Digitransit</a> as
+open data. The displayed location is not based on measured location (like for example
 <a href="https://en.wikipedia.org/wiki/Global_Positioning_System">GPS</a> position) and therefore it
 may and is even likely to differ from the actual location.
 </p>
 
 <p>
 The location is presented as an icon colored based on the type of the vehicle (bus, train, tram,
-metro or ferry). The visibility of the icons by type can be controlled by the buttons below the map.
-The form of the icon is a square for one minute before the departure time and a circle for one
-minute after the arrival time. In between the form of the icon is an array pointing into the
-direction the vehicle is moving to. Information like in the following example is shown when pointer
-is moved over an icon.
+metro, ferry or airplane). The visibility of the icons by type can be controlled by the buttons
+below the map. The form of the icon is a square for one minute before the departure time and a
+circle for one minute after the arrival time. In between the form of the icon is an array pointing
+into the direction the vehicle is moving to. Information like in the following example is shown when
+pointer is moved over an icon.
 </p>
 
 <ul>
@@ -87,7 +87,7 @@ Here are some maps displaying the location of public transport vehicles based on
 <p>
 <a href="index.en.html">Kartalla</a> consists of two parts: <a href="#gtfs2json">gtfs2json</a>
 and browser based graphical <a href="#ui">user interface</a>. The former formats the route and
-timetable data published by HSL in
+timetable data published in
 <a href="https://developers.google.com/transit/gtfs/reference">GTFS</a> format into compressed
 format more suitable for the latter to use. The source code of both parts is available at
 <a href="https://github.com/panur/kartalla">GitHub</a>.
@@ -98,7 +98,7 @@ format more suitable for the latter to use. The source code of both parts is ava
 <p>
 gtfs2json compresses GTFS files (calendar.txt, calendar_dates.txt, routes.txt, shapes.txt,
 stop_times.txt, stops.txt, trips.txt) into one <a href="http://www.json.org/">JSON</a> file.
-The size of GTFS files is about 600 megabytes (60 megabytes in
+The size of HSL GTFS files is about 400-600 megabytes (40-60 megabytes in
 <a href="https://en.wikipedia.org/wiki/Zip_%28file_format%29">ZIP</a> format) and the size of the
 JSON file is about 3 megabytes. The high compression ratio is achieved by skipping irrelevant parts
 in GTFS files and encoding the relevant parts in less verbose form. gtfs2json is implemented in
@@ -143,20 +143,25 @@ The user interface can be controlled with the following URL parameters.
 </p>
 
 <ul>
+    <li><var>data</var>
+        <ul>
+        <li>GTFS source data (hsl or suomi)</li>
+        <li>default value: hsl</li>
+        </ul></li>
     <li><var>lat</var>
         <ul>
         <li>latitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
-        <li>default value: 60.273969</li>
+        <li>default value: 60.273969 (hsl)</li>
         </ul></li>
     <li><var>lng</var>
         <ul>
         <li>longitude in <a href="https://en.wikipedia.org/wiki/World_Geodetic_System">WGS 84</a> coordinate system</li>
-        <li>default value: 24.791911</li>
+        <li>default value: 24.791911 (hsl)</li>
         </ul></li>
     <li><var>zoom</var>
         <ul>
-        <li>zoom level in range 8-16 (from far to near)</li>
-        <li>default value: 10</li>
+        <li>zoom level in range 5-16 (from far to near)</li>
+        <li>default value: 10 (hsl)</li>
         </ul></li>
     <li><var>date</var>
         <ul>
@@ -181,7 +186,7 @@ The user interface can be controlled with the following URL parameters.
     <li><var>types</var>
         <ul>
         <li>visible vehicle types (separated by underscore)</li>
-        <li>default value: train_ferry</li>
+        <li>default value: train_ferry (hsl)</li>
         </ul></li>
     <li><var>routes</var>
         <ul>
@@ -207,17 +212,13 @@ Following are examples of the usage of the parameters.
         <ul>
         <li>trams and metros today at 23:10:00</li>
         </ul></li>
-    <li><a href="index.en.html?date=20151224&amp;_file=gtfs_20151222">http://14142.net/kartalla/index.en.html?date=20151224&amp;_file=gtfs_20151222</a>
-        <ul>
-        <li>Christmas Eve at current time</li>
-        </ul></li>
-    <li><a href="index.en.html?date=20151224&amp;time=165030&amp;_file=gtfs_20151222">http://14142.net/kartalla/index.en.html?date=20151224&amp;time=165030&amp;_file=gtfs_20151222</a>
-        <ul>
-        <li>Christmas Eve at 16:50:30</li>
-        </ul></li>
     <li><a href="index.en.html?routes=I_P_615">http://14142.net/kartalla/index.en.html?routes=I_P_615</a>
         <ul>
         <li>airport trains and bus</li>
+        </ul></li>
+    <li><a href="gmap.en.html?data=suomi&amp;types=airplane">http://14142.net/kartalla/gmap.en.html?data=suomi&amp;types=airplane</a>
+        <ul>
+        <li>airplanes on Google maps</li>
         </ul></li>
 </ul>
 

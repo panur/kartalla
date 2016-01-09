@@ -88,6 +88,10 @@ function Map() {
         }
     }
 
+    this.restart = function (lat, lng, zoomLevel) {
+        state.gm.setView([lat, lng], zoomLevel);
+    }
+
     this.resize = function (newHeight) {
         state.gm.getContainer().style.height = newHeight + 'px';
         state.gm.invalidateSize();

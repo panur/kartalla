@@ -3,20 +3,32 @@
 'use strict';
 
 function Config() {
-    var supportedParams = ['lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval', 'types',
-        'routes', '_file', '_stop'];
+    var that = this;
+    var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
+        'types', 'routes', '_file', '_stop'];
     var urlParams = getUrlParams();
+    this.dataType = urlParams.data || 'hsl';
     this.stopAfter = urlParams._stop || null;
-    this.mapLat = urlParams.lat || 60.273969;
-    this.mapLng = urlParams.lng || 24.791911;
-    this.mapZoomLevel = Number(urlParams.zoom) || 10;
+    this.mapLat = urlParams.lat || getMapLat();
+    this.mapLng = urlParams.lng || getMapLng();
+    this.mapZoomLevel = Number(urlParams.zoom) || getMapZoomLevel();
     this.startDate = getStartDate();
     this.speed = urlParams.speed || 1;
     this.interval = urlParams.interval || 5;
     this.lang = getLang();
+    this.vehicleTypes = getVehicleTypes();
     this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
-    this.json_url = getJsonUrl();
+    this.jsonUrl = getJsonUrl(urlParams._file);
+
+    this.restart = function (newDataType) {
+        this.dataType = newDataType.toLowerCase();
+        this.mapLat = getMapLat();
+        this.mapLng = getMapLng();
+        this.mapZoomLevel = getMapZoomLevel();
+        this.vehicleTypes = getVehicleTypes();
+        this.jsonUrl = getJsonUrl(undefined);
+    }
 
     function getUrlParams() {
         var params = {};
@@ -63,7 +75,7 @@ function Config() {
             var re = /\d+\.\d+/;
             return re.test(parameterValue);
         } else if (parameterName === 'zoom') {
-            return checkValueInterval(parameterValue, 8, 16);
+            return checkValueInterval(parameterValue, 5, 16);
         } else if (parameterName === 'date') {
             var re = /\d{8}/; // YYYYMMDD
             return re.test(parameterValue);
@@ -75,7 +87,7 @@ function Config() {
         } else if (parameterName === 'interval') {
             return checkValueInterval(parameterValue, 1, 10);
         } else if ((parameterName === 'types') || (parameterName === 'routes') ||
-                   (parameterName === '_file')) {
+                   (parameterName === 'data') || (parameterName === '_file')) {
             var re = /\w+/;
             return re.test(parameterValue);
         } else if (parameterName === '_stop') {
@@ -87,6 +99,18 @@ function Config() {
     function checkValueInterval(paramValue, minValue, maxValue) {
         var re = /\d+/;
         return re.test(paramValue) && (paramValue >= minValue) && (paramValue <= maxValue);
+    }
+
+    function getMapLat() {
+        return {'hsl': 60.273969, 'suomi': 65.229573}[that.dataType];
+    }
+
+    function getMapLng() {
+        return {'hsl': 24.791911, 'suomi': 26.918078}[that.dataType];
+    }
+
+    function getMapZoomLevel() {
+        return {'hsl': 10, 'suomi': 5}[that.dataType];
     }
 
     function getStartDate() {
@@ -115,6 +139,14 @@ function Config() {
         }
     }
 
+    function getVehicleTypes() {
+        if (that.dataType === 'hsl') {
+            return ['bus', 'train', 'tram', 'metro', 'ferry'];
+        } else {
+            return ['bus', 'train', 'airplane'];
+        }
+    }
+
     function getVisibleTypes() {
         if (urlParams.types !== undefined) {
             return urlParams.types.split('_');
@@ -131,11 +163,11 @@ function Config() {
         }
     }
 
-    function getJsonUrl() {
-        if (urlParams._file !== undefined) {
-            return 'json/' + urlParams._file + '.json';
+    function getJsonUrl(urlParamsFile) {
+        if (urlParamsFile !== undefined) {
+            return 'json/' + urlParamsFile + '.json';
         } else {
-            return 'json/gtfs.json';
+            return 'json/' + that.dataType + '.json';
         }
     }
 }

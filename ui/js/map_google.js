@@ -74,6 +74,11 @@ function Map() {
         }
     }
 
+    this.restart = function (lat, lng, zoomLevel) {
+        state.gm.setCenter({lat: lat, lng: lng});
+        state.gm.setZoom(zoomLevel);
+    }
+
     this.resize = function (newHeight) {
         state.gm.getDiv().style.height = newHeight + 'px';
         google.maps.event.trigger(state.gm, 'resize');

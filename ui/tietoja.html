@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
-    <title>Kartalla - Helsingin seudun joukkoliikenne</title>
+    <title>Kartalla - Joukkoliikenne</title>
     <link rel="stylesheet" type="text/css" href="css/about.css"/>
   </head>
 
@@ -11,24 +11,25 @@
 
 <h1>Kartalla - Tietoja</h1>
 
-<p>Viimeksi päivitetty 2016-01-07.</p>
+<p>Viimeksi päivitetty 9.1.2016.</p>
 
 <h2 id="yleista">Yleistä</h2>
 
 <p>
-<a href="index.fi.html">Kartalla</a> näyttää tosiaikaisesti Helsingin seudun
-joukkoliikennevälineiden sijainnin <a href="https://www.hsl.fi/">HSL</a>:n avoimena datana
-julkaisemien aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis perustu mitattuun
-paikkatietoon (esimerkiksi <a href="https://fi.wikipedia.org/wiki/GPS">GPS</a>-sijaintiin) eli
-poikkeamat todelliseen sijaintiin ovat mahdollisia ja luultavia.
+<a href="index.fi.html">Kartalla</a> näyttää tosiaikaisesti joukkoliikennevälineiden sijainnin
+<a href="https://www.hsl.fi/">HSL</a>:n ja <a href="http://digitransit.fi/">Digitransit</a>in
+avoimena datana julkaisemien aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis
+perustu mitattuun paikkatietoon (esimerkiksi
+<a href="https://fi.wikipedia.org/wiki/GPS">GPS</a>-sijaintiin) eli poikkeamat todelliseen
+sijaintiin ovat mahdollisia ja luultavia.
 </p>
 
 <p>
 Sijainti esitetään kuvakkeena, jonka väri kertoo liikennevälineen tyypin (bussi, juna, raitiovaunu,
-metro tai lautta). Kuvakkeiden näkyvyyttä tyypeittäin voi säätää kartan alalaidan painikkeilla.
-Kuvakkeen muoto on neliö minuutin ennen lähtöaikaa ja ympyrä minuutin tuloajan jälkeen. Näiden
-välillä muotona on kulkuvälineen kulkusuunnan osoittava nuoli. Siirtämällä osoittimen kuvakkeen
-päälle tulee näkyviin seuraavan esimerkin mukaisia tietoja.
+metro, lautta tai lentokone). Kuvakkeiden näkyvyyttä tyypeittäin voi säätää kartan alalaidan
+painikkeilla. Kuvakkeen muoto on neliö minuutin ennen lähtöaikaa ja ympyrä minuutin tuloajan
+jälkeen. Näiden välillä muotona on kulkuvälineen kulkusuunnan osoittava nuoli. Siirtämällä
+osoittimen kuvakkeen päälle tulee näkyviin seuraavan esimerkin mukaisia tietoja.
 </p>
 
 <ul>
@@ -86,7 +87,7 @@ näyttäviä karttoja.
 <p>
 <a href="index.fi.html">Kartalla</a> muodostuu kahdesta osasta, jotka ovat
 <a href="#gtfs2json">gtfs2json</a> ja selaimessa toimiva graafinen
-<a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa HSL:n julkaiseman
+<a href="#kayttoliittyma">käyttöliittymä</a>. Edellinen muokkaa
 <a href="https://developers.google.com/transit/gtfs/reference">GTFS</a>-muotoisen datan
 jälkimmäiselle soveltuvaan muotoon. Molempien osien lähdekoodi on saatavilla
 <a href="https://github.com/panur/kartalla">GitHub</a>-palvelussa.
@@ -97,11 +98,11 @@ jälkimmäiselle soveltuvaan muotoon. Molempien osien lähdekoodi on saatavilla
 <p>
 gtfs2json tiivistää GTFS-tiedostot (calendar.txt, calendar_dates.txt, routes.txt, shapes.txt,
 stop_times.txt, stops.txt, trips.txt) yhdeksi <a href="http://www.json.org/">JSON</a>-tiedostoksi.
-GTFS-tiedostojen koko on noin 600 megatavua (<a href="https://fi.wikipedia.org/wiki/ZIP">ZIP</a>-
-pakattuna 60 megatavua) ja tuotetun JSON-tiedoston koko on noin 3 megatavua. Tiivistäminen tapahtuu
-karsimalla GTFS-tiedostoista tarpeettomia osia ja esittämällä tarpeelliset osat tiiviimmin.
-gtfs2json on toteutettu <a href="https://www.python.org/">Python</a>-ohjelmointikielellä (versio
-2.7).
+HSL:n GTFS-tiedostojen koko on noin 400-600 megatavua
+(<a href="https://fi.wikipedia.org/wiki/ZIP">ZIP</a>-pakattuna 40-60 megatavua) ja tuotetun
+JSON-tiedoston koko on noin 3 megatavua. Tiivistäminen tapahtuu karsimalla GTFS-tiedostoista
+tarpeettomia osia ja esittämällä tarpeelliset osat tiiviimmin. gtfs2json on toteutettu
+<a href="https://www.python.org/">Python</a>-ohjelmointikielellä (versio 2.7).
 </p>
 
 <h3 id="kayttoliittyma">Käyttöliittymä</h3>
@@ -142,20 +143,25 @@ Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
 </p>
 
 <ul>
+    <li><var>data</var>
+        <ul>
+        <li>GTFS-aineisto (hsl tai suomi)</li>
+        <li>oletusarvo: hsl</li>
+        </ul></li>
     <li><var>lat</var>
         <ul>
         <li>leveyspiiri <a href="https://fi.wikipedia.org/wiki/WGS84">WGS84</a>-järjestelmässä</li>
-        <li>oletusarvo: 60.273969</li>
+        <li>oletusarvo: 60.273969 (hsl)</li>
         </ul></li>
     <li><var>lng</var>
         <ul>
         <li>pituuspiiri <a href="https://fi.wikipedia.org/wiki/WGS84">WGS84</a>-järjestelmässä</li>
-        <li>oletusarvo: 24.791911</li>
+        <li>oletusarvo: 24.791911 (hsl)</li>
         </ul></li>
     <li><var>zoom</var>
         <ul>
-        <li>zoom-taso välillä 8-16 (kaukaa lähelle)</li>
-        <li>oletusarvo: 10</li>
+        <li>zoom-taso välillä 5-16 (kaukaa lähelle)</li>
+        <li>oletusarvo: 10 (hsl)</li>
         </ul></li>
     <li><var>date</var>
         <ul>
@@ -179,8 +185,8 @@ Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
         </ul></li>
     <li><var>types</var>
         <ul>
-        <li>näkyvät kulkuvälinetyypit (bus, train, tram, metro, ferry) alaviivalla eroteltuna</li>
-        <li>oletusarvo: train_ferry</li>
+        <li>näkyvät kulkuvälinetyypit (bus, train, tram, metro, ferry, airplane) alaviivalla eroteltuna</li>
+        <li>oletusarvo: train_ferry (hsl)</li>
         </ul></li>
     <li><var>routes</var>
         <ul>
@@ -206,17 +212,13 @@ Esimerkkejä parametrien käytöstä.
         <ul>
         <li>ratikat ja metrot tänään kello 23:10:00</li>
         </ul></li>
-    <li><a href="index.fi.html?date=20151224&amp;_file=gtfs_20151222">http://14142.net/kartalla/index.fi.html?date=20151224&amp;_file=gtfs_20151222</a>
-        <ul>
-        <li>jouluaatto nykyiseen kellonaikaan</li>
-        </ul></li>
-    <li><a href="index.fi.html?date=20151224&amp;time=165030&amp;_file=gtfs_20151222">http://14142.net/kartalla/index.fi.html?date=20151224&amp;time=165030&amp;_file=gtfs_20151222</a>
-        <ul>
-        <li>jouluaatto kello 16:50:30</li>
-        </ul></li>
     <li><a href="index.fi.html?routes=I_P_615">http://14142.net/kartalla/index.fi.html?routes=I_P_615</a>
         <ul>
         <li>lentokentän junat ja bussi</li>
+        </ul></li>
+    <li><a href="gmap.fi.html?data=suomi&amp;types=airplane">http://14142.net/kartalla/gmap.fi.html?data=suomi&amp;types=airplane</a>
+        <ul>
+        <li>lentokoneet Googlen kartalla</li>
         </ul></li>
 </ul>
 

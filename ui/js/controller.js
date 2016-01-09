@@ -26,6 +26,16 @@ function Controller(gtfs, map) {
         state.markerUpdateInterval = markerUpdateInterval;
     };
 
+    this.restart = function () {
+        for (var tripId in state.activeTrips) {
+            state.activeTrips[tripId].remove();
+        }
+        state.nextTripUpdate = 0;
+        state.activeServicesDateString = null;
+        state.activeServices = {};
+        state.activeTrips = {};
+    };
+
     this.update = function (mapDate) {
         var mapDateString = getDateString(mapDate);
 
@@ -286,6 +296,10 @@ function ControllerTrip(map) {
     this.getType = function () {
         return state.tripType;
     };
+
+    this.remove = function () {
+        map.removeMarker(state.marker);
+    }
 
     this.updateOnMap = function (mapDate, realTime) {
         var tripState = '';

@@ -3,6 +3,7 @@
 'use strict';
 
 function main() {
+    console.log('Heppa luppa!');
     var config = new Config();
     var utils = new Utils();
     var uiBar = new UiBar();
@@ -12,15 +13,15 @@ function main() {
     var timing = new Timing(controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
-    tripTypeInfos.init(config.visibleTypes);
-    uiBar.init(config.lang, tripTypeInfos, getMapInfos());
+    tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
+    uiBar.init(config.lang, tripTypeInfos, createDataSelection(), createMapSelection());
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
 
     initResizeHandler();
 
-    downloadGtfsJsonData(config.json_url);
+    downloadGtfsJsonData(config.jsonUrl);
 
     function downloadGtfsJsonData(filename) {
         var readyEvent = document.createEvent('Event');
@@ -62,10 +63,24 @@ function main() {
         }
     }
 
-    function getMapInfos() {
+    function createDataSelection() {
+        var dataTypes = ['HSL', 'Suomi'];
+        var selectedData = {'hsl': 'HSL', 'suomi': 'Suomi'}[config.dataType];
+        return {values: dataTypes, selectedValue: selectedData, changeType : function (newType) {
+            config.restart(newType);
+            tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
+            uiBar.restart();
+            controller.restart();
+            timing.restart();
+            map.restart(config.mapLat, config.mapLng, config.mapZoomLevel);
+            downloadGtfsJsonData(config.jsonUrl);
+        }};
+    }
+
+    function createMapSelection() {
         var maps = ['Leaflet', 'Google'];
         var selectedMap = {true: 'Leaflet', false: 'Google'}[document.URL.indexOf('gmap') === -1];
-        return {maps: maps, selectedMap: selectedMap, changeType : function (newType) {
+        return {values: maps, selectedValue: selectedMap, changeType : function (newType) {
             var filePrefix = {'Leaflet': 'index', 'Google': 'gmap'}[newType];
             window.location = filePrefix + '.' + config.lang + '.html';
         }};
@@ -95,6 +110,10 @@ function Timing(controller, uiBar) {
         state.stopAfter = config.stopAfter;
         state.intervalId = window.setInterval(function () {processTick();}, state.tickMs);
         uiBar.updateClock(getMapDate());
+    };
+
+    this.restart = function () {
+        state.downloadIsReady = false;
     };
 
     function processTick() {
@@ -135,23 +154,31 @@ function TripTypeInfos(controller, uiBar) {
     function getState() {
         var s = {};
         s.types = null;
+        s.names = null;
         return s;
     }
 
-    this.init = function (visibleTypes) {
+    this.init = function (vehicleTypes, visibleTypes) {
         state.types = createTypes();
         for (var typeName in state.types) {
+            state.types[typeName].isUsed = (vehicleTypes.indexOf(typeName) != -1);
             state.types[typeName].isVisible = (visibleTypes.indexOf(typeName) != -1);
         }
+        state.names = vehicleTypes;
+    }
+
+    this.restart = function (vehicleTypes, visibleTypes) {
+        that.init(vehicleTypes, visibleTypes);
     }
 
     function createTypes() {
         var types = {};
-        types.bus = {isVisible: false, color: 'blue', count: 0};
-        types.train = {isVisible: false, color: 'red', count: 0};
-        types.tram = {isVisible: false, color: 'green', count: 0};
-        types.metro = {isVisible: false, color: 'orange', count: 0};
-        types.ferry = {isVisible: false, color: 'purple', count: 0};
+        types.bus = {isUsed: false, isVisible: false, color: 'blue', count: 0};
+        types.train = {isUsed: false, isVisible: false, color: 'red', count: 0};
+        types.tram = {isUsed: false, isVisible: false, color: 'green', count: 0};
+        types.metro = {isUsed: false, isVisible: false, color: 'orange', count: 0};
+        types.ferry = {isUsed: false, isVisible: false, color: 'purple', count: 0};
+        types.airplane = {isUsed: false, isVisible: false, color: 'olive', count: 0};
         return types;
     }
 
@@ -164,7 +191,7 @@ function TripTypeInfos(controller, uiBar) {
     };
 
     this.getNames = function () {
-        return ['bus', 'train', 'tram', 'metro', 'ferry'];
+        return state.names;
     };
 
     this.resetStatistics = function () {
