@@ -22,6 +22,21 @@ function Map() {
     }
 
     this.init = function (lat, lng, zoomLevel) {
+        var baseMaps = getBaseMaps();
+
+        state.gm = L.map('map_canvas', {
+            center: [lat, lng],
+            zoom: zoomLevel,
+            layers: [baseMaps.Mapbox]
+        });
+        state.gm.on('zoomend', zoomChanged);
+
+        L.control.layers(baseMaps).addTo(state.gm);
+
+        state.previousSymbolScale = getSymbolScale();
+    };
+
+    function getBaseMaps() {
         var url = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}';
         var mapbox = L.tileLayer(url, {
             attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> ' +
@@ -39,26 +54,12 @@ function Map() {
         });
         var hsl = L.tileLayer('http://digitransit.fi/hsl-map/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: 'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
+            attribution: 'Map data &copy; ' +
+                '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
                 'Tiles &copy; <a href="http://digitransit.fi/">Digitransit</a>'
         });
-        state.gm = L.map('map_canvas', {
-            center: [lat, lng],
-            zoom: zoomLevel,
-            layers: [mapbox]
-        });
-        state.gm.on('zoomend', zoomChanged);
-
-        var baseMaps = {
-            'Mapbox': mapbox,
-            'OpenStreetMap': osm,
-            'HSL': hsl
-        };
-
-        L.control.layers(baseMaps).addTo(state.gm);
-
-        state.previousSymbolScale = getSymbolScale();
-    };
+        return {'Mapbox': mapbox, 'OpenStreetMap': osm, 'HSL': hsl};
+    }
 
     function getSymbolScale() {
         var zoom = state.gm.getZoom();
@@ -240,18 +241,24 @@ function Map() {
                          y: Math.round((elementRect.bottom + elementRect.top) / 2)};
             var mouseAngle = Math.round(getMouseAngle(origo.x, origo.y, mouseX, mouseY));
             var markerAngle = Math.round(marker.angle);
-            return (Math.abs(mouseAngle - markerAngle) < 30);
+            var minAngle = ((markerAngle + 180) - 30) % 360;
+            var maxAngle = ((markerAngle + 180) + 30) % 360;
+            if (minAngle < maxAngle) {
+                return (mouseAngle > minAngle) && (mouseAngle < maxAngle);
+            } else {
+                return (mouseAngle > minAngle) || (mouseAngle < maxAngle);
+            }
         } else {
             return true;
         }
     }
 
     function getMouseAngle(origoX, origoY, mouseX, mouseY) {
-        var angle = Math.atan2(origoY - mouseY, origoX - mouseX) + (Math.PI / 2);
+        var angle = Math.atan2(origoY - mouseY, origoX - mouseX) - (Math.PI / 2);
         if (angle < 0.0) {
             angle += Math.PI * 2.0;
         }
-        return angle * L.LatLng.RAD_TO_DEG; // 0-360, 0=south, 90=west, 180=north, 270=east,
+        return angle * L.LatLng.RAD_TO_DEG; // 0-360, 0=north, 90=east, 180=south, 270=west
     }
 
     function showSymbolTooltipElement(rect, title) {
