@@ -64,10 +64,11 @@ function main() {
     }
 
     function createDataSelection() {
-        var dataTypes = ['HSL', 'Suomi'];
-        var selectedData = {'hsl': 'HSL', 'suomi': 'Suomi'}[config.dataType];
-        return {values: dataTypes, selectedValue: selectedData, changeType : function (newType) {
-            config.restart(newType);
+        var names = ['HSL', 'Suomi', 'VR', 'Jyväskylä', 'Joensuu', 'Kuopio', 'Lappeenranta',
+            'Oulu', 'Porvoo', 'Seinäjoki', 'Turku', 'Vaasa'];
+        var selectedData = getDataTypeName(names, config.dataType);
+        return {values: names, selectedValue: selectedData, changeType : function (newType) {
+            config.restart(getDataType(newType));
             tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
             uiBar.restart();
             controller.restart();
@@ -75,6 +76,20 @@ function main() {
             map.restart(config.mapLat, config.mapLng, config.mapZoomLevel);
             downloadGtfsJsonData(config.jsonUrl);
         }};
+    }
+
+    function getDataTypeName(dataTypeNames, dataType) {
+        for (var i = 0; i < dataTypeNames.length; i++) {
+            if (getDataType(dataTypeNames[i]) == dataType) {
+                return dataTypeNames[i];
+            }
+        }
+        console.error('No %o in %o', dataType, dataTypeNames);
+        return null;
+    }
+
+    function getDataType(dataTypeName) {
+        return dataTypeName.toLowerCase().replace(/ä/g, 'a');
     }
 
     function createMapSelection() {

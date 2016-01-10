@@ -79,6 +79,7 @@ def _parse_routes(routes_txt):
                     row['route_id'], row['route_type'], route_types))
             # create new route
             routes[row['route_id']] = {
+                'agency_id': row.get('agency_id', 0),
                 'route_id': row['route_id'],
                 'name': _get_route_name(row),
                 'long_name': row['route_long_name'],

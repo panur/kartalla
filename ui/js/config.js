@@ -22,11 +22,12 @@ function Config() {
     this.jsonUrl = getJsonUrl(urlParams._file);
 
     this.restart = function (newDataType) {
-        this.dataType = newDataType.toLowerCase();
+        this.dataType = newDataType;
         this.mapLat = getMapLat();
         this.mapLng = getMapLng();
         this.mapZoomLevel = getMapZoomLevel();
         this.vehicleTypes = getVehicleTypes();
+        this.visibleTypes = getVisibleTypes();
         this.jsonUrl = getJsonUrl(undefined);
     }
 
@@ -102,15 +103,30 @@ function Config() {
     }
 
     function getMapLat() {
-        return {'hsl': 60.273969, 'suomi': 65.229573}[that.dataType];
+        return {
+            'hsl': 60.273969, 'suomi': 65.229573, 'vr': 65.229573,
+            'joensuu': 62.607072, 'jyvaskyla': 62.235599, 'kuopio': 62.900360,
+            'lappeenranta': 61.058213, 'oulu': 65.021237, 'porvoo': 60.392879,
+            'seinajoki': 62.786752, 'turku': 60.444043, 'vaasa': 63.097463
+        }[that.dataType];
     }
 
     function getMapLng() {
-        return {'hsl': 24.791911, 'suomi': 26.918078}[that.dataType];
+        return {
+            'hsl': 24.791911, 'suomi': 26.918078, 'vr': 26.918078,
+            'joensuu': 29.791886, 'jyvaskyla': 25.761523, 'kuopio': 27.662373,
+            'lappeenranta': 28.188472, 'oulu': 25.468197, 'porvoo': 25.664513,
+            'seinajoki': 22.845576, 'turku': 22.276154, 'vaasa': 21.621426
+        }[that.dataType];
     }
 
     function getMapZoomLevel() {
-        return {'hsl': 10, 'suomi': 5}[that.dataType];
+        return {
+            'hsl': 10, 'suomi': 5, 'vr': 5,
+            'joensuu': 12, 'jyvaskyla': 11, 'kuopio': 12,
+            'lappeenranta': 12, 'oulu': 11, 'porvoo': 13,
+            'seinajoki': 12, 'turku': 11, 'vaasa': 13
+        }[that.dataType];
     }
 
     function getStartDate() {
@@ -142,8 +158,12 @@ function Config() {
     function getVehicleTypes() {
         if (that.dataType === 'hsl') {
             return ['bus', 'train', 'tram', 'metro', 'ferry'];
-        } else {
+        } else if (that.dataType === 'suomi') {
             return ['bus', 'train', 'airplane'];
+        } else if (that.dataType === 'vr') {
+            return ['bus', 'train'];
+        } else {
+            return ['bus'];
         }
     }
 
@@ -151,7 +171,13 @@ function Config() {
         if (urlParams.types !== undefined) {
             return urlParams.types.split('_');
         } else {
-            return ['train', 'ferry'];
+            if (that.dataType === 'hsl') {
+                return ['train', 'ferry'];
+            } else if ((that.dataType === 'suomi') || (that.dataType === 'vr')) {
+                return ['train'];
+            } else {
+                return ['bus'];
+            }
         }
     }
 
@@ -167,7 +193,11 @@ function Config() {
         if (urlParamsFile !== undefined) {
             return 'json/' + urlParamsFile + '.json';
         } else {
-            return 'json/' + that.dataType + '.json';
+            if ((that.dataType === 'hsl') || (that.dataType === 'suomi')) {
+                return 'json/' + that.dataType + '.json';
+            } else {
+                return 'json/split/' + that.dataType + '.json';
+            }
         }
     }
 }

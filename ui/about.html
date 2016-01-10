@@ -12,7 +12,7 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2016-01-09.</p>
+<p>Last updated 2016-01-10.</p>
 
 <h2 id="overview">Overview</h2>
 
@@ -112,8 +112,8 @@ in GTFS files and encoding the relevant parts in less verbose form. gtfs2json is
 The browser based user interface downloads from a web server the JSON file created by gtfs2json. It
 then displays the locations of the public transport vehicles as icons on a map using either
 <a href="http://leafletjs.com/">Leaflet</a> library (using map data from
-<a href="http://www.mapbox.com">Mapbox</a> or
-<a href="http://www.openstreetmap.org/">OpenStreetMap</a>) or
+<a href="http://www.mapbox.com">Mapbox</a>,
+<a href="http://www.openstreetmap.org/">OpenStreetMap</a> or HSL) or
 <a href="https://developers.google.com/maps/documentation/javascript/">Google Maps JavaScript
 API</a>. The JSON file is downloaded as a compressed file if the browser supports
 <a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>. In that case size of
@@ -146,7 +146,7 @@ The user interface can be controlled with the following URL parameters.
 <ul>
     <li><var>data</var>
         <ul>
-        <li>GTFS source data (hsl or suomi)</li>
+        <li>GTFS source data (hsl, suomi, vr, joensuu, jyvaskyla, kuopio, lappeenranta, oulu, porvoo, seinajoki, turku or vaasa)</li>
         <li>default value: hsl</li>
         </ul></li>
     <li><var>lat</var>
@@ -220,6 +220,10 @@ Following are examples of the usage of the parameters.
     <li><a href="gmap.en.html?data=suomi&amp;types=airplane">http://14142.net/kartalla/gmap.en.html?data=suomi&amp;types=airplane</a>
         <ul>
         <li>airplanes on Google maps</li>
+        </ul></li>
+    <li><a href="index.en.html?data=turku">http://14142.net/kartalla/index.en.html?data=turku</a>
+        <ul>
+        <li>Turku</li>
         </ul></li>
 </ul>
 
