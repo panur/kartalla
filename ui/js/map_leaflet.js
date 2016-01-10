@@ -85,11 +85,11 @@ function Map() {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId];
             marker.gmSymbol.scale = newScale;
+            var icon = marker.gmMarker.options.icon;
+            setIconSize(icon.options, newScale);
+            marker.gmMarker.setIcon(icon);
             if (marker.gmSymbol.form !== '') {
                 updateSymbol(marker.gmSymbol);
-                var icon = marker.gmMarker.options.icon;
-                setIconSize(icon.options, newScale);
-                marker.gmMarker.setIcon(icon);
             }
         }
     }
@@ -146,17 +146,21 @@ function Map() {
 
     this.addMarker = function (path, pathId, isVisible, color) {
         var symbolScale = getSymbolScale();
-        var iconElement = createMarkerIconElement(isVisible, color);
-        var gmMarker = L.marker(path[0], {
-            icon: createMarkerIcon(iconElement, symbolScale)
+        var marker = createMarker(pathId);
+        var symbolElement = createMarkerSymbolElement(isVisible, color, marker);
+
+        marker.gmMarker = L.marker(path[0], {
+            clickable: false, // https://github.com/panur/kartalla/issues/8
+            icon: createMarkerIcon(symbolElement, symbolScale)
         });
-        var gmSymbol = {
-            element: iconElement,
+        marker.gmSymbol = {
+            element: symbolElement,
             form: '',
             scale: symbolScale
         };
         if (state.polylineCache[pathId] === undefined) {
             var newPolyline = L.polyline(path, {
+                clickable: false, // https://github.com/panur/kartalla/issues/8
                 color: 'black',
                 opacity: 0.6,
                 weight: 1
@@ -166,31 +170,117 @@ function Map() {
             state.polylineCache[pathId].count += 1;
         }
 
-        var gmPolyline = state.polylineCache[pathId].polyline;
-        var marker = {gmMarker: gmMarker, isMarkerOnMap: false, gmSymbol: gmSymbol,
-            gmPolyline: gmPolyline, isPolylineOnMap: false, pathId: pathId,
-            markerId: state.nextMarkerId};
-        state.markers[state.nextMarkerId] = marker;
-        state.nextMarkerId += 1;
+        marker.gmPolyline = state.polylineCache[pathId].polyline;
+
         return marker;
     };
 
-    function createMarkerIconElement(isVisible, color) {
-        var iconElement = document.createElement('div');
-        iconElement.style.visibility = getVisibilityString(isVisible);
-        iconElement.style.color = color;
-        return iconElement;
+    function createMarker(pathId) {
+        var marker = {
+            gmMarker: null, isMarkerOnMap: false, gmSymbol: null, gmPolyline: null,
+            isPolylineOnMap: false, pathId: pathId, markerId: state.nextMarkerId, title: '',
+            angle: 0  // 0-360, 0=north, 90=east, 180=south, 270=west
+        };
+        state.markers[state.nextMarkerId] = marker;
+        state.nextMarkerId += 1;
+        return marker;
+    }
+
+    function createMarkerSymbolElement(isVisible, color, marker) {
+        var symbolElement = document.createElement('div');
+        symbolElement.style.visibility = getVisibilityString(isVisible);
+        symbolElement.style.color = color;
+        symbolElement.addEventListener('mousemove', function (e) {
+            updateSymbolTooltipElement(symbolElement, marker, e.clientX, e.clientY);
+        });
+        symbolElement.addEventListener('mouseout', function () {
+            hideSymbolTooltipElement(symbolElement);
+
+        });
+        return symbolElement;
+    }
+
+    function getSymbolTooltipElement() {
+        var elementId = 'markerSymbolTooltip';
+        var symbolTooltipElement = document.getElementById(elementId);
+        if (symbolTooltipElement === null) {
+            symbolTooltipElement = createSymbolTooltipElement(elementId);
+            document.body.appendChild(symbolTooltipElement);
+        }
+        return symbolTooltipElement;
+    }
+
+    function createSymbolTooltipElement(elementId) {
+        var symbolTooltipElement = document.createElement('div');
+        symbolTooltipElement.id = elementId;
+        symbolTooltipElement.style.position = 'absolute';
+        symbolTooltipElement.style.padding = '5px';
+        symbolTooltipElement.style.whiteSpace = 'pre';
+        symbolTooltipElement.style.background = 'linear-gradient(to bottom, khaki, white)';
+        return symbolTooltipElement;
+    }
+
+    function updateSymbolTooltipElement(symbolElement, marker, mouseX, mouseY) {
+        var rect = symbolElement.getBoundingClientRect();
+        if (isMouseOverSymbol(marker, rect, mouseX, mouseY)) {
+            if (symbolElement.style.cursor !== 'help') {
+                symbolElement.style.cursor = 'help';
+                showSymbolTooltipElement(rect, marker.title);
+            }
+        } else {
+            if (symbolElement.style.cursor !== '') {
+                hideSymbolTooltipElement(symbolElement);
+            }
+        }
+    }
+
+    function isMouseOverSymbol(marker, elementRect, mouseX, mouseY) {
+        if (marker.gmSymbol.form === 'arrow') {
+            var origo = {x: Math.round((elementRect.right + elementRect.left) / 2),
+                         y: Math.round((elementRect.bottom + elementRect.top) / 2)};
+            var mouseAngle = Math.round(getMouseAngle(origo.x, origo.y, mouseX, mouseY));
+            var markerAngle = Math.round(marker.angle);
+            return (Math.abs(mouseAngle - markerAngle) < 30);
+        } else {
+            return true;
+        }
+    }
+
+    function getMouseAngle(origoX, origoY, mouseX, mouseY) {
+        var angle = Math.atan2(origoY - mouseY, origoX - mouseX) + (Math.PI / 2);
+        if (angle < 0.0) {
+            angle += Math.PI * 2.0;
+        }
+        return angle * L.LatLng.RAD_TO_DEG; // 0-360, 0=south, 90=west, 180=north, 270=east,
+    }
+
+    function showSymbolTooltipElement(rect, title) {
+        var symbolTooltipElement = getSymbolTooltipElement();
+        symbolTooltipElement.textContent = title;
+        symbolTooltipElement.style.visibility = 'visible';
+
+        var leftOffset = {true: 0,
+            false: symbolTooltipElement.offsetWidth}[rect.left < (window.innerWidth / 2)];
+        symbolTooltipElement.style.left = (rect.left - leftOffset) + 'px';
+        var topOffset = {true: -rect.height,
+            false: symbolTooltipElement.offsetHeight}[rect.top < (window.innerHeight / 2)];
+        symbolTooltipElement.style.top = (rect.top - topOffset) + 'px';
+    }
+
+    function hideSymbolTooltipElement(symbolElement) {
+        var symbolTooltipElement = getSymbolTooltipElement();
+        symbolTooltipElement.style.visibility = 'hidden';
+        symbolElement.style.cursor = '';
     }
 
     function getVisibilityString(isVisible) {
         return {true: 'visible', false: 'hidden'}[isVisible];
     }
 
-    function createMarkerIcon(iconElement, symbolScale) {
+    function createMarkerIcon(symbolElement, symbolScale) {
         var wrapperElement = document.createElement('div');
-        wrapperElement.style.cursor = 'grab';
-        wrapperElement.appendChild(iconElement);
-        var iconOptions = {domElement: wrapperElement, className: '', clickable: false};
+        wrapperElement.appendChild(symbolElement);
+        var iconOptions = {domElement: wrapperElement, className: ''};
         setIconSize(iconOptions, symbolScale);
         return new DomIcon(iconOptions);
     }
@@ -223,7 +313,9 @@ function Map() {
         }
         marker.gmSymbol.element.style.opacity = opacity;
         marker.gmSymbol.element.style.transform = 'rotate(' + (distance.heading - 90) + 'deg)';
-        marker.gmSymbol.element.title = title;
+
+        marker.title = title;
+        marker.angle = distance.heading;
 
         marker.gmMarker.setLatLng(distance.position);
         marker.gmMarker.update();
@@ -290,7 +382,7 @@ function Map() {
         var y = Math.sin(lon1 - lon2) * Math.cos(lat2);
         var x = (Math.cos(lat1) * Math.sin(lat2)) -
             (Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
-        var angle = - Math.atan2(y ,x);
+        var angle = - Math.atan2(y, x);
 
         if (angle < 0.0) {
             angle += Math.PI * 2.0;

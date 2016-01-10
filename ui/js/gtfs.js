@@ -267,7 +267,7 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     };
 
     this.getDirection = function () {
-        return ['->', '<-'][directionId];
+        return ['\u2190', '\u2192'][directionId]; // 2190=<-, 2192=->
     };
 
     this.getType = function () {

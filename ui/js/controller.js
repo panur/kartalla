@@ -76,9 +76,6 @@ function Controller(gtfs, map) {
         for (var i = 0; i < tripsToBeDeleted.length; i++) {
             delete state.activeTrips[tripsToBeDeleted[i]];
         }
-        if (tripsToBeDeleted.length > 0) {
-            console.log('deleted %d trips', tripsToBeDeleted.length);
-        }
         state.tripTypeInfos.refreshStatistics();
     }
 
@@ -154,7 +151,7 @@ function Controller(gtfs, map) {
                 }
             }
         }
-        console.log('found %d new active trips for %o', numNewTrips, mapDate.toLocaleString());
+        console.log('found %d new active trips for %s', numNewTrips, mapDate.toLocaleString());
     }
 }
 
