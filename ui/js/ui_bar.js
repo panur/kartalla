@@ -27,7 +27,7 @@ function UiBar() {
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div');
-        line2Element.appendChild(createLanguageElement());
+        line2Element.appendChild(createLanguageElement(mapSelection.selectedValue));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createJsonDataElement(dataSelection));
         line2Element.appendChild(createTextElement(' | '));
@@ -99,23 +99,28 @@ function UiBar() {
         visibilityElement.textContent = '(' + visibilityElement.title.charAt(0) + ')';
     }
 
-    function createLanguageElement() {
+    function createLanguageElement(selectedMap) {
         var languageElement = createElement('span');
         if (state.lang === 'fi') {
             languageElement.appendChild(createTextElement('Kieli: suomi / '));
             var linkElement = createElement('a', undefined, 'English');
-            linkElement.href = document.URL.replace('.fi.', '.en.');
+            linkElement.href = getUrl(selectedMap, 'en');
             linkElement.title = 'show English version of this page';
             languageElement.appendChild(linkElement);
         } else {
             languageElement.appendChild(createTextElement('Language: '));
             var linkElement = createElement('a', undefined, 'suomi');
-            linkElement.href = document.URL.replace('.en.', '.fi.');
+            linkElement.href = getUrl(selectedMap, 'fi');
             linkElement.title = 'näytä sivun suomenkielinen versio';
             languageElement.appendChild(linkElement);
             languageElement.appendChild(createTextElement(' / English'));
         }
         return languageElement;
+    }
+
+    function getUrl(selectedMap, lang) {
+        var prefix = {'Leaflet': 'index', 'Google': 'gmap'}[selectedMap];
+        return prefix + '.' + lang + '.html';
     }
 
     function createJsonDataElement(dataSelection) {
