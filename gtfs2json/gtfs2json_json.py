@@ -13,11 +13,6 @@ import logging
 import time
 
 
-class GtfsError(Exception):
-    """Invalid GTFS data."""
-    pass
-
-
 def create(routes, output_filename, gtfs_modification_time):
     """Create JSON file from parsed GTFS routes."""
     array_keys = _get_array_keys()
@@ -101,12 +96,8 @@ def _get_output_directions(array_keys, services):
         output_directions = [None, None]
         for direction_id, direction in sorted(service['directions'].iteritems()):
             if direction['shape_id']:  # some services operate only in one direction
-                try:
-                    output_direction = _get_output_direction(array_keys, service, direction_id,
-                                                             direction, output['stats'])
-                except GtfsError as err:
-                    logging.error(err)
-                    output_direction = []
+                output_direction = _get_output_direction(array_keys, service, direction_id,
+                                                         direction, output['stats'])
             else:
                 output_direction = []
             output_directions[int(direction_id)] = output_direction
@@ -180,10 +171,7 @@ def _get_service_stop_times(service, direction_id, is_departure_times):
     for _, trip in sorted(service['trips'].iteritems()):
         if trip['direction_id'] == direction_id:
             trip_stop_times = _get_trip_stop_times(trip['stop_times'], is_departure_times)
-            try:
-                delta_stop_times = _integer_list_to_string(_get_delta_list(trip_stop_times))
-            except ValueError:
-                raise GtfsError('Invalid stop times in {}'.format(trip))
+            delta_stop_times = _integer_list_to_string(_get_delta_list(trip_stop_times))
             try:
                 trip['stop_times_i'] = service_stop_times.index(delta_stop_times)
             except ValueError:
@@ -205,7 +193,7 @@ def _get_delta_list(integer_list):
     if (len(integer_list) > 0) and (integer_list[0] != 0):
         raise SystemExit('integer_list[0] = {} != 0'.format(integer_list[0]))
     if integer_list != sorted(integer_list):
-        raise ValueError('integer_list not sorted: {}'.format(integer_list))
+        raise SystemExit('integer_list not sorted: {}'.format(integer_list))
     return [(integer_list[i] - integer_list[i - 1]) for i in range(1, len(integer_list))]
 
 

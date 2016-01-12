@@ -245,6 +245,8 @@ def _add_stop_times_to_trips(routes, stop_times_txt):
                 service = routes[trip['route_id']]['services'][trip['service_id']]
                 _add_stop_to_stops(service['directions'][trip['direction_id']]['stops'], row)
 
+    _delete_invalid_trips(routes, trips)
+
 
 def _get_trips(routes):
     trips = {}
@@ -272,9 +274,6 @@ def _get_minutes(time_string):
 def _add_stop_times_to_trip(trip, row):  # row in stop_times.txt
     arrival_time = _get_minutes(row['arrival_time'])
     departure_time = _get_minutes(row['departure_time'])
-    if departure_time < arrival_time:
-        logging.error('In service_id={} departure_time < arrival_time: {} < {}'.format(
-            trip['service_id'], row['departure_time'], row['arrival_time']))
     trip['is_departure_times'] = trip['is_departure_times'] or (arrival_time != departure_time)
     trip['stop_times'].append(arrival_time - trip['start_time'])
     trip['stop_times'].append(departure_time - trip['start_time'])
@@ -289,6 +288,29 @@ def _add_stop_to_stops(stops, row):  # row in stop_times.txt
             logging.error('In trip_id={} two stops for stop_sequence={}: {} {} '.format(
                 row['trip_id'], stop_sequence, row['stop_id'],
                 stops[stop_sequence]))
+
+
+def _delete_invalid_trips(routes, trips):
+    for trip_id in trips:
+        trip = trips[trip_id]
+        if _is_trip_invalid(trip_id, trip):
+            route = routes[trip['route_id']]
+            service = route['services'][trip['service_id']]
+            del service['trips'][trip_id]
+            logging.info('Deleted trip_id={} as invalid.'.format(trip_id))
+            if len(service['trips']) == 0:
+                del route['services'][trip['service_id']]
+                logging.info('Deleted service_id={}/route_id={} with no trips'.format(
+                    trip['service_id'], trip['route_id']))
+
+
+def _is_trip_invalid(trip_id, trip):
+    if trip['stop_times'] != sorted(trip['stop_times']):
+        logging.error('In trip_id={}/service_id={}/route_id={} invalid stop_times: {}'.format(
+            trip_id, trip['service_id'], trip['route_id'], trip['stop_times']))
+        return True
+    else:
+        return False
 
 
 def _add_shapes_to_routes(routes, shapes, stops):
