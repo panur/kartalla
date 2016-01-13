@@ -305,12 +305,24 @@ def _delete_invalid_trips(routes, trips):
 
 
 def _is_trip_invalid(trip_id, trip):
+    msg_format = 'In trip_id={}/service_id={}/route_id={} invalid stop_times ({}): {}'
     if trip['stop_times'] != sorted(trip['stop_times']):
-        logging.error('In trip_id={}/service_id={}/route_id={} invalid stop_times: {}'.format(
-            trip_id, trip['service_id'], trip['route_id'], trip['stop_times']))
+        logging.error(msg_format.format(
+            trip_id, trip['service_id'], trip['route_id'], 'order', trip['stop_times']))
+        return True
+    elif _get_max_stop_time_gap(trip['stop_times']) > (8 * 60):  # 8 hours
+        logging.error(msg_format.format(
+            trip_id, trip['service_id'], trip['route_id'], 'gap', trip['stop_times']))
         return True
     else:
         return False
+
+
+def _get_max_stop_time_gap(stop_times):
+    max_gap = 0
+    for i in range(1, len(stop_times)):
+        max_gap = max(max_gap, stop_times[i] - stop_times[i - 1])
+    return max_gap
 
 
 def _add_shapes_to_routes(routes, shapes, stops):
