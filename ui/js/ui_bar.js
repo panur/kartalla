@@ -2,7 +2,7 @@
 
 'use strict';
 
-function UiBar() {
+function UiBar(utils) {
     var that = this;
     var state = getState();
 
@@ -13,7 +13,7 @@ function UiBar() {
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos, dataSelection, mapSelection) {
+    this.init = function (lang, tripTypeInfos, dataSelection, mapSelection, getUrlParams) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
 
@@ -32,6 +32,8 @@ function UiBar() {
         line2Element.appendChild(createJsonDataElement(dataSelection));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createMapSelectionElement(mapSelection));
+        line2Element.appendChild(createTextElement(' | '));
+        line2Element.appendChild(createShareElement(getUrlParams, mapSelection.selectedValue));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createAboutLinkElement());
         uiBarElement.appendChild(line2Element);
@@ -84,7 +86,7 @@ function UiBar() {
     function createTripTypeVisibilityElement(tripTypeName, tripType) {
         var visibilityElement = createElement('span');
         updateTripTypeVisibilityElement(visibilityElement, tripType.isVisible);
-        visibilityElement.className = 'visibilityButton';
+        visibilityElement.className = 'button';
         visibilityElement.addEventListener('click', function () {
             state.tripTypeInfos.toggleVisibility(tripTypeName);
             updateTripTypeVisibilityElement(visibilityElement, tripType.isVisible);
@@ -119,8 +121,11 @@ function UiBar() {
     }
 
     function getUrl(selectedMap, lang) {
+        var baseUrl = document.URL.split('/');
+        baseUrl.pop();
+        baseUrl = baseUrl.join('/');
         var prefix = {'Leaflet': 'index', 'Google': 'gmap'}[selectedMap];
-        return prefix + '.' + lang + '.html';
+        return baseUrl + '/' + prefix + '.' + lang + '.html';
     }
 
     function createJsonDataElement(dataSelection) {
@@ -153,6 +158,83 @@ function UiBar() {
             selectionData.changeType(event.target.value);
         };
         return selectElement;
+    }
+
+    function createShareElement(getUrlParams, selectedMap) {
+        var buttonName = {'en': 'share', 'fi': 'jaa'}[state.lang];
+        var shareElement = createTextElement('(' + buttonName + ')');
+        shareElement.className = 'button';
+        shareElement.title =
+            {'en': 'create link to this page', 'fi': 'tee linkki tähän näkymään'}[state.lang];
+        shareElement.addEventListener('click', function () {
+            var elementId = 'editShareLink';
+            if (document.getElementById(elementId) === null) {
+                createEditShareLinkElement(getUrlParams(), elementId, selectedMap);
+            }
+        });
+        return shareElement;
+    }
+
+    function createEditShareLinkElement(urlParams, elementId, selectedMap) {
+        var editShareLinkElement = createElement('div', elementId);
+        editShareLinkElement.className = 'editShareLink';
+        editShareLinkElement.appendChild(createCloseButtonElement());
+        var linkElement = createElement('a');
+        var itemElementIdPrefix = 'editShareLinkCheckBox';
+        var tableElement =
+            createShareLinkTableElement(urlParams, linkElement, itemElementIdPrefix, selectedMap);
+        editShareLinkElement.appendChild(tableElement);
+        editShareLinkElement.appendChild(linkElement);
+        document.body.appendChild(editShareLinkElement);
+        updateShareLinkUrl(linkElement, urlParams, itemElementIdPrefix, selectedMap);
+        centerElement(editShareLinkElement);
+    }
+
+    function createCloseButtonElement() {
+        var closeElement = createTextElement('(X)');
+        closeElement.className = 'closeButton button';
+        closeElement.title = {'en': 'close', 'fi': 'sulje'}[state.lang];
+        closeElement.addEventListener('click', function () {
+            document.body.removeChild(closeElement.parentNode);
+        });
+        return closeElement;
+    }
+
+    function createShareLinkTableElement(urlParams, linkElement, itemElementIdPrefix, selectedMap) {
+        var tableElement = createElement('table');
+        for (var i = 0; i < urlParams.length; i++) {
+            var row = tableElement.insertRow(-1);
+            var checkBoxElement =
+                createElement('input', itemElementIdPrefix + urlParams[i]['name']);
+            checkBoxElement.type = 'checkbox';
+            checkBoxElement.checked = urlParams[i]['on'];
+            checkBoxElement.addEventListener('click', function () {
+                updateShareLinkUrl(linkElement, urlParams, itemElementIdPrefix, selectedMap);
+            });
+            row.appendChild(checkBoxElement);
+            row.appendChild(createElement('td', undefined, urlParams[i]['name']));
+            row.appendChild(createElement('td', undefined, urlParams[i]['value']));
+        }
+        return tableElement;
+    }
+
+    function updateShareLinkUrl(linkElement, urlParams, itemElementIdPrefix, selectedMap) {
+        var pairs = [];
+        for (var i = 0; i < urlParams.length; i++) {
+            var elementId = itemElementIdPrefix + urlParams[i]['name'];
+            var checkBoxElement = document.getElementById(elementId);
+            if (checkBoxElement.checked) {
+                pairs.push(urlParams[i]['name'] + '=' + urlParams[i]['value']);
+            }
+        }
+        var fullUrl = getUrl(selectedMap, state.lang) + '?' + pairs.join('&');
+        linkElement.href = fullUrl;
+        linkElement.textContent = fullUrl;
+    }
+
+    function centerElement(elem) {
+        elem.style.top = ((document.body.clientHeight - elem.clientHeight) / 2) + 'px';
+        elem.style.left = ((document.body.clientWidth - elem.clientWidth) / 2) + 'px';
     }
 
     function createAboutLinkElement() {
@@ -202,23 +284,7 @@ function UiBar() {
     };
 
     function epochToString(epoch, isTimeIncluded) {
-        return dateToString(new Date(epoch * 1000), isTimeIncluded);
-    }
-
-    function dateToString(d, isTimeIncluded) {
-        function pad(number) {
-            if (number < 10) {
-                return '0' + number;
-            } else {
-                return number;
-            }
-        }
-        var dateString = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-        if (isTimeIncluded) {
-            dateString +=
-                ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-        }
-        return dateString;
+        return utils.dateToString(new Date(epoch * 1000), isTimeIncluded);
     }
 
     function getDataInfoTitle(dataInfo) {
@@ -259,7 +325,7 @@ function UiBar() {
     }
 
     this.updateClock = function (date) {
-        setElementText('clock', dateToString(date, true));
+        setElementText('clock', utils.dateToString(date, true));
     };
 
     this.updateStatistics = function () {

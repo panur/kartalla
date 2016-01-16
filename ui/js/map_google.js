@@ -204,4 +204,9 @@ function Map() {
 
         return distances;
     };
+
+    this.getParams = function () {
+        var center = state.gm.getCenter();
+        return {'lat': center.lat(), 'lng': center.lng(), 'zoom': state.gm.getZoom()};
+    };
 }

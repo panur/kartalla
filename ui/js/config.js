@@ -2,7 +2,7 @@
 
 'use strict';
 
-function Config() {
+function Config(utils) {
     var that = this;
     var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
         'types', 'routes', '_file', '_stop'];
@@ -22,13 +22,57 @@ function Config() {
     this.jsonUrl = getJsonUrl(urlParams._file);
 
     this.restart = function (newDataType) {
-        this.dataType = newDataType;
-        this.mapLat = getMapLat();
-        this.mapLng = getMapLng();
-        this.mapZoomLevel = getMapZoomLevel();
-        this.vehicleTypes = getVehicleTypes();
-        this.visibleTypes = getVisibleTypes();
-        this.jsonUrl = getJsonUrl(undefined);
+        that.dataType = newDataType;
+        that.mapLat = getMapLat();
+        that.mapLng = getMapLng();
+        that.mapZoomLevel = getMapZoomLevel();
+        that.vehicleTypes = getVehicleTypes();
+        that.visibleTypes = getVisibleTypes();
+        that.jsonUrl = getJsonUrl(undefined);
+    };
+
+    this.getShareLinkParamsList = function (mapParams, date, tripTypes) {
+        var paramsList = [];
+        paramsList.push({'name': 'data', 'on': true, 'value': that.dataType});
+        paramsList.push({'name': 'lat', 'on': true, 'value': formatLatLng(mapParams['lat'])});
+        paramsList.push({'name': 'lng', 'on': true, 'value': formatLatLng(mapParams['lng'])});
+        paramsList.push({'name': 'zoom', 'on': true, 'value': mapParams['zoom']});
+        paramsList.push({'name': 'date', 'on': false, 'value': getShareLinkDate(date)});
+        paramsList.push({'name': 'time', 'on': false, 'value': getShareLinkTime(date)});
+        paramsList.push({'name': 'speed', 'on': false, 'value': that.speed});
+        paramsList.push({'name': 'interval', 'on': false, 'value': that.interval});
+        if (that.vehicleTypes.length > 1) {
+            var types = getShareLinkTypes(tripTypes);
+            if (types !== '') {
+                paramsList.push({'name': 'types', 'on': true, 'value': types});
+            }
+        }
+        if (urlParams.routes !== undefined) {
+            paramsList.push({'name': 'routes', 'on': true, 'value': urlParams.routes});
+        }
+        return paramsList;
+    };
+
+    function formatLatLng(latOrLng) {
+        return latOrLng.toString().substr(0, 9);
+    }
+
+    function getShareLinkDate(date) {
+        return utils.dateToString(date).replace(/-/g, '');
+    }
+
+    function getShareLinkTime(date) {
+        return utils.dateToString(date, true).split(' ')[1].replace(/:/g, '');
+    }
+
+    function getShareLinkTypes(tripTypes) {
+        var types = [];
+        for (var tripTypeName in tripTypes) {
+            if (tripTypes[tripTypeName].isVisible) {
+                types.push(tripTypeName);
+            }
+        }
+        return types.join('_');
     }
 
     function getUrlParams() {

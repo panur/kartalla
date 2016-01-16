@@ -4,13 +4,30 @@ html, body {
     overflow: hidden;
 }
 
-span.visibilityButton {
+span.button {
     cursor: pointer;
+}
+
+span.closeButton {
+    position: absolute;
+    top: 1px;
+    right: 1px;
 }
 
 span.dataInfo {
     cursor: help;
     color: teal;
+}
+
+div.editShareLink {
+    padding: 5px;
+    color: #000000;
+    background-color: #FFFFFF;
+    opacity: 0.9;
+    position: absolute;
+    overflow: auto;
+    max-width: 75%;
+    max-height: 50%;
 }
 
 a:link {

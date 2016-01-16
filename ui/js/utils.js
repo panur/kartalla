@@ -27,4 +27,20 @@ function Utils() {
         }
         request.send();
     };
+
+    this.dateToString = function (d, isTimeIncluded) {
+        function pad(number) {
+            if (number < 10) {
+                return '0' + number;
+            } else {
+                return number;
+            }
+        }
+        var dateString = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        if (isTimeIncluded) {
+            dateString +=
+                ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+        }
+        return dateString;
+    };
 }

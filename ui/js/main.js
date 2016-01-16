@@ -4,9 +4,9 @@
 
 function main() {
     console.log('Heppa luppa!');
-    var config = new Config();
     var utils = new Utils();
-    var uiBar = new UiBar();
+    var config = new Config(utils);
+    var uiBar = new UiBar(utils);
     var map = new Map();
     var gtfs = new Gtfs();
     var controller = new Controller(gtfs, map);
@@ -14,7 +14,8 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
-    uiBar.init(config.lang, tripTypeInfos, createDataSelection(), createMapSelection());
+    uiBar.init(config.lang, tripTypeInfos, createDataSelection(), createMapSelection(),
+               getUrlParams);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
@@ -100,6 +101,11 @@ function main() {
             window.location = filePrefix + '.' + config.lang + '.html';
         }};
     }
+
+    function getUrlParams() {
+        var tripTypes = tripTypeInfos.getTypes();
+        return config.getShareLinkParamsList(map.getParams(), timing.getMapDate(), tripTypes);
+    }
 }
 
 function Timing(controller, uiBar) {
@@ -124,7 +130,7 @@ function Timing(controller, uiBar) {
         state.speedMultiplier = config.speed;
         state.stopAfter = config.stopAfter;
         state.intervalId = window.setInterval(function () {processTick();}, state.tickMs);
-        uiBar.updateClock(getMapDate());
+        uiBar.updateClock(that.getMapDate());
     };
 
     this.restart = function () {
@@ -132,7 +138,7 @@ function Timing(controller, uiBar) {
     };
 
     function processTick() {
-        var mapDate = getMapDate();
+        var mapDate = that.getMapDate();
 
         uiBar.updateClock(mapDate);
 
@@ -146,7 +152,7 @@ function Timing(controller, uiBar) {
         }
     }
 
-    function getMapDate() {
+    this.getMapDate = function () {
         var realMsFromStart = (new Date()).getTime() - state.startRealDate.getTime();
         var mapMsFromStart = realMsFromStart * state.speedMultiplier;
         return new Date(state.startMapDate.getTime() + mapMsFromStart);
