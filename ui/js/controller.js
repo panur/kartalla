@@ -256,7 +256,7 @@ function ControllerTrip(map) {
             var arrivalTime = times[i * 2];
             var departureTime = times[(i * 2) + 1];
             var distance = distances[i];
-            if (arrivalTime === times[0]) {
+            if ((arrivalTime === times[0]) || (arrivalTime === times[1])) {
                 if (i !== 0) {
                     distance = undefined; // skip if same as 1st but not 1st
                 }
@@ -348,7 +348,7 @@ function ControllerTrip(map) {
     function getDistanceFromStart(secondsFromStart, timesAndDistances) {
         var distance = 0;
 
-        if (secondsFromStart <= 0) {
+        if (secondsFromStart <= (timesAndDistances[0].departure * 60)) {
             distance = timesAndDistances[0].distance;
         } else if (secondsFromStart >= state.lastArrivalSeconds) {
             distance = timesAndDistances[timesAndDistances.length - 1].distance;
