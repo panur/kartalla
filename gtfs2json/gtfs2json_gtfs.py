@@ -305,17 +305,24 @@ def _delete_invalid_trips(routes, trips):
 
 
 def _is_trip_invalid(trip_id, trip):
-    msg_format = 'In trip_id={}/service_id={}/route_id={} invalid stop_times ({}): {}'
-    if trip['stop_times'] != sorted(trip['stop_times']):
-        logging.error(msg_format.format(
-            trip_id, trip['service_id'], trip['route_id'], 'order', trip['stop_times']))
-        return True
+    if len(trip['stop_times']) < 4:
+        reason = 'short'
+        is_invalid = True
+    elif trip['stop_times'] != sorted(trip['stop_times']):
+        reason = 'order'
+        is_invalid = True
     elif _get_max_stop_time_gap(trip['stop_times']) > (8 * 60):  # 8 hours
-        logging.error(msg_format.format(
-            trip_id, trip['service_id'], trip['route_id'], 'gap', trip['stop_times']))
-        return True
+        reason = 'gap'
+        is_invalid = True
     else:
-        return False
+        is_invalid = False
+
+    if is_invalid:
+        msg_format = 'In trip_id={}/service_id={}/route_id={} invalid stop_times ({}): {}'
+        logging.error(msg_format.format(
+            trip_id, trip['service_id'], trip['route_id'], reason, trip['stop_times']))
+
+    return is_invalid
 
 
 def _get_max_stop_time_gap(stop_times):
