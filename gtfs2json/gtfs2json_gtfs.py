@@ -43,9 +43,11 @@ def _parse_shapes(shapes_txt):
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['shape_id'] not in shapes:
-                shapes[row['shape_id']] = []
+                shapes[row['shape_id']] = {'is_invalid': False, 'points': []}
             point = (float(row['shape_pt_lat']), float(row['shape_pt_lon']))
-            shapes[row['shape_id']].append(point)
+            shapes[row['shape_id']]['points'].append(point)
+            if point == (58.432233, 20.142573):
+                shapes[row['shape_id']]['is_invalid'] = True
 
     logging.debug('parsed {} shapes'.format(len(shapes)))
 
@@ -111,8 +113,6 @@ def _add_services_trips_to_routes(routes, trips_txt):
                     row['route_id'], row['direction_id']))
             else:
                 _add_services_trips_to_route(routes[row['route_id']], row)
-
-    return routes
 
 
 def _add_services_trips_to_route(route, row):  # row in trips.txt
@@ -297,10 +297,11 @@ def _delete_invalid_trips(routes, trips):
             route = routes[trip['route_id']]
             service = route['services'][trip['service_id']]
             del service['trips'][trip_id]
-            logging.info('Deleted trip_id={} as invalid.'.format(trip_id))
+            logging.info('Deleted trip_id={} in route={} as invalid.'.format(
+                trip_id, route['long_name']))
             if len(service['trips']) == 0:
                 del route['services'][trip['service_id']]
-                logging.info('Deleted service_id={}/route_id={} with no trips'.format(
+                logging.info('Deleted service_id={}/route_id={} with no trips.'.format(
                     trip['service_id'], trip['route_id']))
 
 
@@ -336,27 +337,40 @@ def _add_shapes_to_routes(routes, shapes, stops):
     stats = {'shapes': 0, 'points': 0, 'dropped_points': 0, 'bytes': 0}
 
     for route in routes.itervalues():
-        direction_cache = {}
-        for service in route['services'].itervalues():
-            for direction in service['directions'].itervalues():
+        cache = {}
+        for service_id in route['services']:
+            for direction in route['services'][service_id]['directions'].itervalues():
                 if direction['shape_id']:  # some services operate only in one direction
-                    cache_key = tuple(sorted(direction['stops'].items()))
-                    if cache_key in direction_cache:
-                        direction['stop_distances'] = direction_cache[cache_key]['stop_distances']
-                        direction['shape_i'] = direction_cache[cache_key]['shape_i']
-                    else:
-                        if direction['shape_id'] in shapes:
-                            shape = shapes[direction['shape_id']]
+                    if _is_shape_ok(route, service_id, direction, shapes):
+                        cache_key = tuple(sorted(direction['stops'].items()))
+                        if cache_key in cache:
+                            direction['stop_distances'] = cache[cache_key]['stop_distances']
+                            direction['shape_i'] = cache[cache_key]['shape_i']
+                        else:
+                            shape = shapes[direction['shape_id']]['points']
                             stop_distances = _get_stop_distances(shape, direction['stops'], stops)
                             _add_shape_to_route(route, direction, shape, stop_distances, stats)
-                            direction_cache[cache_key] = {
+                            cache[cache_key] = {
                                 'shape_i': direction['shape_i'],
                                 'stop_distances': direction['stop_distances']}
-                        else:
-                            logging.error('No shape information for shape_id={}'.format(
-                                direction['shape_id']))
 
     logging.debug('shape encoding stats: {}'.format(stats))
+    _delete_invalid_services(routes)
+
+
+def _is_shape_ok(route, service_id, direction, shapes):
+    if direction['shape_id'] not in shapes:
+        logging.error('No shape information for shape_id={} in route={}.'.format(
+            direction['shape_id'], route['long_name']))
+        direction['shape_id'] = None
+        return False
+    elif shapes[direction['shape_id']]['is_invalid']:
+        logging.error('Invalid shape_id={} for service_id={} in route={}.'.format(
+            direction['shape_id'], service_id, route['long_name']))
+        direction['shape_id'] = None
+        return False
+    else:
+        return True
 
 
 def _get_stop_distances(shape, direction_stops, stops):
@@ -378,13 +392,13 @@ def _get_stop_distances(shape, direction_stops, stops):
 
 def _add_shape_to_route(route, direction, shape, stop_distances, stats):
     if len(shape) < len(stop_distances):
-        logging.error('In route {} less points in shape than stops: {} < {}'.format(
-            route['name'], len(shape), len(stop_distances)))
+        logging.error('In route={} less points in shape than stops: {} < {}'.format(
+            route['long_name'], len(shape), len(stop_distances)))
         return
     encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     direction['stop_distances'] = encoded_shape['fixed_indexes']
     if encoded_shape['points'] in route['shapes']:
-        logging.error('Duplicate shape encoding for route {}'.format(route['name']))
+        logging.error('Duplicate shape encoding for route={}'.format(route['long_name']))
     else:
         route['shapes'].append(encoded_shape['points'])
         direction['shape_i'] = len(route['shapes']) - 1
@@ -392,6 +406,25 @@ def _add_shape_to_route(route, direction, shape, stop_distances, stats):
         stats['points'] += len(shape)
         stats['dropped_points'] += encoded_shape['num_dropped_points']
         stats['bytes'] += len(encoded_shape['points'])
+
+
+def _delete_invalid_services(routes):
+    trips = _get_trips(routes)
+    for trip_id in trips:
+        trip = trips[trip_id]
+        if ((trip['route_id'] in routes) and
+                (trip['service_id'] in routes[trip['route_id']]['services'])):
+            route = routes[trip['route_id']]
+            service = route['services'][trip['service_id']]
+            directions = service['directions']
+            if (directions['0']['shape_id'] == None) and (directions['1']['shape_id'] == None):
+                del route['services'][trip['service_id']]
+                logging.error('Deleted service_id={} in route={} with no directions.'.format(
+                    trip['service_id'], route['long_name']))
+            if len(route['services']) == 0:
+                del routes[trip['route_id']]
+                logging.info('Deleted route_id={} ({}) with no services.'.format(
+                    trip['route_id'], route['long_name']))
 
 
 def get_modification_time(input_dir):
