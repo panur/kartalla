@@ -73,9 +73,9 @@ function UiBar(utils) {
 
     function getStatisticsTitle(tripTypeName) {
         if (state.lang === 'fi') {
-            return {'bus': 'busseja', 'train': 'junia', 'tram': 'ratikoita',
-                    'metro': 'metroja', 'ferry': 'lauttoja',
-                    'airplane': 'lentokoneita'}[tripTypeName];
+            return {'bus': 'bussit', 'train': 'junat', 'tram': 'ratikat',
+                    'metro': 'metrot', 'ferry': 'lautat',
+                    'airplane': 'lentävät'}[tripTypeName];
         } else {
             return {'bus': 'buses', 'train': 'trains', 'tram': 'trams',
                     'metro': 'metros', 'ferry': 'ferries',

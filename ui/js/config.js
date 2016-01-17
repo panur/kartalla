@@ -150,8 +150,8 @@ function Config(utils) {
         return {
             'hsl': 60.273969, 'suomi': 65.229573, 'vr': 65.229573,
             'joensuu': 62.607072, 'jyvaskyla': 62.235599, 'kuopio': 62.900360,
-            'lappeenranta': 61.058213, 'oulu': 65.021237, 'porvoo': 60.392879,
-            'seinajoki': 62.786752, 'turku': 60.444043, 'vaasa': 63.097463
+            'lappeenranta': 61.058213, 'oulu': 65.021237, 'seinajoki': 62.786752,
+            'tampere': 61.475903, 'turku': 60.444043, 'vaasa': 63.097463
         }[that.dataType];
     }
 
@@ -159,8 +159,8 @@ function Config(utils) {
         return {
             'hsl': 24.791911, 'suomi': 26.918078, 'vr': 26.918078,
             'joensuu': 29.791886, 'jyvaskyla': 25.761523, 'kuopio': 27.662373,
-            'lappeenranta': 28.188472, 'oulu': 25.468197, 'porvoo': 25.664513,
-            'seinajoki': 22.845576, 'turku': 22.276154, 'vaasa': 21.621426
+            'lappeenranta': 28.188472, 'oulu': 25.468197, 'seinajoki': 22.845576,
+            'tampere': 23.774071, 'turku': 22.276154, 'vaasa': 21.621426
         }[that.dataType];
     }
 
@@ -168,8 +168,8 @@ function Config(utils) {
         return {
             'hsl': 10, 'suomi': 5, 'vr': 5,
             'joensuu': 12, 'jyvaskyla': 11, 'kuopio': 12,
-            'lappeenranta': 12, 'oulu': 11, 'porvoo': 13,
-            'seinajoki': 12, 'turku': 11, 'vaasa': 13
+            'lappeenranta': 12, 'oulu': 11, 'seinajoki': 12,
+            'tampere': 11, 'turku': 11, 'vaasa': 13
         }[that.dataType];
     }
 
@@ -203,7 +203,7 @@ function Config(utils) {
         if (that.dataType === 'hsl') {
             return ['bus', 'train', 'tram', 'metro', 'ferry'];
         } else if (that.dataType === 'suomi') {
-            return ['bus', 'train', 'airplane'];
+            return ['bus', 'train', 'tram', 'metro', 'ferry', 'airplane'];
         } else if (that.dataType === 'vr') {
             return ['bus', 'train'];
         } else {
