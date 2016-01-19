@@ -15,7 +15,7 @@ function Map() {
         s.gm = null;
         s.polylineCache = {};
         s.markers = {};
-        s.symbolBaseSize = 10;
+        s.symbolBaseSize = 15;
         s.nextMarkerId = 0;
         s.previousSymbolScale = null;
         return s;
@@ -85,13 +85,9 @@ function Map() {
     function updateSymbolScales(newScale) {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId];
-            marker.gmSymbol.scale = newScale;
             var icon = marker.gmMarker.options.icon;
             setIconSize(icon.options, newScale);
             marker.gmMarker.setIcon(icon);
-            if (marker.gmSymbol.form !== '') {
-                updateSymbol(marker.gmSymbol);
-            }
         }
     }
 
@@ -156,8 +152,7 @@ function Map() {
         });
         marker.gmSymbol = {
             element: symbolElement,
-            form: '',
-            scale: symbolScale
+            form: ''
         };
         if (state.polylineCache[pathId] === undefined) {
             var newPolyline = L.polyline(path, {
@@ -188,11 +183,11 @@ function Map() {
     }
 
     function createMarkerSymbolElement(isVisible, color, marker) {
-        var symbolElement = document.createElement('div');
+        var symbolElement = createSvgElement('g');
         symbolElement.style.visibility = getVisibilityString(isVisible);
-        symbolElement.style.color = color;
-        symbolElement.addEventListener('mousemove', function (e) {
-            updateSymbolTooltipElement(symbolElement, marker, e.clientX, e.clientY);
+        symbolElement.style.fill = color;
+        symbolElement.addEventListener('mouseover', function () {
+            updateSymbolTooltipElement(symbolElement, marker);
         });
         symbolElement.addEventListener('mouseout', function () {
             hideSymbolTooltipElement(symbolElement);
@@ -221,44 +216,10 @@ function Map() {
         return symbolTooltipElement;
     }
 
-    function updateSymbolTooltipElement(symbolElement, marker, mouseX, mouseY) {
+    function updateSymbolTooltipElement(symbolElement, marker) {
         var rect = symbolElement.getBoundingClientRect();
-        if (isMouseOverSymbol(marker, rect, mouseX, mouseY)) {
-            if (symbolElement.style.cursor !== 'help') {
-                symbolElement.style.cursor = 'help';
-                showSymbolTooltipElement(rect, marker.title);
-            }
-        } else {
-            if (symbolElement.style.cursor !== '') {
-                hideSymbolTooltipElement(symbolElement);
-            }
-        }
-    }
-
-    function isMouseOverSymbol(marker, elementRect, mouseX, mouseY) {
-        if (marker.gmSymbol.form === 'arrow') {
-            var origo = {x: Math.round((elementRect.right + elementRect.left) / 2),
-                         y: Math.round((elementRect.bottom + elementRect.top) / 2)};
-            var mouseAngle = Math.round(getMouseAngle(origo.x, origo.y, mouseX, mouseY));
-            var markerAngle = Math.round(marker.angle);
-            var minAngle = ((markerAngle + 180) - 30) % 360;
-            var maxAngle = ((markerAngle + 180) + 30) % 360;
-            if (minAngle < maxAngle) {
-                return (mouseAngle > minAngle) && (mouseAngle < maxAngle);
-            } else {
-                return (mouseAngle > minAngle) || (mouseAngle < maxAngle);
-            }
-        } else {
-            return true;
-        }
-    }
-
-    function getMouseAngle(origoX, origoY, mouseX, mouseY) {
-        var angle = Math.atan2(origoY - mouseY, origoX - mouseX) - (Math.PI / 2);
-        if (angle < 0.0) {
-            angle += Math.PI * 2.0;
-        }
-        return angle * L.LatLng.RAD_TO_DEG; // 0-360, 0=north, 90=east, 180=south, 270=west
+        symbolElement.style.cursor = 'help';
+        showSymbolTooltipElement(rect, marker.title);
     }
 
     function showSymbolTooltipElement(rect, title) {
@@ -284,18 +245,24 @@ function Map() {
         return {true: 'visible', false: 'hidden'}[isVisible];
     }
 
-    function createMarkerIcon(symbolElement, symbolScale) {
+    function createMarkerIcon(svgSymbolElement, symbolScale) {
         var wrapperElement = document.createElement('div');
-        wrapperElement.appendChild(symbolElement);
+        var svgRootElement = createSvgElement('svg');
+        svgRootElement.setAttribute('viewBox', '0 0 10 10');
+        svgRootElement.appendChild(svgSymbolElement);
+        wrapperElement.appendChild(svgRootElement);
         var iconOptions = {domElement: wrapperElement, className: ''};
         setIconSize(iconOptions, symbolScale);
         return new DomIcon(iconOptions);
     }
 
+    function createSvgElement(elementType) {
+        return document.createElementNS('http://www.w3.org/2000/svg', elementType);
+    }
+
     function setIconSize(iconOptions, symbolScale) {
         var size = symbolScale * state.symbolBaseSize;
-        iconOptions.iconSize = new L.Point(size * 2, size);
-        iconOptions.iconAnchor = new L.Point(size, size / 2);
+        iconOptions.iconSize = new L.Point(size, size);
     }
 
     var DomIcon = L.DivIcon.extend({
@@ -319,7 +286,8 @@ function Map() {
             updateSymbol(marker.gmSymbol);
         }
         marker.gmSymbol.element.style.opacity = opacity;
-        marker.gmSymbol.element.style.transform = 'rotate(' + (distance.heading - 90) + 'deg)';
+        marker.gmSymbol.element.setAttribute('transform',
+                                             'rotate(' + (distance.heading - 90) + ', 5, 5)');
 
         marker.title = title;
         marker.angle = distance.heading;
@@ -411,34 +379,26 @@ function Map() {
     }
 
     function updateSymbol(gmSymbol) {
-        var elementStyle = gmSymbol.element.style;
-        var size = state.symbolBaseSize * gmSymbol.scale;
-        var half_size = size / 2;
-
         if (gmSymbol.form === 'square') {
-            elementStyle.width = size + 'px';
-            elementStyle.height = size+ 'px';
-            elementStyle.left = half_size + 'px';
-            elementStyle.position = 'absolute';
-            elementStyle.backgroundColor = elementStyle.color;
+            var svgElement = createSvgElement('rect');
+            svgElement.setAttribute('x', '2');
+            svgElement.setAttribute('y', '2');
+            svgElement.setAttribute('width', '6');
+            svgElement.setAttribute('height', '6');
         } else if (gmSymbol.form === 'circle') {
-            elementStyle.width = size + 'px';
-            elementStyle.height = size + 'px';
-            elementStyle.left = half_size + 'px';
-            elementStyle.position = 'absolute';
-            elementStyle.backgroundColor = elementStyle.color;
-            elementStyle.border = '';
-            elementStyle.borderRadius = '50%';
+            var svgElement = createSvgElement('circle');
+            svgElement.setAttribute('cx', '5');
+            svgElement.setAttribute('cy', '5');
+            svgElement.setAttribute('r', '3');
         } else { // arrow ->
-            elementStyle.width = '';
-            elementStyle.height = '';
-            elementStyle.left = '';
-            elementStyle.position = '';
-            elementStyle.backgroundColor = '';
-            elementStyle.borderTop = half_size + 'px solid transparent';
-            elementStyle.borderBottom = half_size + 'px solid transparent';
-            elementStyle.borderLeft = size + 'px solid ' + elementStyle.color;
+            var svgElement = createSvgElement('path');
+            svgElement.setAttribute('d', 'M 2,2 8,5 2,8 4,5 z');
         }
+
+        if (gmSymbol.element.firstChild !== null) {
+            gmSymbol.element.removeChild(gmSymbol.element.firstChild);
+        }
+        gmSymbol.element.appendChild(svgElement);
     }
 
     this.removeMarker = function (marker) {
