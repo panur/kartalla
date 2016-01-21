@@ -85,9 +85,7 @@ function Map() {
     function updateSymbolScales(newScale) {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId];
-            var icon = marker.gmMarker.options.icon;
-            setIconSize(icon.options, newScale);
-            marker.gmMarker.setIcon(icon);
+            marker.gmMarker.resize(newScale * state.symbolBaseSize);
         }
     }
 
@@ -142,18 +140,9 @@ function Map() {
     }
 
     this.addMarker = function (path, pathId, isVisible, color) {
-        var symbolScale = getSymbolScale();
         var marker = createMarker(pathId);
         var symbolElement = createMarkerSymbolElement(isVisible, color, marker);
 
-        marker.gmMarker = L.marker(path[0], {
-            clickable: false, // https://github.com/panur/kartalla/issues/8
-            icon: createMarkerIcon(symbolElement, symbolScale)
-        });
-        marker.gmSymbol = {
-            element: symbolElement,
-            form: ''
-        };
         if (state.polylineCache[pathId] === undefined) {
             var newPolyline = L.polyline(path, {
                 clickable: false, // https://github.com/panur/kartalla/issues/8
@@ -168,13 +157,22 @@ function Map() {
 
         marker.gmPolyline = state.polylineCache[pathId].polyline;
 
+        marker.gmMarker = new SymbolMarker(state.gm, marker.gmPolyline);
+        marker.gmMarker.init(createSymbolRootElement(symbolElement), isVisible,
+                             getSymbolScale() * state.symbolBaseSize);
+
+        marker.gmSymbol = {
+            element: symbolElement,
+            form: ''
+        };
+
         return marker;
     };
 
     function createMarker(pathId) {
         var marker = {
-            gmMarker: null, isMarkerOnMap: false, gmSymbol: null, gmPolyline: null,
-            isPolylineOnMap: false, pathId: pathId, markerId: state.nextMarkerId, title: '',
+            gmMarker: null, gmSymbol: null, gmPolyline: null, pathId: pathId,
+            markerId: state.nextMarkerId, title: '',
             angle: 0  // 0-360, 0=north, 90=east, 180=south, 270=west
         };
         state.markers[state.nextMarkerId] = marker;
@@ -245,37 +243,18 @@ function Map() {
         return {true: 'visible', false: 'hidden'}[isVisible];
     }
 
-    function createMarkerIcon(svgSymbolElement, symbolScale) {
+    function createSymbolRootElement(svgSymbolElement) {
         var wrapperElement = document.createElement('div');
         var svgRootElement = createSvgElement('svg');
         svgRootElement.setAttribute('viewBox', '0 0 10 10');
         svgRootElement.appendChild(svgSymbolElement);
         wrapperElement.appendChild(svgRootElement);
-        var iconOptions = {domElement: wrapperElement, className: ''};
-        setIconSize(iconOptions, symbolScale);
-        return new DomIcon(iconOptions);
+        return wrapperElement;
     }
 
     function createSvgElement(elementType) {
         return document.createElementNS('http://www.w3.org/2000/svg', elementType);
     }
-
-    function setIconSize(iconOptions, symbolScale) {
-        var size = symbolScale * state.symbolBaseSize;
-        iconOptions.iconSize = new L.Point(size, size);
-    }
-
-    var DomIcon = L.DivIcon.extend({
-        options: {
-            domElement: null
-        },
-
-        createIcon: function(oldIcon) {
-            var div = (oldIcon && (oldIcon.tagName === 'DIV')) ? oldIcon : this.options.domElement;
-            this._setIconStyles(div, 'icon');
-            return div;
-        }
-    });
 
     this.updateMarker = function (marker, distanceFromStart, opacity, title) {
         var distance = getPathPositionAndHeading(marker.gmPolyline.getLatLngs(), distanceFromStart);
@@ -292,19 +271,7 @@ function Map() {
         marker.title = title;
         marker.angle = distance.heading;
 
-        marker.gmMarker.setLatLng(distance.position);
-        marker.gmMarker.update();
-
-        if (marker.isMarkerOnMap === false) {
-            marker.isMarkerOnMap = true;
-            marker.gmMarker.addTo(state.gm);
-        }
-
-        if ((marker.isPolylineOnMap === false) &&
-            (marker.gmSymbol.element.style.visibility === 'visible')) {
-            marker.isPolylineOnMap = true;
-            marker.gmPolyline.addTo(state.gm);
-        }
+        marker.gmMarker.update(distance.position);
     };
 
     function getPathPositionAndHeading(path, distanceFromStart) {
@@ -402,7 +369,7 @@ function Map() {
     }
 
     this.removeMarker = function (marker) {
-        state.gm.removeLayer(marker.gmMarker);
+        marker.gmMarker.remove();
         marker.gmMarker = null;
         delete state.markers[marker.markerId];
 
@@ -416,17 +383,7 @@ function Map() {
 
     this.setMarkerVisibility = function (marker, isVisible) {
         marker.gmSymbol.element.style.visibility = getVisibilityString(isVisible);
-        if (isVisible === true) {
-            if (marker.isPolylineOnMap === false) {
-                marker.isPolylineOnMap = true;
-                marker.gmPolyline.addTo(state.gm);
-            }
-        } else {
-            if (marker.isPolylineOnMap === true) {
-                marker.isPolylineOnMap = false;
-                state.gm.removeLayer(marker.gmPolyline);
-            }
-        }
+        marker.gmMarker.setVisibility(isVisible);
     };
 
     this.getDistances = function (path, pathIndexes) {
@@ -450,5 +407,90 @@ function Map() {
     this.getParams = function () {
         var center = state.gm.getCenter();
         return {'lat': center.lat, 'lng': center.lng, 'zoom': state.gm.getZoom()};
+    };
+}
+
+function SymbolMarker(nativeMap, nativePolyline) {
+    var that = this;
+    var state = getState();
+
+    function getState() {
+        var s = {};
+        s.isVisible = false;
+        s.isMarkerOnMap = false;
+        s.isPolylineOnMap = false;
+        s.nativeMarker = null;
+        return s;
+    }
+
+    this.init = function (symbolRootElement, isVisible, size) {
+        state.nativeMarker = L.marker(nativeMap.getCenter(), {
+            clickable: false, // https://github.com/panur/kartalla/issues/8
+            icon: createIcon(symbolRootElement)
+        });
+
+        that.setVisibility(isVisible);
+        that.resize(size);
+    };
+
+    function createIcon(symbolRootElement) {
+        var iconOptions = {domElement: symbolRootElement, className: ''};
+        return new DomIcon(iconOptions);
+    }
+
+    function setIconSize(iconOptions, newSymbolSize) {
+        iconOptions.iconSize = new L.Point(newSymbolSize, newSymbolSize);
+    }
+
+    var DomIcon = L.DivIcon.extend({
+        options: {
+            domElement: null
+        },
+
+        createIcon: function(oldIcon) {
+            var div = (oldIcon && (oldIcon.tagName === 'DIV')) ? oldIcon : this.options.domElement;
+            this._setIconStyles(div, 'icon');
+            return div;
+        }
+    });
+
+    this.update = function(latLng) {
+        state.nativeMarker.setLatLng(latLng);
+        state.nativeMarker.update();
+
+        if (state.isMarkerOnMap === false) {
+            state.isMarkerOnMap = true;
+            state.nativeMarker.addTo(nativeMap);
+        }
+
+        if ((state.isPolylineOnMap === false) && (state.isVisible === true)) {
+            state.isPolylineOnMap = true;
+            nativePolyline.addTo(nativeMap);
+        }
+    };
+
+    this.remove = function() {
+        nativeMap.removeLayer(state.nativeMarker);
+    };
+
+    this.resize = function(newSize) {
+        var icon = state.nativeMarker.options.icon;
+        setIconSize(icon.options, newSize);
+        state.nativeMarker.setIcon(icon);
+    };
+
+    this.setVisibility = function (newIsVisible) {
+        state.isVisible = newIsVisible;
+        if (state.isVisible === true) {
+            if (state.isPolylineOnMap === false) {
+                state.isPolylineOnMap = true;
+                nativePolyline.addTo(nativeMap);
+            }
+        } else {
+            if (state.isPolylineOnMap === true) {
+                state.isPolylineOnMap = false;
+                nativeMap.removeLayer(nativePolyline);
+            }
+        }
     };
 }
