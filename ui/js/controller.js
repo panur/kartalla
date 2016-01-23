@@ -216,6 +216,8 @@ function ControllerTrip(map) {
         s.tripTypeInfo = null;
         s.markerUpdateInterval = null;
         s.nextMarkerUpdateTime = null;
+        s.previousSecondsFromStart = null;
+        s.previousDistance = null;
         return s;
     }
 
@@ -229,7 +231,7 @@ function ControllerTrip(map) {
         state.lastArrivalSeconds =
             state.timesAndDistances[state.timesAndDistances.length - 1].arrival * 60;
         state.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
-                                     tripTypeInfo.color);
+                                     tripTypeInfo.color, getMarkerTitle);
         state.startTime = gtfsTrip.getStartTime();
         state.tripType = gtfsTrip.getType();
         state.tripInfo =
@@ -311,8 +313,9 @@ function ControllerTrip(map) {
             if (isTimeToUpdateMarker(realTime)) {
                 var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
                 var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
-                updateTripInfo(secondsFromStart, distance);
-                map.updateMarker(state.marker, distance, opacity, getMarkerTitle());
+                state.previousSecondsFromStart = secondsFromStart;
+                state.previousDistance = distance;
+                map.updateMarker(state.marker, distance, opacity);
             }
             tripState = 'active';
         } else {
@@ -400,8 +403,8 @@ function ControllerTrip(map) {
         return {'routeName': tripName, 'route': tripLongName, 'direction': direction,
                 'startTime': startTime, 'lastArrivalTime': lastArrivalTime,
                 'totalDuration': duration, 'duration': null, 'totalDistance': totalDistance,
-                'distance': null, 'averageSpeed': Math.round(totalDistance / (duration / 60)),
-                'stops': stops};
+                'distance': null, 'speed': null,
+                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
     }
 
     function minutesToString(minutesAfterMidnight) {
@@ -415,12 +418,25 @@ function ControllerTrip(map) {
         var kmsFromStart = (metersFromStart / 1000).toFixed(1);
         state.tripInfo.duration = minutesFromStart + ' / ' + state.tripInfo.totalDuration;
         state.tripInfo.distance = kmsFromStart + ' / ' + state.tripInfo.totalDistance;
+        state.tripInfo.speed = getSpeed(secondsFromStart, metersFromStart);
+    }
+
+    function getSpeed(secondsFromStart, metersFromStart) {
+        var timeSeconds = 60;
+        var timeHours = ((timeSeconds / 60) / 60);
+        var distanceMeters = metersFromStart -
+            getDistanceFromStart(secondsFromStart - timeSeconds, state.timesAndDistances);
+        /* speed = average speed of the last minute */
+        return Math.round((distanceMeters / 1000) / timeHours);
     }
 
     function getMarkerTitle() {
         var titleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
-                          'duration', 'distance', 'averageSpeed', 'stops'];
+                          'duration', 'distance', 'speed', 'averageSpeed', 'stops'];
         var markerTitle = '';
+
+        updateTripInfo(state.previousSecondsFromStart, state.previousDistance);
+
         for (var i = 0; i < titleItems.length; i++) {
             markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
                                                   state.tripInfo[titleItems[i]];
@@ -436,12 +452,14 @@ function ControllerTrip(map) {
             return {'routeName': 'Linja', 'route': 'Reitti', 'direction': 'Suunta',
                     'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
                     'duration': 'Kesto (min)', 'distance': 'Matka (km)',
-                    'averageSpeed': 'Keskinopeus (km/h)', 'stops': 'Pysäkkejä'}[markerTitleItem];
+                    'speed': 'Nopeus (km/h)', 'averageSpeed': 'Keskinopeus (km/h)',
+                    'stops': 'Pysäkkejä'}[markerTitleItem];
         } else {
             return {'routeName': 'Route name', 'route': 'Route', 'direction': 'Direction',
                     'startTime': 'Departure time', 'lastArrivalTime': 'Arrival time',
                     'duration': 'Duration (min)', 'distance': 'Distance (km)',
-                    'averageSpeed': 'Average speed (km/h)', 'stops': 'Stops'}[markerTitleItem];
+                    'speed': 'Speed (km/h)', 'averageSpeed': 'Average speed (km/h)',
+                    'stops': 'Stops'}[markerTitleItem];
         }
     }
 }

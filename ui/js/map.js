@@ -63,7 +63,7 @@ function Map() {
     };
 
     // path as returned by decodePath()
-    this.addMarker = function (path, pathId, isVisible, color) {
+    this.addMarker = function (path, pathId, isVisible, color, getTitleText) {
         if (state.polylineCache[pathId] === undefined) {
             var polylineOptions = {
                 isVisible: isVisible,
@@ -78,14 +78,14 @@ function Map() {
         }
         var polyline = state.polylineCache[pathId].polyline;
         var marker = new MapMarker(state.maMap);
-        marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale());
+        marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), getTitleText);
         state.markers[state.nextMarkerId] = {marker: marker, pathId: pathId};
         state.nextMarkerId += 1;
         return marker;
     };
 
-    this.updateMarker = function (marker, distanceFromStart, opacity, title) {
-        marker.update(distanceFromStart, opacity, title);
+    this.updateMarker = function (marker, distanceFromStart, opacity) {
+        marker.update(distanceFromStart, opacity);
     };
 
     this.setMarkerVisibility = function (marker, isVisible) {
@@ -144,17 +144,18 @@ function MapMarker(maMap) {
         s.symbolBaseSize = 15;
         s.symbolForm = '';
         s.symbolAngle = 0; // 0-360, 0=north, 90=east, 180=south, 270=west
-        s.title = '';
+        s.getTitleText = null;
         return s;
     }
 
-    this.init = function (markerId, maPolyline, isVisible, color, scale) {
+    this.init = function (markerId, maPolyline, isVisible, color, scale, getTitleText) {
         state.markerId = markerId;
         state.maPolyline = maPolyline;
         state.symbolElement = createSymbolElement(isVisible, color);
         state.maMarker = new MapApiMarker(maMap.getMap(), maPolyline);
         state.maMarker.init(createSymbolRootElement(state.symbolElement), isVisible,
                             scale * state.symbolBaseSize);
+        state.getTitleText = getTitleText;
     };
 
     this.getMarkerId = function () {
@@ -202,7 +203,7 @@ function MapMarker(maMap) {
     function updateSymbolTooltipElement(symbolElement) {
         var rect = symbolElement.getBoundingClientRect();
         symbolElement.style.cursor = 'help';
-        showSymbolTooltipElement(rect, state.title);
+        showSymbolTooltipElement(rect, state.getTitleText());
     }
 
     function showSymbolTooltipElement(rect, title) {
@@ -241,7 +242,7 @@ function MapMarker(maMap) {
         return document.createElementNS('http://www.w3.org/2000/svg', elementType);
     }
 
-    this.update = function (distanceFromStart, opacity, title) {
+    this.update = function (distanceFromStart, opacity) {
         var polylinePath = maMap.getPolylinePath(state.maPolyline);
         var distance = getPathPositionAndHeading(polylinePath, distanceFromStart);
 
@@ -253,8 +254,6 @@ function MapMarker(maMap) {
         state.symbolElement.style.opacity = opacity;
         state.symbolElement.setAttribute('transform',
                                          'rotate(' + (distance.heading - 90) + ', 5, 5)');
-
-        state.title = title;
         state.symbolAngle = distance.heading;
 
         state.maMarker.update(distance.position);
