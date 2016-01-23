@@ -127,7 +127,7 @@ function Map() {
     };
 
     this.getParams = function () {
-        return state.maMap().getParams();
+        return state.maMap.getParams();
     };
 }
 

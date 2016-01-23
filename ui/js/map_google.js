@@ -36,6 +36,7 @@ function MapApiMap() {
         state.map = new google.maps.Map(mapElement, mapOptions);
         state.map.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
         state.map.addListener('zoom_changed', zoomChanged);
+        state.map.setTilt(0);
     };
 
     this.getMap = function () {
