@@ -12,21 +12,21 @@ function MapApiMap() {
 
     function getState() {
         var s = {};
-        s.gm = null;
+        s.map = null;
         return s;
     }
 
     this.init = function (lat, lng, zoomLevel, zoomChanged) {
         var baseMaps = getBaseMaps();
 
-        state.gm = L.map('map_canvas', {
+        state.map = L.map('map_canvas', {
             center: [lat, lng],
             zoom: zoomLevel,
             layers: [baseMaps.Mapbox]
         });
-        state.gm.on('zoomend', zoomChanged);
+        state.map.on('zoomend', zoomChanged);
 
-        L.control.layers(baseMaps).addTo(state.gm);
+        L.control.layers(baseMaps).addTo(state.map);
     };
 
     function getBaseMaps() {
@@ -55,16 +55,16 @@ function MapApiMap() {
     }
 
     this.getMap = function () {
-        return state.gm;
+        return state.map;
     };
 
     this.restart = function (lat, lng, zoomLevel) {
-        state.gm.setView([lat, lng], zoomLevel);
+        state.map.setView([lat, lng], zoomLevel);
     };
 
     this.resize = function (newHeight) {
-        state.gm.getContainer().style.height = newHeight + 'px';
-        state.gm.invalidateSize();
+        state.map.getContainer().style.height = newHeight + 'px';
+        state.map.invalidateSize();
     };
 
     this.decodePath = function (encodedPath) {
@@ -124,7 +124,7 @@ function MapApiMap() {
     };
 
     this.removePolyline = function (polyline) {
-        state.gm.removeLayer(polyline);
+        state.map.removeLayer(polyline);
     };
 
     // polylinePath as returned by getPolylinePath()
@@ -179,16 +179,16 @@ function MapApiMap() {
     };
 
     this.getZoom =  function () {
-        return state.gm.getZoom();
+        return state.map.getZoom();
     };
 
     this.getParams = function () {
-        var center = state.gm.getCenter();
-        return {'lat': center.lat, 'lng': center.lng, 'zoom': state.gm.getZoom()};
+        var center = state.map.getCenter();
+        return {'lat': center.lat, 'lng': center.lng, 'zoom': state.map.getZoom()};
     };
 }
 
-function MapApiMarker(nativeMap, nativePolyline) {
+function MapApiMarker(map, polyline) {
     var that = this;
     var state = getState();
 
@@ -202,7 +202,7 @@ function MapApiMarker(nativeMap, nativePolyline) {
     }
 
     this.init = function (symbolRootElement, isVisible, size) {
-        state.nativeMarker = L.marker(nativeMap.getCenter(), {
+        state.nativeMarker = L.marker(map.getCenter(), {
             clickable: false, // https://github.com/panur/kartalla/issues/8
             icon: createIcon(symbolRootElement)
         });
@@ -238,17 +238,17 @@ function MapApiMarker(nativeMap, nativePolyline) {
 
         if (state.isMarkerOnMap === false) {
             state.isMarkerOnMap = true;
-            state.nativeMarker.addTo(nativeMap);
+            state.nativeMarker.addTo(map);
         }
 
         if ((state.isPolylineOnMap === false) && (state.isVisible === true)) {
             state.isPolylineOnMap = true;
-            nativePolyline.addTo(nativeMap);
+            polyline.addTo(map);
         }
     };
 
     this.remove = function() {
-        nativeMap.removeLayer(state.nativeMarker);
+        map.removeLayer(state.nativeMarker);
     };
 
     this.resize = function(newSize) {
@@ -262,12 +262,12 @@ function MapApiMarker(nativeMap, nativePolyline) {
         if (state.isVisible === true) {
             if (state.isPolylineOnMap === false) {
                 state.isPolylineOnMap = true;
-                nativePolyline.addTo(nativeMap);
+                polyline.addTo(map);
             }
         } else {
             if (state.isPolylineOnMap === true) {
                 state.isPolylineOnMap = false;
-                nativeMap.removeLayer(nativePolyline);
+                map.removeLayer(polyline);
             }
         }
     };

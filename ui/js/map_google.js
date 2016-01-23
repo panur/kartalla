@@ -12,13 +12,13 @@ function MapApiMap() {
 
     function getState() {
         var s = {};
-        s.gm = null;
+        s.map = null;
         return s;
     }
 
     this.init = function (lat, lng, zoomLevel, zoomChanged) {
-        var gmElement = document.getElementById('map_canvas');
-        var gmOptions = {
+        var mapElement = document.getElementById('map_canvas');
+        var mapOptions = {
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             mapTypeControlOptions: {style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR},
             zoomControlOptions: {style: google.maps.ZoomControlStyle.DEFAULT},
@@ -33,23 +33,23 @@ function MapApiMap() {
             }]
         };
 
-        state.gm = new google.maps.Map(gmElement, gmOptions);
-        state.gm.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
-        state.gm.addListener('zoom_changed', zoomChanged);
+        state.map = new google.maps.Map(mapElement, mapOptions);
+        state.map.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
+        state.map.addListener('zoom_changed', zoomChanged);
     };
 
     this.getMap = function () {
-        return state.gm;
+        return state.map;
     };
 
     this.restart = function (lat, lng, zoomLevel) {
-        state.gm.setCenter({lat: lat, lng: lng});
-        state.gm.setZoom(zoomLevel);
+        state.map.setCenter({lat: lat, lng: lng});
+        state.map.setZoom(zoomLevel);
     };
 
     this.resize = function (newHeight) {
-        state.gm.getDiv().style.height = newHeight + 'px';
-        google.maps.event.trigger(state.gm, 'resize');
+        state.map.getDiv().style.height = newHeight + 'px';
+        google.maps.event.trigger(state.map, 'resize');
     };
 
     this.decodePath = function (encodedPath) {
@@ -100,16 +100,16 @@ function MapApiMap() {
     };
 
     this.getZoom =  function () {
-        return state.gm.getZoom();
+        return state.map.getZoom();
     };
 
     this.getParams = function () {
-        var center = state.gm.getCenter();
-        return {'lat': center.lat(), 'lng': center.lng(), 'zoom': state.gm.getZoom()};
+        var center = state.map.getCenter();
+        return {'lat': center.lat(), 'lng': center.lng(), 'zoom': state.map.getZoom()};
     };
 }
 
-function MapApiMarker(nativeMap, nativePolyline) {
+function MapApiMarker(map, polyline) {
     var that = this;
     var state = getState();
 
@@ -128,12 +128,12 @@ function MapApiMarker(nativeMap, nativePolyline) {
         that.resize(size);
     };
 
-    this.onAdd = function() {
+    this.onAdd = function() { // part of OverlayView
         var panes = that.getPanes();
         panes.overlayImage.appendChild(state.symbolRootElement);
     };
 
-    this.draw = function() {
+    this.draw = function() { // part of OverlayView
         var projection = that.getProjection();
         if (projection !== undefined) {
             var point = projection.fromLatLngToDivPixel(state.latLng);
@@ -147,15 +147,15 @@ function MapApiMarker(nativeMap, nativePolyline) {
     this.update = function(latLng) {
         state.latLng = latLng;
         if (that.getMap() === undefined) {
-            that.setMap(nativeMap);
+            that.setMap(map);
         }
-        if (nativePolyline.getMap() === undefined) {
-            nativePolyline.setMap(nativeMap);
+        if (polyline.getMap() === undefined) {
+            polyline.setMap(map);
         }
         that.draw();
     };
 
-    this.onRemove = function() {
+    this.onRemove = function() { // part of OverlayView
         state.symbolRootElement.parentNode.removeChild(state.symbolRootElement);
         state.symbolRootElement = null;
     };
@@ -171,7 +171,7 @@ function MapApiMarker(nativeMap, nativePolyline) {
     };
 
     this.setVisibility = function (newIsVisible) {
-        nativePolyline.setVisible(newIsVisible);
+        polyline.setVisible(newIsVisible);
     };
 }
 
