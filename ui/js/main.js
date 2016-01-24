@@ -44,6 +44,7 @@ function main() {
                               downloadRequest.responseText.length, duration,
                               isDownloadCompressed());
             timing.downloadIsReady();
+            window.onresize();
         }
 
         function isDownloadCompressed() {
@@ -75,6 +76,7 @@ function main() {
             controller.restart();
             timing.restart();
             map.restart(config.mapLat, config.mapLng, config.mapZoomLevel);
+            window.onresize();
             downloadGtfsJsonData(config.jsonUrl);
         }};
     }

@@ -58,7 +58,7 @@ function UiBar(utils) {
             tripTypeElement.appendChild(titleElement);
             tripTypeElement.appendChild(createTextElement(': '));
             var elementId = tripTypeName + 'Count';
-            tripTypeElement.appendChild(createElement('span', elementId, '-'));
+            tripTypeElement.appendChild(createElement('span', elementId, '--'));
             tripTypeElement.appendChild(createTextElement(' '));
             var tripTypeVisibilityElement =
                 createTripTypeVisibilityElement(tripTypeName, tripTypes[tripTypeName]);
