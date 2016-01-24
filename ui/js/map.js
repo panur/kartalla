@@ -24,14 +24,14 @@ function Map() {
 
     function getSymbolScale() {
         var zoom = state.maMap.getZoom();
-        if (zoom < 12) {
+        if (zoom < 11) {
             return 1;
         } else if (zoom < 14) {
-            return 2;
-        } else if (zoom < 15) {
             return 3;
-        } else {
+        } else if (zoom < 15) {
             return 4;
+        } else {
+            return 5;
         }
     }
 
@@ -63,7 +63,7 @@ function Map() {
     };
 
     // path as returned by decodePath()
-    this.addMarker = function (path, pathId, isVisible, color, getTitleText) {
+    this.addMarker = function (path, pathId, isVisible, color, routeName, getTitleText) {
         if (state.polylineCache[pathId] === undefined) {
             var polylineOptions = {
                 isVisible: isVisible,
@@ -78,7 +78,8 @@ function Map() {
         }
         var polyline = state.polylineCache[pathId].polyline;
         var marker = new MapMarker(state.maMap);
-        marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), getTitleText);
+        marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), routeName,
+                    getTitleText);
         state.markers[state.nextMarkerId] = {marker: marker, pathId: pathId};
         state.nextMarkerId += 1;
         return marker;
@@ -143,18 +144,19 @@ function MapMarker(maMap) {
         s.symbolElement = null;
         s.symbolBaseSize = 15;
         s.symbolForm = '';
-        s.symbolAngle = 0; // 0-360, 0=north, 90=east, 180=south, 270=west
+        s.routeName = null;
         s.getTitleText = null;
         return s;
     }
 
-    this.init = function (markerId, maPolyline, isVisible, color, scale, getTitleText) {
+    this.init = function (markerId, maPolyline, isVisible, color, scale, routeName, getTitleText) {
         state.markerId = markerId;
         state.maPolyline = maPolyline;
         state.symbolElement = createSymbolElement(isVisible, color);
         state.maMarker = new MapApiMarker(maMap.getMap(), maPolyline);
         state.maMarker.init(createSymbolRootElement(state.symbolElement), isVisible,
                             scale * state.symbolBaseSize);
+        state.routeName = routeName;
         state.getTitleText = getTitleText;
     };
 
@@ -164,6 +166,7 @@ function MapMarker(maMap) {
 
     this.resize = function (newScale) {
         state.maMarker.resize(newScale * state.symbolBaseSize);
+        updateTextTitle();
     };
 
     function createSymbolElement(isVisible, color) {
@@ -250,12 +253,11 @@ function MapMarker(maMap) {
         if (symbolForm !== state.symbolForm) {
             state.symbolForm = symbolForm;
             updateSymbol();
+            updateTextTitle();
         }
         state.symbolElement.style.opacity = opacity;
-        state.symbolElement.setAttribute('transform',
-                                         'rotate(' + (distance.heading - 90) + ', 5, 5)');
-        state.symbolAngle = distance.heading;
-
+        var formElement = state.symbolElement.firstChild;
+        formElement.setAttribute('transform', 'rotate(' + (distance.heading - 90) + ', 5, 5)');
         state.maMarker.update(distance.position);
     };
 
@@ -297,24 +299,69 @@ function MapMarker(maMap) {
     function updateSymbol() {
         if (state.symbolForm === 'square') {
             var svgElement = createSvgElement('rect');
-            svgElement.setAttribute('x', '2');
-            svgElement.setAttribute('y', '2');
-            svgElement.setAttribute('width', '6');
-            svgElement.setAttribute('height', '6');
+            svgElement.setAttribute('x', '3');
+            svgElement.setAttribute('y', '3');
+            svgElement.setAttribute('width', '4');
+            svgElement.setAttribute('height', '4');
         } else if (state.symbolForm === 'circle') {
             var svgElement = createSvgElement('circle');
             svgElement.setAttribute('cx', '5');
             svgElement.setAttribute('cy', '5');
-            svgElement.setAttribute('r', '3');
+            svgElement.setAttribute('r', '2');
         } else { // arrow ->
             var svgElement = createSvgElement('path');
             svgElement.setAttribute('d', 'M 2,2 8,5 2,8 4,5 z');
         }
 
-        if (state.symbolElement.firstChild !== null) {
+        while (state.symbolElement.firstChild !== null) {
             state.symbolElement.removeChild(state.symbolElement.firstChild);
         }
         state.symbolElement.appendChild(svgElement);
+    }
+
+    function updateTextTitle() {
+        if (state.routeName.length < 6) {
+            if (maMap.getZoom() > 10) {
+                if (state.symbolElement.childNodes.length < 2) {
+                    state.symbolElement.appendChild(createTextTitleElement());
+                }
+            } else {
+                if (state.symbolElement.childNodes.length > 1) {
+                    state.symbolElement.removeChild(state.symbolElement.lastChild);
+                }
+            }
+        }
+    }
+
+    function createTextTitleElement() {
+        var textTitleElement = createSvgElement('g');
+        if (state.symbolForm === 'arrow') {
+            var backgroundElement = createSvgElement('circle');
+            backgroundElement.setAttribute('cx', '5');
+            backgroundElement.setAttribute('cy', '5');
+            backgroundElement.setAttribute('r', '1.75');
+            textTitleElement.appendChild(backgroundElement);
+        }
+        var textElement = createSvgElement('text');
+        textElement.textContent = state.routeName;
+        textElement.setAttribute('fill', 'white');
+        textElement.setAttribute('font-size', getFontSize());
+        textElement.setAttribute('text-anchor', 'middle');
+        textElement.setAttribute('dominant-baseline', 'central');
+        textElement.setAttribute('x', '5');
+        textElement.setAttribute('y', '5');
+        textTitleElement.appendChild(textElement);
+        return textTitleElement;
+    }
+
+    function getFontSize() {
+        if (state.routeName.length < 3) {
+            return '2';
+        } else if (state.routeName.length < 4) {
+            return '1.75';
+        } else {
+            return '1.5';
+        }
     }
 
     this.remove = function (isPolylineRemoved) {

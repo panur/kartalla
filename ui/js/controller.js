@@ -231,7 +231,7 @@ function ControllerTrip(map) {
         state.lastArrivalSeconds =
             state.timesAndDistances[state.timesAndDistances.length - 1].arrival * 60;
         state.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
-                                     tripTypeInfo.color, getMarkerTitle);
+                                     tripTypeInfo.color, gtfsTrip.getName(), getMarkerTitle);
         state.startTime = gtfsTrip.getStartTime();
         state.tripType = gtfsTrip.getType();
         state.tripInfo =
@@ -422,12 +422,16 @@ function ControllerTrip(map) {
     }
 
     function getSpeed(secondsFromStart, metersFromStart) {
-        var timeSeconds = 60;
-        var timeHours = ((timeSeconds / 60) / 60);
-        var distanceMeters = metersFromStart -
-            getDistanceFromStart(secondsFromStart - timeSeconds, state.timesAndDistances);
-        /* speed = average speed of the last minute */
-        return Math.round((distanceMeters / 1000) / timeHours);
+        if (secondsFromStart > state.lastArrivalSeconds) {
+            return 0;
+        } else {
+            var timeSeconds = 60;
+            var timeHours = ((timeSeconds / 60) / 60);
+            var distanceMeters = metersFromStart -
+                getDistanceFromStart(secondsFromStart - timeSeconds, state.timesAndDistances);
+            /* speed = average speed of the last minute */
+            return Math.round((distanceMeters / 1000) / timeHours);
+        }
     }
 
     function getMarkerTitle() {
