@@ -14,6 +14,10 @@ span.closeButton {
     right: 1px;
 }
 
+span.visibilityButton {
+    font-size: large;
+}
+
 span.dataInfo {
     cursor: help;
     color: teal;

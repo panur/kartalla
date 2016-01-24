@@ -13,6 +13,7 @@ function MapApiMap() {
     function getState() {
         var s = {};
         s.map = null;
+        s.control = null;
         return s;
     }
 
@@ -63,6 +64,7 @@ function MapApiMap() {
             path: path,
             visible: polylineOptions.isVisible,
             geodesic: true,
+            clickable: false, // https://github.com/panur/kartalla/issues/8
             strokeColor: polylineOptions.color,
             strokeOpacity: polylineOptions.opacity,
             strokeWeight: polylineOptions.weight
@@ -107,6 +109,16 @@ function MapApiMap() {
     this.getParams = function () {
         var center = state.map.getCenter();
         return {'lat': center.lat(), 'lng': center.lng(), 'zoom': state.map.getZoom()};
+    };
+
+    this.toggleControl = function (controlElement) {
+        var position = google.maps.ControlPosition.LEFT_BOTTOM;
+        if (controlElement === undefined) {
+            state.map.controls[position].removeAt(state.control);
+            state.control = null;
+        } else {
+            state.control = state.map.controls[position].push(controlElement) - 1;
+        }
     };
 }
 

@@ -13,7 +13,8 @@ function UiBar(utils) {
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos, dataSelection, mapSelection, getUrlParams) {
+    this.init = function (lang, tripTypeInfos, onUiBarVisibilityChange, dataSelection, mapSelection,
+                          getUrlParams) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
 
@@ -27,6 +28,8 @@ function UiBar(utils) {
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div');
+        line2Element.appendChild(createHideElement(onUiBarVisibilityChange));
+        line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createLanguageElement(mapSelection.selectedValue));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createJsonDataElement(dataSelection));
@@ -99,6 +102,24 @@ function UiBar(utils) {
         var hideText = {'en': 'hide', 'fi': 'piilota'}[state.lang];
         visibilityElement.title = {false: showText, true: hideText}[isVisible];
         visibilityElement.textContent = '(' + visibilityElement.title.charAt(0) + ')';
+    }
+
+    function createHideElement(onUiBarVisibilityChange) {
+        var hideElement = createTextElement('(\u2199)');
+        hideElement.className = 'button';
+        hideElement.title = {'en': 'hide control bar', 'fi': 'piilota ohjainpalkki'}[state.lang];
+        hideElement.addEventListener('click', function () {
+            var showElement = createTextElement('(\u2197)');
+            showElement.className = 'button visibilityButton';
+            showElement.title = {'en': 'show control bar', 'fi': 'näytä ohjainpalkki'}[state.lang];
+            showElement.addEventListener('click', function () {
+                document.getElementById('ui_bar').style.visibility = 'visible';
+                onUiBarVisibilityChange();
+            });
+            document.getElementById('ui_bar').style.visibility = 'hidden';
+            onUiBarVisibilityChange(showElement);
+        });
+        return hideElement;
     }
 
     function createLanguageElement(selectedMap) {

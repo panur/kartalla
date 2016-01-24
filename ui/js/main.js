@@ -14,8 +14,8 @@ function main() {
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
-    uiBar.init(config.lang, tripTypeInfos, createDataSelection(), createMapSelection(),
-               getUrlParams);
+    uiBar.init(config.lang, tripTypeInfos, onUiBarVisibilityChange, createDataSelection(),
+               createMapSelection(), getUrlParams);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
@@ -59,10 +59,17 @@ function main() {
         resizeMap();
 
         function resizeMap() {
-            var mapHeight = document.documentElement.clientHeight -
-                document.getElementById('ui_bar').clientHeight;
+            var mapHeight = document.documentElement.clientHeight;
+            if (document.getElementById('ui_bar').style.visibility !== 'hidden') {
+                mapHeight -= document.getElementById('ui_bar').clientHeight;
+            }
             map.resize(mapHeight);
         }
+    }
+
+    function onUiBarVisibilityChange(controlElement) {
+        map.toggleControl(controlElement);
+        window.onresize();
     }
 
     function createDataSelection() {

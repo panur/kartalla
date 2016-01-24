@@ -130,6 +130,10 @@ function Map() {
     this.getParams = function () {
         return state.maMap.getParams();
     };
+
+    this.toggleControl = function (controlElement) {
+        state.maMap.toggleControl(controlElement);
+    };
 }
 
 function MapMarker(maMap) {

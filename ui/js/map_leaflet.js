@@ -13,6 +13,7 @@ function MapApiMap() {
     function getState() {
         var s = {};
         s.map = null;
+        s.control = null;
         return s;
     }
 
@@ -185,6 +186,24 @@ function MapApiMap() {
     this.getParams = function () {
         var center = state.map.getCenter();
         return {'lat': center.lat, 'lng': center.lng, 'zoom': state.map.getZoom()};
+    };
+
+    this.toggleControl = function (controlElement) {
+        if (controlElement === undefined) {
+            state.map.removeControl(state.control);
+            state.control = null;
+        } else {
+            var CustomControl = L.Control.extend({
+                options: {
+                    position: 'bottomleft'
+                },
+                onAdd: function (map) {
+                    return controlElement;
+                }
+            });
+            state.control = new CustomControl();
+            state.map.addControl(state.control);
+        }
     };
 }
 
