@@ -203,6 +203,10 @@ function MapApiMap() {
             });
             state.control = new CustomControl();
             state.map.addControl(state.control);
+            var parentZIndex =
+                window.getComputedStyle(controlElement.parentNode).getPropertyValue('z-index');
+            /* in small resolution display bottomleft and bottomright may overlap */
+            controlElement.parentNode.style.zIndex = parentZIndex + 1;
         }
     };
 }

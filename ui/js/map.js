@@ -351,7 +351,8 @@ function MapMarker(maMap) {
         textElement.setAttribute('fill', 'white');
         textElement.setAttribute('font-size', getFontSize());
         textElement.setAttribute('text-anchor', 'middle');
-        textElement.setAttribute('dominant-baseline', 'central');
+        /* MSIE doesn't support dominant-baseline, let's hack vertical position with dy */
+        textElement.setAttribute('dy', '0.3em');
         textElement.setAttribute('x', '5');
         textElement.setAttribute('y', '5');
         textTitleElement.appendChild(textElement);
