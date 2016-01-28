@@ -217,7 +217,10 @@ function MapApiMarker(map, polyline) {
 
     function getState() {
         var s = {};
+        s.latLng = null;
+        s.symbolRootElement = null;
         s.isVisible = false;
+        s.size = null;
         s.isMarkerOnMap = false;
         s.isPolylineOnMap = false;
         s.nativeMarker = null;
@@ -225,22 +228,21 @@ function MapApiMarker(map, polyline) {
     }
 
     this.init = function (symbolRootElement, isVisible, size) {
-        state.nativeMarker = L.marker(map.getCenter(), {
-            clickable: false, // https://github.com/panur/kartalla/issues/8
-            icon: createIcon(symbolRootElement)
-        });
-
-        that.setVisibility(isVisible);
-        that.resize(size);
+        state.symbolRootElement = symbolRootElement;
+        state.isVisible = isVisible;
+        state.size = size;
     };
+
+    function createNativeMarker() {
+        return L.marker(state.latLng, {
+            clickable: false, // https://github.com/panur/kartalla/issues/8
+            icon: createIcon(state.symbolRootElement)
+        });
+    }
 
     function createIcon(symbolRootElement) {
         var iconOptions = {domElement: symbolRootElement, className: ''};
         return new DomIcon(iconOptions);
-    }
-
-    function setIconSize(iconOptions, newSymbolSize) {
-        iconOptions.iconSize = new L.Point(newSymbolSize, newSymbolSize);
     }
 
     var DomIcon = L.DivIcon.extend({
@@ -256,42 +258,50 @@ function MapApiMarker(map, polyline) {
     });
 
     this.update = function(latLng) {
-        state.nativeMarker.setLatLng(latLng);
-        state.nativeMarker.update();
-
-        if (state.isMarkerOnMap === false) {
-            state.isMarkerOnMap = true;
-            state.nativeMarker.addTo(map);
-        }
-
-        if ((state.isPolylineOnMap === false) && (state.isVisible === true)) {
-            state.isPolylineOnMap = true;
-            polyline.addTo(map);
-        }
-    };
-
-    this.remove = function() {
-        map.removeLayer(state.nativeMarker);
-    };
-
-    this.resize = function(newSize) {
-        var icon = state.nativeMarker.options.icon;
-        setIconSize(icon.options, newSize);
-        state.nativeMarker.setIcon(icon);
-    };
-
-    this.setVisibility = function (newIsVisible) {
-        state.isVisible = newIsVisible;
+        state.latLng = latLng;
         if (state.isVisible === true) {
+            if (state.isMarkerOnMap === false) {
+                state.isMarkerOnMap = true;
+                state.nativeMarker = createNativeMarker();
+                that.resize(state.size);
+                state.nativeMarker.addTo(map);
+            }
             if (state.isPolylineOnMap === false) {
                 state.isPolylineOnMap = true;
                 polyline.addTo(map);
             }
+            state.nativeMarker.setLatLng(latLng);
+            state.nativeMarker.update();
         } else {
+            that.remove();
             if (state.isPolylineOnMap === true) {
                 state.isPolylineOnMap = false;
                 map.removeLayer(polyline);
             }
+        }
+    };
+
+    this.remove = function() {
+        if (state.isMarkerOnMap) {
+            state.isMarkerOnMap = false;
+            map.removeLayer(state.nativeMarker);
+            state.nativeMarker = null;
+        }
+    };
+
+    this.resize = function(newSize) {
+        state.size = newSize;
+        if (state.isMarkerOnMap) {
+            var icon = state.nativeMarker.options.icon;
+            icon.options.iconSize = new L.Point(newSize, newSize);
+            state.nativeMarker.setIcon(icon);
+        }
+    };
+
+    this.setVisibility = function (newIsVisible) {
+        state.isVisible = newIsVisible;
+        if (state.latLng !== null) {
+            that.update(state.latLng);
         }
     };
 }

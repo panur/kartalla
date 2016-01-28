@@ -62,7 +62,6 @@ function MapApiMap() {
     this.newPolyline = function (path, polylineOptions) {
         var polyline = new google.maps.Polyline({
             path: path,
-            visible: polylineOptions.isVisible,
             geodesic: true,
             clickable: false, // https://github.com/panur/kartalla/issues/8
             strokeColor: polylineOptions.color,
@@ -130,6 +129,7 @@ function MapApiMarker(map, polyline) {
         var s = {};
         s.latLng = null;
         s.symbolRootElement = null;
+        s.isVisible = false;
         s.size = null;
         return s;
     }
@@ -148,7 +148,7 @@ function MapApiMarker(map, polyline) {
 
     this.draw = function() { // part of OverlayView
         var projection = that.getProjection();
-        if (projection !== undefined) {
+        if ((projection !== undefined) && (projection !== null)) {
             var point = projection.fromLatLngToDivPixel(state.latLng);
             if (point !== null) {
                 state.symbolRootElement.style.left = (point.x - state.size / 2) + 'px';
@@ -159,18 +159,24 @@ function MapApiMarker(map, polyline) {
 
     this.update = function(latLng) {
         state.latLng = latLng;
-        if (that.getMap() === undefined) {
-            that.setMap(map);
+        if (state.isVisible === true) {
+            if ((that.getMap() === undefined) || (that.getMap() === null)) {
+                that.setMap(map);
+            }
+            if ((polyline.getMap() === undefined) || (polyline.getMap() === null)) {
+                polyline.setMap(map);
+            }
+            that.draw();
+        } else {
+            that.remove();
+            if ((polyline.getMap() !== undefined) && (polyline.getMap() !== null)) {
+                polyline.setMap(null);
+            }
         }
-        if (polyline.getMap() === undefined) {
-            polyline.setMap(map);
-        }
-        that.draw();
     };
 
     this.onRemove = function() { // part of OverlayView
         state.symbolRootElement.parentNode.removeChild(state.symbolRootElement);
-        state.symbolRootElement = null;
     };
 
     this.remove = function() {
@@ -184,7 +190,10 @@ function MapApiMarker(map, polyline) {
     };
 
     this.setVisibility = function (newIsVisible) {
-        polyline.setVisible(newIsVisible);
+        state.isVisible = newIsVisible;
+        if (state.latLng !== null) {
+            that.update(state.latLng);
+        }
     };
 }
 

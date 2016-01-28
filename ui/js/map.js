@@ -66,7 +66,6 @@ function Map() {
     this.addMarker = function (path, pathId, isVisible, color, routeName, getTitleText) {
         if (state.polylineCache[pathId] === undefined) {
             var polylineOptions = {
-                isVisible: isVisible,
                 color: 'black',
                 opacity: 0.6,
                 weight: 1
