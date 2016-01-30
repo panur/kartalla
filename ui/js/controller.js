@@ -205,6 +205,7 @@ function ControllerTrip(map) {
 
     function getState() {
         var s = {};
+        s.gtfsTrip = null;
         s.serviceStartDate = null;
         s.lang = null;
         s.timesAndDistances = null;
@@ -222,27 +223,28 @@ function ControllerTrip(map) {
     }
 
     this.init = function (gtfsTrip, serviceStartDate, lang, tripTypeInfo, markerUpdateInterval) {
+        state.gtfsTrip = gtfsTrip;
         state.serviceStartDate = serviceStartDate;
         state.lang = lang;
-        var tripPath = map.decodePath(gtfsTrip.getShape());
         var stopTimes = gtfsTrip.getStopTimes();
-        var stopDistances = map.getDistances(tripPath, gtfsTrip.getStopDistances());
-        state.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
-        state.lastArrivalSeconds =
-            state.timesAndDistances[state.timesAndDistances.length - 1].arrival * 60;
-        state.marker = map.addMarker(tripPath, gtfsTrip.getShapeId(), tripTypeInfo.isVisible,
-                                     tripTypeInfo.color, gtfsTrip.getName(), getMarkerTitle);
+        state.lastArrivalSeconds = stopTimes[stopTimes.length - 2] * 60;
         state.startTime = gtfsTrip.getStartTime();
         state.tripType = gtfsTrip.getType();
-        state.tripInfo =
-            createTripInfo(gtfsTrip.getName(), gtfsTrip.getDirection(), gtfsTrip.getLongName(),
-                           state.startTime, state.lastArrivalSeconds,
-                           stopDistances[stopDistances.length - 1], stopTimes.length / 2);
         state.tripTypeInfo = tripTypeInfo;
         state.markerUpdateInterval = markerUpdateInterval * 1000;
         state.nextMarkerUpdateTime =
             (new Date()).getTime() + (Math.random() * state.markerUpdateInterval);
     };
+
+    function initMarker() {
+        var tripPath = map.decodePath(state.gtfsTrip.getShape());
+        var stopTimes = state.gtfsTrip.getStopTimes();
+        var stopDistances = map.getDistances(tripPath, state.gtfsTrip.getStopDistances());
+        state.timesAndDistances = mergeStopTimesAndDistances(stopTimes, stopDistances);
+        state.marker = map.addMarker(tripPath, state.gtfsTrip.getShapeId(),
+                                     state.tripTypeInfo.isVisible, state.tripTypeInfo.color,
+                                     state.gtfsTrip.getName(), getMarkerTitle);
+    }
 
     /* Merge stop times (arrival/departure) and distances into list of objects with unique arrival
     time (to simplify the calculation of distance from start when given seconds from start). The
@@ -297,7 +299,9 @@ function ControllerTrip(map) {
     };
 
     this.remove = function () {
-        map.removeMarker(state.marker);
+        if (state.marker !== null) {
+            map.removeMarker(state.marker);
+        }
     }
 
     this.updateOnMap = function (mapDate, realTime) {
@@ -306,11 +310,16 @@ function ControllerTrip(map) {
         var secondsFromStart = getSecondsFromStart(mapDate);
 
         if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
-            map.removeMarker(state.marker);
+            if (state.marker !== null) {
+                map.removeMarker(state.marker);
+            }
             tripState = 'exit';
         } else if ((secondsFromStart >= -fadeSeconds) &&
             (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
-            if (isTimeToUpdateMarker(realTime)) {
+            if (state.tripTypeInfo.isVisible && isTimeToUpdateMarker(realTime)) {
+                if (state.marker === null) {
+                    initMarker();
+                }
                 var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
                 var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
                 state.previousSecondsFromStart = secondsFromStart;
@@ -391,19 +400,24 @@ function ControllerTrip(map) {
     }
 
     this.updateVisibility = function () {
-        map.setMarkerVisibility(state.marker, state.tripTypeInfo.isVisible);
+        if (state.marker !== null) {
+            map.setMarkerVisibility(state.marker, state.tripTypeInfo.isVisible);
+        }
     };
 
-    function createTripInfo(tripName, direction, tripLongName, startTimeMinutesAfterMidnight,
-                            durationSeconds, distanceMeters, stops) {
+    function createTripInfo() {
+        var startTimeMinutesAfterMidnight = state.startTime;
         var startTime = minutesToString(startTimeMinutesAfterMidnight);
-        var duration = durationSeconds / 60;
+        var duration = state.lastArrivalSeconds / 60;
         var lastArrivalTime = minutesToString(startTimeMinutesAfterMidnight + duration);
+        var distanceMeters = state.timesAndDistances[state.timesAndDistances.length - 1].distance;
         var totalDistance = Math.round(distanceMeters / 1000);
-        return {'routeName': tripName, 'route': tripLongName, 'direction': direction,
-                'startTime': startTime, 'lastArrivalTime': lastArrivalTime,
-                'totalDuration': duration, 'duration': null, 'totalDistance': totalDistance,
-                'distance': null, 'speed': null,
+        var stopTimes = state.gtfsTrip.getStopTimes();
+        var stops = stopTimes.length / 2;
+        return {'routeName': state.gtfsTrip.getName(), 'route': state.gtfsTrip.getLongName(),
+                'direction': state.gtfsTrip.getDirection(), 'startTime': startTime,
+                'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
+                'totalDistance': totalDistance, 'distance': null, 'speed': null,
                 'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
     }
 
@@ -416,6 +430,9 @@ function ControllerTrip(map) {
     function updateTripInfo(secondsFromStart, metersFromStart) {
         var minutesFromStart = Math.max(0, (secondsFromStart / 60).toFixed(1));
         var kmsFromStart = (metersFromStart / 1000).toFixed(1);
+        if (state.tripInfo === null) {
+            state.tripInfo = createTripInfo();
+        }
         state.tripInfo.duration = minutesFromStart + ' / ' + state.tripInfo.totalDuration;
         state.tripInfo.distance = kmsFromStart + ' / ' + state.tripInfo.totalDistance;
         state.tripInfo.speed = getSpeed(secondsFromStart, metersFromStart);
