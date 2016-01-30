@@ -159,7 +159,8 @@ function MapApiMarker(map, polyline) {
 
     this.update = function(latLng) {
         state.latLng = latLng;
-        if (state.isVisible === true) {
+        var isInViewport = map.getBounds().contains(state.latLng);
+        if ((state.isVisible === true) && (isInViewport == true)) {
             if ((that.getMap() === undefined) || (that.getMap() === null)) {
                 that.setMap(map);
             }
@@ -169,7 +170,8 @@ function MapApiMarker(map, polyline) {
             that.draw();
         } else {
             that.remove();
-            if ((polyline.getMap() !== undefined) && (polyline.getMap() !== null)) {
+            if ((state.isVisible === false) &&
+                (polyline.getMap() !== undefined) && (polyline.getMap() !== null)) {
                 polyline.setMap(null);
             }
         }

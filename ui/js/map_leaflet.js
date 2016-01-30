@@ -259,7 +259,8 @@ function MapApiMarker(map, polyline) {
 
     this.update = function(latLng) {
         state.latLng = latLng;
-        if (state.isVisible === true) {
+        var isInViewport = map.getBounds().contains(state.latLng);
+        if ((state.isVisible === true) && (isInViewport == true)) {
             if (state.isMarkerOnMap === false) {
                 state.isMarkerOnMap = true;
                 state.nativeMarker = createNativeMarker();
@@ -274,7 +275,7 @@ function MapApiMarker(map, polyline) {
             state.nativeMarker.update();
         } else {
             that.remove();
-            if (state.isPolylineOnMap === true) {
+            if ((state.isVisible === false) && (state.isPolylineOnMap === true)) {
                 state.isPolylineOnMap = false;
                 map.removeLayer(polyline);
             }
