@@ -1,10 +1,10 @@
 [
 {"filename": "jyvaskyla.json", "agencies": ["190859"]},
-{"filename": "joensuu.json", "agencies": ["190907"]},
-{"filename": "kuopio.json", "agencies": ["190900"]},
+{"filename": "joensuu.json", "agencies": ["191503"]},
+{"filename": "kuopio.json", "agencies": ["191496"]},
 {"filename": "lappeenranta.json", "agencies": ["180656"]},
 {"filename": "oulu.json", "agencies": ["190827", "190828", "190829", "190830", "190831", "190832"]},
-{"filename": "seinajoki.json", "agencies": ["190909"]},
+{"filename": "seinajoki.json", "agencies": ["191799"]},
 {"filename": "tampere.json", "agencies": ["3"]},
 {"filename": "turku.json", "agencies": ["14"]},
 {"filename": "vaasa.json", "agencies": ["182524", "182526"]},
