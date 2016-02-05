@@ -23,6 +23,7 @@ def create(routes, output_filename, gtfs_modification_time):
     output_data[array_keys['root']['array_keys']] = array_keys
     output_data[array_keys['root']['gtfs_epoch']] = gtfs_modification_time
     output_data[array_keys['root']['json_epoch']] = int(time.time())
+    output_data[array_keys['root']['is_direction']] = int(routes.values()[0]['is_direction'])
     output_data[array_keys['root']['dates']] = output_dates
     output_data[array_keys['root']['routes']] = output_routes
 
@@ -32,10 +33,10 @@ def create(routes, output_filename, gtfs_modification_time):
 
 def _get_array_keys():
     array_keys = {}
-    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'dates': 3,
-                          'routes': 4}
-    array_keys['route'] = {'name': 0, 'long_name': 1, 'type': 2, 'shapes': 3, 'directions': 4,
-                           'services': 5}
+    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'is_direction': 3,
+                          'dates': 4, 'routes': 5}
+    array_keys['route'] = {'id': 0, 'name': 1, 'long_name': 2, 'type': 3, 'shapes': 4,
+                           'directions': 5, 'services': 6}
     array_keys['direction'] = {'shape_i': 0, 'stop_distances': 1, 'is_departure_times': 2,
                                'stop_times': 3, 'trips': 4}
     array_keys['service'] = {'start_date_i': 0, 'end_date_i': 1, 'weekday': 2, 'exception_dates': 3,
@@ -70,6 +71,7 @@ def _get_output_routes(array_keys, output_dates, routes):
         output_directions = _get_output_directions(array_keys, route['services'])
         output_services = _get_output_services(array_keys, route['services'], output_dates)
         output_route = [None] * len(array_keys['route'])
+        output_route[array_keys['route']['id']] = route['route_id']
         output_route[array_keys['route']['name']] = route['name']
         output_route[array_keys['route']['long_name']] = route['long_name']
         output_route[array_keys['route']['type']] = route['type']

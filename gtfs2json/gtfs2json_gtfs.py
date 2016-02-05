@@ -86,6 +86,7 @@ def _parse_routes(routes_txt):
                 'name': _get_route_name(row),
                 'long_name': row['route_long_name'],
                 'type': route_types.get(row['route_type'], row['route_type']),
+                'is_direction': False,
                 'services': {},  # by service_id
                 'shapes': []
             }
@@ -112,7 +113,9 @@ def _add_services_trips_to_routes(routes, trips_txt):
                 logging.error('For route_id={} invalid direction_id: {}'.format(
                     row['route_id'], row['direction_id']))
             else:
-                _add_services_trips_to_route(routes[row['route_id']], row)
+                route = routes[row['route_id']]
+                route['is_direction'] = 'direction_id' in row
+                _add_services_trips_to_route(route, row)
 
 
 def _add_services_trips_to_route(route, row):  # row in trips.txt
