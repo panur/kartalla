@@ -502,7 +502,6 @@ function ControllerTrip(map, vpCache) {
     };
 
     function createTripInfo() {
-        var direction = ['\u2192', '\u2190'][state.gtfsTrip.getDirection()]; // 2190=<-, 2192=->
         var startTimeMinutesAfterMidnight = state.startTime;
         var startTime = minutesToString(startTimeMinutesAfterMidnight);
         var duration = state.lastArrivalSeconds / 60;
@@ -512,7 +511,7 @@ function ControllerTrip(map, vpCache) {
         var stopTimes = state.gtfsTrip.getStopTimes();
         var stops = stopTimes.length / 2;
         return {'routeName': state.gtfsTrip.getName(), 'route': state.gtfsTrip.getLongName(),
-                'direction': direction, 'startTime': startTime,
+                'direction': getDirection(), 'startTime': startTime,
                 'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
                 'totalDistance': totalDistance, 'distance': null, 'speed': null,
                 'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops,
@@ -523,6 +522,15 @@ function ControllerTrip(map, vpCache) {
         var date = new Date((minutesAfterMidnight * 60) * 1000);
         var timeString = date.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
         return timeString.substr(11, 5); // HH:mm
+    }
+
+    function getDirection() {
+        var direction = state.gtfsTrip.getDirection();
+        if (direction === undefined) {
+            return undefined;
+        } else {
+            return ['\u2192', '\u2190'][direction]; // 2190=<-, 2192=->
+        }
     }
 
     function updateTripInfo(secondsFromStart, metersFromStart) {
@@ -564,10 +572,12 @@ function ControllerTrip(map, vpCache) {
         updateTripInfo(state.previousSecondsFromStart, state.previousDistance);
 
         for (var i = 0; i < titleItems.length; i++) {
-            markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' +
-                                                  state.tripInfo[titleItems[i]];
-            if (i < (titleItems.length - 1)) {
-                markerTitle += '\n';
+            var itemValue = state.tripInfo[titleItems[i]];
+            if (itemValue !== undefined) {
+                markerTitle += getMarkerTitleItemName(titleItems[i]) + ': ' + itemValue;
+                if (i < (titleItems.length - 1)) {
+                    markerTitle += '\n';
+                }
             }
         }
         return markerTitle;

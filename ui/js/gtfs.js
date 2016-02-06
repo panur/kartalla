@@ -34,6 +34,10 @@ function Gtfs() {
         return state.root[getArrayKey('json_epoch')];
     };
 
+    this.isDirection = function () {
+        return state.root[getArrayKey('is_direction')];
+    };
+
     this.getDates = function () {
         return state.root[getArrayKey('dates')];
     };
@@ -279,7 +283,11 @@ function GtfsDirection(directionId, gtfsRoot, gtfsService, rootDirection) {
     };
 
     this.getDirection = function () {
-        return directionId;
+        if (gtfsRoot.isDirection()) {
+            return directionId;
+        } else {
+            return undefined;
+        }
     };
 
     this.getType = function () {
