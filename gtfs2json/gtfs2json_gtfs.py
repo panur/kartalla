@@ -126,7 +126,7 @@ def _add_services_trips_to_route(route, row):  # row in trips.txt
         route['services'][row['service_id']] = {
             'start_date': None,
             'end_date': None,
-            'weekday': None,
+            'weekdays': None,
             'exception_dates': {'added': [], 'removed': []},
             'trips': {},  # by trip_id
             'directions_i': None,
@@ -181,7 +181,7 @@ def _add_calendar_to_services(routes, calendar_txt):
                             row['service_id']))
                     service['start_date'] = row['start_date']
                     service['end_date'] = row['end_date']
-                    service['weekday'] = _get_service_weekday(row)
+                    service['weekdays'] = _get_service_weekdays(row)
 
 
 def _get_services(routes):
@@ -194,7 +194,7 @@ def _get_services(routes):
     return services
 
 
-def _get_service_weekday(row):  # row in calendar.txt
+def _get_service_weekdays(row):  # row in calendar.txt
     days = [row['monday'], row['tuesday'], row['wednesday'], row['thursday'], row['friday'],
             row['saturday'], row['sunday']]
     if ''.join(sorted(days)) == '0000001':  # exactly one weekday (HSL)

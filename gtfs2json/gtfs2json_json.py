@@ -39,8 +39,8 @@ def _get_array_keys():
                            'directions': 5, 'services': 6}
     array_keys['direction'] = {'shape_i': 0, 'stop_distances': 1, 'is_departure_times': 2,
                                'stop_times': 3, 'trips': 4}
-    array_keys['service'] = {'start_date_i': 0, 'end_date_i': 1, 'weekday': 2, 'exception_dates': 3,
-                             'directions_i': 4}
+    array_keys['service'] = {'start_date_i': 0, 'end_date_i': 1, 'weekdays': 2,
+                             'exception_dates': 3, 'directions_i': 4}
     array_keys['trip'] = {'first_start_time': 0, 'start_times': 1, 'stop_times_indexes': 2}
     array_keys['exception_dates'] = {'added': 0, 'removed': 1}
     return array_keys
@@ -140,7 +140,7 @@ def _get_output_services(array_keys, services, output_dates):
         output_service = [None] * len(array_keys['service'])
         output_service[array_keys['service']['start_date_i']] = start_date_i
         output_service[array_keys['service']['end_date_i']] = end_date_i
-        output_service[array_keys['service']['weekday']] = service['weekday']
+        output_service[array_keys['service']['weekdays']] = service['weekdays']
         output_service[array_keys['service']['exception_dates']] = exception_dates
         output_service[array_keys['service']['directions_i']] = service['directions_i']
         output_services.append(output_service)

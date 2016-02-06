@@ -235,7 +235,7 @@ function GtfsService(serviceId, gtfsRoot, gtfsRoute, rootService) {
     }
 
     function getWeekDays() {
-        return rootService[getArrayKey('weekday')];  // tbd: rename to weekdays
+        return rootService[getArrayKey('weekdays')];
     }
 
     function getExceptionDates() {
