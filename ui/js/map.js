@@ -84,8 +84,16 @@ function Map() {
         return marker;
     };
 
-    this.updateMarker = function (marker, distanceFromStart, opacity) {
-        marker.update(distanceFromStart, opacity);
+    this.updateVpMarker = function (marker, lat, lng) {
+        return marker.updateVp(lat, lng);
+    };
+
+    this.updateDistanceMarker = function (marker, distanceFromStart, isPastLastArrival) {
+        marker.updateDistance(distanceFromStart, isPastLastArrival);
+    };
+
+    this.updateMarkerOpacity = function (marker, opacity) {
+        marker.updateOpacity(opacity);
     };
 
     this.setMarkerVisibility = function (marker, isVisible) {
@@ -149,6 +157,7 @@ function MapMarker(maMap) {
         s.symbolForm = '';
         s.routeName = null;
         s.getTitleText = null;
+        s.previousUpdateType = null;
         return s;
     }
 
@@ -209,7 +218,7 @@ function MapMarker(maMap) {
     function updateSymbolTooltipElement(symbolElement) {
         var rect = symbolElement.getBoundingClientRect();
         symbolElement.style.cursor = 'help';
-        showSymbolTooltipElement(rect, state.getTitleText());
+        showSymbolTooltipElement(rect, state.getTitleText(state.previousUpdateType));
     }
 
     function showSymbolTooltipElement(rect, title) {
@@ -248,20 +257,63 @@ function MapMarker(maMap) {
         return document.createElementNS('http://www.w3.org/2000/svg', elementType);
     }
 
-    this.update = function (distanceFromStart, opacity) {
+    this.updateVp = function (lat, lng) {
+        var latLon = new LatLon(lat, lng);
+        var minDist = getMinDistanceToPolyline(latLon);
+
+        if (minDist['d'] < 100) {
+            var heading = minDist['p1'].bearingTo(minDist['p2']);
+            var position = maMap.getLatLng(latLon);
+            update('vp', 'arrow', heading, position);
+            return true;
+        } else {
+            return false;
+        }
+    };
+
+    function getMinDistanceToPolyline(latLon) {
+        var polylinePath = maMap.getPolylinePath(state.maPolyline);
+        var pathLength = maMap.getPathLength(polylinePath);
+        var result = {'d': Number.MAX_VALUE, 'p1': null, 'p2': null};
+
+        for (var i = 1; i < pathLength; i++) {
+            var p1 = maMap.getPathLatLon(polylinePath, i - 1);
+            var p2 = maMap.getPathLatLon(polylinePath, i);
+            var p = latLon.nearestPointOnSegment(p1, p2);
+            var d = p.distanceTo(latLon);
+            if (d < result['d']) {
+                result['d'] = d; // distance from latLon to segment in meters
+                result['p1'] = p1; // segment start LatLon
+                result['p2'] = p2; // segment end LatLon
+            }
+        }
+        return result;
+    };
+
+    this.updateDistance = function (distanceFromStart, isPastLastArrival) {
         var polylinePath = maMap.getPolylinePath(state.maPolyline);
         var distance = getPathPositionAndHeading(polylinePath, distanceFromStart);
+        var symbolForm = getSymbolForm(distanceFromStart, isPastLastArrival);
 
-        var symbolForm = getSymbolForm(distanceFromStart, opacity);
-        if (symbolForm !== state.symbolForm) {
+        update('distance', symbolForm, distance.heading, distance.position);
+    };
+
+    function update(updateType, symbolForm, heading, position) {
+        if ((symbolForm !== state.symbolForm) || (updateType !== state.previousUpdateType)) {
             state.symbolForm = symbolForm;
+            state.previousUpdateType = updateType;
             updateSymbol();
             updateTextTitle();
         }
-        state.symbolElement.style.opacity = opacity;
+
         var formElement = state.symbolElement.firstChild;
-        formElement.setAttribute('transform', 'rotate(' + (distance.heading - 90) + ', 5, 5)');
-        state.maMarker.update(distance.position);
+        formElement.setAttribute('transform', 'rotate(' + (heading - 90) + ', 5, 5)');
+
+        state.maMarker.update(position);
+    }
+
+    this.updateOpacity = function (opacity) {
+        state.symbolElement.style.opacity = opacity;
     };
 
     function getPathPositionAndHeading(polylinePath, distanceFromStart) {
@@ -287,11 +339,11 @@ function MapMarker(maMap) {
         return {position: p2, heading: maMap.computeHeading(p1, p2)};
     }
 
-    function getSymbolForm(distanceFromStart, opacity) {
+    function getSymbolForm(distanceFromStart, isPastLastArrival) {
         if (distanceFromStart === 0) {
             return 'square';
         } else {
-            if (opacity < 1) {
+            if (isPastLastArrival) {
                 return 'circle';
             } else {
                 return 'arrow';
@@ -343,6 +395,10 @@ function MapMarker(maMap) {
             backgroundElement.setAttribute('cx', '5');
             backgroundElement.setAttribute('cy', '5');
             backgroundElement.setAttribute('r', '1.75');
+            if (state.previousUpdateType === 'vp') {
+                backgroundElement.setAttribute('stroke', 'white');
+                backgroundElement.setAttribute('stroke-width', '0.5');
+            }
             textTitleElement.appendChild(backgroundElement);
         }
         var textElement = createSvgElement('text');

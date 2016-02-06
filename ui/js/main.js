@@ -45,12 +45,50 @@ function main() {
                               isDownloadCompressed());
             timing.downloadIsReady();
             window.onresize();
+            if (config.isVpUsed) {
+                initVp();
+            }
         }
 
         function isDownloadCompressed() {
             var contentEncoding = downloadRequest.getResponseHeader('Content-Encoding');
             return ((contentEncoding !== null) && (contentEncoding === 'gzip'));
         }
+    }
+
+    function initVp() {
+        var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
+        var client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
+        client.onMessageArrived = onMessageArrived;
+        client.connect({onSuccess:onConnect});
+
+        function onConnect() {
+            client.subscribe('/hfp/journey/#');
+        }
+
+        function onMessageArrived(message) {
+            var topic = message.destinationName;
+            var payload = message.payloadString;
+            var parsedVp = JSON.parse(payload).VP;
+            if (isVpMessageOk(parsedVp)) {
+                var routeId = topic.split('/')[5];
+                controller.updateVp(routeId, parsedVp.dir - 1, parsedVp.start, parsedVp.tsi,
+                                    parsedVp.lat, parsedVp.long);
+            }
+        }
+    }
+
+    function isVpMessageOk(parsedVp) {
+        var fields = ['dir', 'start', 'tsi', 'lat', 'long'];
+        for (var i = 0; i < fields.length; i++) {
+            if (parsedVp[fields[i]] === undefined) {
+                return false;
+            }
+        }
+        if (['1', '2'].indexOf(parsedVp.dir) === -1) {
+            return false;
+        }
+        return true;
     }
 
     function initResizeHandler() {

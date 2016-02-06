@@ -138,6 +138,14 @@ function MapApiMap() {
         return polylinePath[index];
     };
 
+    this.getPathLatLon = function (polylinePath, index) {
+        return new LatLon(polylinePath[index].lat, polylinePath[index].lng);
+    };
+
+    this.getLatLng = function (latLon) {
+        return L.latLng(latLon.lat, latLon.lon);
+    };
+
     this.computeDistance = function(p1, p2) {
         return p1.distanceTo(p2);
     };

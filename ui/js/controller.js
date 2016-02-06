@@ -16,6 +16,7 @@ function Controller(gtfs, map) {
         s.activeServicesDateString = null;
         s.activeServices = {};
         s.activeTrips = {};
+        s.vpCache = {};
         return s;
     }
 
@@ -34,6 +35,18 @@ function Controller(gtfs, map) {
         state.activeServicesDateString = null;
         state.activeServices = {};
         state.activeTrips = {};
+    };
+
+    this.updateVp = function (routeId, direction, startTime, tsi, lat, lng) {
+        if (state.vpCache[routeId] === undefined) {
+            state.vpCache[routeId] = {'0': {}, '1': {}};
+        }
+        if (state.vpCache[routeId][direction][startTime] === undefined) {
+            state.vpCache[routeId][direction][startTime] = {'tsi': '', 'lat': '', 'lng': ''};
+        }
+        state.vpCache[routeId][direction][startTime]['tsi'] = tsi;
+        state.vpCache[routeId][direction][startTime]['lat'] = lat;
+        state.vpCache[routeId][direction][startTime]['lng'] = lng;
     };
 
     this.update = function (mapDate) {
@@ -143,7 +156,7 @@ function Controller(gtfs, map) {
                 if (state.activeTrips[tripId] === undefined) {
                     var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
                     var serviceStartDate = state.activeServices[serviceId].getStartDate();
-                    var activeTrip = new ControllerTrip(map);
+                    var activeTrip = new ControllerTrip(map, state.vpCache);
                     activeTrip.init(activeTrips[j], serviceStartDate, state.lang, tripTypeInfo,
                                     state.markerUpdateInterval);
                     state.activeTrips[tripId] = activeTrip;
@@ -199,7 +212,7 @@ function ControllerService() {
     };
 }
 
-function ControllerTrip(map) {
+function ControllerTrip(map, vpCache) {
     var that = this;
     var state = getState();
 
@@ -219,6 +232,7 @@ function ControllerTrip(map) {
         s.nextMarkerUpdateTime = null;
         s.previousSecondsFromStart = null;
         s.previousDistance = null;
+        s.vpCacheEntries = {'previous': null, 'valid': null};
         return s;
     }
 
@@ -309,30 +323,108 @@ function ControllerTrip(map) {
         var fadeSeconds = 60;
         var secondsFromStart = getSecondsFromStart(mapDate);
 
-        if (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds)) {
-            if (state.marker !== null) {
-                map.removeMarker(state.marker);
-            }
-            tripState = 'exit';
-        } else if ((secondsFromStart >= -fadeSeconds) &&
-            (secondsFromStart <= (state.lastArrivalSeconds + fadeSeconds))) {
-            if (state.tripTypeInfo.isVisible && isTimeToUpdateMarker(realTime)) {
-                if (state.marker === null) {
-                    initMarker();
-                }
-                var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
-                var opacity = getMarkerOpacity(secondsFromStart, fadeSeconds);
-                state.previousSecondsFromStart = secondsFromStart;
-                state.previousDistance = distance;
-                map.updateMarker(state.marker, distance, opacity);
-            }
-            tripState = 'active';
-        } else {
+        if (secondsFromStart < -fadeSeconds) {
             tripState = 'waiting';
+        } else {
+            var vpCacheEntry = getVpCacheEntry();
+            if ((vpCacheEntry === undefined) &&
+                (secondsFromStart > (state.lastArrivalSeconds + fadeSeconds))) {
+                if (state.marker !== null) {
+                    map.removeMarker(state.marker);
+                }
+                tripState = 'exit';
+            } else {
+                if (state.tripTypeInfo.isVisible && isTimeToUpdateMarker(realTime)) {
+                    if (state.marker === null) {
+                        initMarker();
+                    }
+                    updateActive(vpCacheEntry, fadeSeconds, secondsFromStart);
+                }
+                tripState = 'active';
+            }
         }
 
         return tripState;
     };
+
+    function getVpCacheEntry() {
+        var routeId = state.gtfsTrip.getRouteId();
+        var direction = state.gtfsTrip.getDirection();
+        var startTime = minutesToString(state.startTime).replace(':', '');
+        if ((vpCache[routeId] !== undefined) &&
+            (vpCache[routeId][direction][startTime] !== undefined)) {
+            var cacheEntry = vpCache[routeId][direction][startTime];
+            var cacheEntryAge = getVpEntryAge(cacheEntry['tsi']);
+            if (cacheEntryAge < getMaxVpEntryAge()) {
+                return cloneVpCacheEntry(cacheEntry);
+            } else {
+                delete vpCache[routeId][direction][startTime];
+            }
+        }
+        return undefined;
+    }
+
+    function getVpEntryAge(tsi) {
+        return ((new Date()).getTime() / 1000) - tsi; // age in seconds
+    }
+
+    function getMaxVpEntryAge() {
+        return 120; // cache entries older than this are considered invalid and they are ignored
+    }
+
+    function cloneVpCacheEntry(cacheEntry) {
+        return {'tsi': cacheEntry['tsi'], 'lat': cacheEntry['lat'], 'lng': cacheEntry['lng']};
+    }
+
+    function updateActive(vpCacheEntry, fadeSeconds, secondsFromStart) {
+        var updateMarkerByDistance = true;
+        var opacity = 1;
+
+        if ((vpCacheEntry !== undefined) && (secondsFromStart > 0)) {
+            if (areVpCacheEntryPositionsSame(state.vpCacheEntries['previous'], vpCacheEntry)) {
+                if (areVpCacheEntryPositionsSame(state.vpCacheEntries['valid'], vpCacheEntry)) {
+                    state.vpCacheEntries['valid'] = vpCacheEntry;
+                }
+            } else {
+                var isPositionOk =
+                    map.updateVpMarker(state.marker, vpCacheEntry['lat'], vpCacheEntry['lng']);
+                if (isPositionOk) {
+                    state.vpCacheEntries['valid'] = vpCacheEntry;
+                }
+            }
+
+            state.vpCacheEntries['previous'] = vpCacheEntry;
+
+            if ((state.vpCacheEntries['valid'] === null) ||
+                (getVpEntryAge(state.vpCacheEntries['valid']['tsi']) > getMaxVpEntryAge())) {
+                updateMarkerByDistance = true;
+            } else {
+                updateMarkerByDistance = false;
+                opacity = getVpMarkerOpacity(state.vpCacheEntries['valid']['tsi']);
+            }
+        }
+
+        if (updateMarkerByDistance) {
+            var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
+            opacity = getDistanceMarkerOpacity(secondsFromStart, fadeSeconds);
+            state.previousSecondsFromStart = secondsFromStart;
+            state.previousDistance = distance;
+            var isPastLastArrival = secondsFromStart > state.lastArrivalSeconds;
+            map.updateDistanceMarker(state.marker, distance, isPastLastArrival);
+        }
+
+        map.updateMarkerOpacity(state.marker, opacity);
+    }
+
+    function areVpCacheEntryPositionsSame(oldVpCacheEntry, newVpCacheEntry) {
+        if (oldVpCacheEntry !== null) {
+            if ((oldVpCacheEntry['lat'] === newVpCacheEntry['lat']) &&
+                (oldVpCacheEntry['lng'] === newVpCacheEntry['lng'])) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     function getSecondsFromStart(mapDate) {
         var secondsAfterMidnight = getSecondsAfterMidnight(mapDate);
@@ -389,7 +481,11 @@ function ControllerTrip(map) {
         return Math.round(distance);
     }
 
-    function getMarkerOpacity(secondsFromStart, fadeSeconds) {
+    function getVpMarkerOpacity(tsi) {
+        return Math.max(0.2, 1.0 - (getVpEntryAge(tsi) / getMaxVpEntryAge()));
+    }
+
+    function getDistanceMarkerOpacity(secondsFromStart, fadeSeconds) {
         if (secondsFromStart < 0) {
             return (fadeSeconds + secondsFromStart) / fadeSeconds;
         } else if (secondsFromStart > state.lastArrivalSeconds) {
@@ -406,6 +502,7 @@ function ControllerTrip(map) {
     };
 
     function createTripInfo() {
+        var direction = ['\u2192', '\u2190'][state.gtfsTrip.getDirection()]; // 2190=<-, 2192=->
         var startTimeMinutesAfterMidnight = state.startTime;
         var startTime = minutesToString(startTimeMinutesAfterMidnight);
         var duration = state.lastArrivalSeconds / 60;
@@ -415,10 +512,11 @@ function ControllerTrip(map) {
         var stopTimes = state.gtfsTrip.getStopTimes();
         var stops = stopTimes.length / 2;
         return {'routeName': state.gtfsTrip.getName(), 'route': state.gtfsTrip.getLongName(),
-                'direction': state.gtfsTrip.getDirection(), 'startTime': startTime,
+                'direction': direction, 'startTime': startTime,
                 'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
                 'totalDistance': totalDistance, 'distance': null, 'speed': null,
-                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops};
+                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops,
+                'update': null};
     }
 
     function minutesToString(minutesAfterMidnight) {
@@ -436,6 +534,10 @@ function ControllerTrip(map) {
         state.tripInfo.duration = minutesFromStart + ' / ' + state.tripInfo.totalDuration;
         state.tripInfo.distance = kmsFromStart + ' / ' + state.tripInfo.totalDistance;
         state.tripInfo.speed = getSpeed(secondsFromStart, metersFromStart);
+        if (state.vpCacheEntries['valid'] !== null) {
+            var age = getVpEntryAge(state.vpCacheEntries['valid']['tsi']);
+            state.tripInfo.update = Math.round(age);
+        }
     }
 
     function getSpeed(secondsFromStart, metersFromStart) {
@@ -451,9 +553,12 @@ function ControllerTrip(map) {
         }
     }
 
-    function getMarkerTitle() {
-        var titleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
-                          'duration', 'distance', 'speed', 'averageSpeed', 'stops'];
+    function getMarkerTitle(previousUpdateType) {
+        var vpTitleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
+                            'update', 'stops'];
+        var distanceTitleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
+                                  'duration', 'distance', 'speed', 'averageSpeed', 'stops'];
+        var titleItems = {'vp': vpTitleItems, 'distance': distanceTitleItems}[previousUpdateType];
         var markerTitle = '';
 
         updateTripInfo(state.previousSecondsFromStart, state.previousDistance);
@@ -474,13 +579,13 @@ function ControllerTrip(map) {
                     'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
                     'duration': 'Kesto (min)', 'distance': 'Matka (km)',
                     'speed': 'Nopeus (km/h)', 'averageSpeed': 'Keskinopeus (km/h)',
-                    'stops': 'Pysäkkejä'}[markerTitleItem];
+                    'stops': 'Pysäkkejä', 'update': 'Päivitys (s)'}[markerTitleItem];
         } else {
             return {'routeName': 'Route name', 'route': 'Route', 'direction': 'Direction',
                     'startTime': 'Departure time', 'lastArrivalTime': 'Arrival time',
                     'duration': 'Duration (min)', 'distance': 'Distance (km)',
                     'speed': 'Speed (km/h)', 'averageSpeed': 'Average speed (km/h)',
-                    'stops': 'Stops'}[markerTitleItem];
+                    'stops': 'Stops', 'update': 'Update (s)'}[markerTitleItem];
         }
     }
 }

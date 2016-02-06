@@ -5,7 +5,7 @@
 function Config(utils) {
     var that = this;
     var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
-        'types', 'routes', '_file', '_stop'];
+        'types', 'routes', '_file', '_stop', '_vp'];
     var urlParams = getUrlParams();
     this.dataType = urlParams.data || 'hsl';
     this.stopAfter = urlParams._stop || null;
@@ -20,6 +20,7 @@ function Config(utils) {
     this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
     this.jsonUrl = getJsonUrl(urlParams._file);
+    this.isVpUsed = urlParams._vp || false;
 
     this.restart = function (newDataType) {
         that.dataType = newDataType;
@@ -138,6 +139,8 @@ function Config(utils) {
         } else if (parameterName === '_stop') {
             var re = /\d+/;
             return re.test(parameterValue);
+        } else if (parameterName === '_vp') {
+            return checkValueInterval(parameterValue, 0, 1);
         }
     }
 

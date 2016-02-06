@@ -89,6 +89,14 @@ function MapApiMap() {
         return polylinePath.getAt(index);
     };
 
+    this.getPathLatLon = function (polylinePath, index) {
+        return new LatLon(polylinePath.getAt(index).lat(), polylinePath.getAt(index).lng());
+    };
+
+    this.getLatLng = function (latLon) {
+        return new google.maps.LatLng(latLon.lat, latLon.lon);
+    };
+
     this.computeDistance = function(p1, p2) {
         return google.maps.geometry.spherical.computeDistanceBetween(p1, p2)
     };
