@@ -150,41 +150,19 @@ function MapApiMap() {
         return p1.distanceTo(p2);
     };
 
-    // based on http://www.movable-type.co.uk/scripts/latlong.html
     this.interpolate = function(p1, p2, fraction) {
         var radius = 6378137; // earth's radius in meters
-        var d = p1.distanceTo(p2) / radius;
-        var lat1 = p1.lat * L.LatLng.DEG_TO_RAD;
-        var lon1 = p1.lng * L.LatLng.DEG_TO_RAD;
-        var lat2 = p2.lat * L.LatLng.DEG_TO_RAD;
-        var lon2 = p2.lng * L.LatLng.DEG_TO_RAD;
-        var A = Math.sin((1 - fraction) * d) / Math.sin(d);
-        var B = Math.sin(fraction * d) / Math.sin(d);
-        var x = ((A * Math.cos(lat1)) * Math.cos(lon1)) + ((B * Math.cos(lat2)) * Math.cos(lon2));
-        var y = ((A * Math.cos(lat1)) * Math.sin(lon1)) + ((B * Math.cos(lat2)) * Math.sin(lon2));
-        var z =  (A * Math.sin(lat1))                   +  (B * Math.sin(lat2));
-        var lat = Math.atan2(z, Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2)));
-        var lon = Math.atan2(y, x);
-        return L.latLng(lat * L.LatLng.RAD_TO_DEG, lon * L.LatLng.RAD_TO_DEG);
+        var distance = that.computeDistance(p1, p2);
+        var bearing = that.computeHeading(p1, p2);
+        var p1LatLon = new LatLon(p1.lat, p1.lng);
+        var newLatLon = p1LatLon.destinationPoint(fraction * distance, bearing, radius);
+        return that.getLatLng(newLatLon);
     };
 
-    // based on http://www.movable-type.co.uk/scripts/latlong.html
     this.computeHeading = function (p1, p2) {
-        var lat1 = p1.lat * L.LatLng.DEG_TO_RAD;
-        var lon1 = p1.lng * L.LatLng.DEG_TO_RAD;
-        var lat2 = p2.lat * L.LatLng.DEG_TO_RAD;
-        var lon2 = p2.lng * L.LatLng.DEG_TO_RAD;
-
-        var y = Math.sin(lon1 - lon2) * Math.cos(lat2);
-        var x = (Math.cos(lat1) * Math.sin(lat2)) -
-            (Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon1 - lon2));
-        var angle = - Math.atan2(y, x);
-
-        if (angle < 0.0) {
-            angle += Math.PI * 2.0;
-        }
-
-        return angle * L.LatLng.RAD_TO_DEG;
+        var p1LatLon = new LatLon(p1.lat, p1.lng);
+        var p2LatLon = new LatLon(p2.lat, p2.lng);
+        return p1LatLon.bearingTo(p2LatLon);
     };
 
     this.getZoom =  function () {
