@@ -437,7 +437,8 @@ function ControllerTrip(map, vpCache) {
 
     function getSecondsAfterMidnight(date) {
         var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
-        return (minutesAfterMidnight * 60) + date.getSeconds(); // possible values: 0 - 86 399
+        return (minutesAfterMidnight * 60) + date.getSeconds() + date.getMilliseconds()/1000;
+        // possible values: 0 - 86 399.999
     }
 
     function isTimeToUpdateMarker(realTime) {
@@ -478,7 +479,7 @@ function ControllerTrip(map, vpCache) {
             }
         }
 
-        return Math.round(distance);
+        return distance;
     }
 
     function getVpMarkerOpacity(tsi) {

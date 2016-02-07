@@ -249,9 +249,17 @@ function MapApiMarker(map, polyline) {
         if ((state.isVisible === true) && (isInViewport == true)) {
             if (state.isMarkerOnMap === false) {
                 state.isMarkerOnMap = true;
-                state.nativeMarker = createNativeMarker();
+                var marker = state.nativeMarker = createNativeMarker();
                 that.resize(state.size);
-                state.nativeMarker.addTo(map);
+                marker.addTo(map);
+                if (L.DomUtil.TRANSITION) {
+                    if (marker._icon) {
+                        marker._icon.style[L.DomUtil.TRANSITION] = 'all 1000ms linear';
+                    }
+                    if (marker._shadow) {
+                        marker._shadow.style[L.DomUtil.TRANSITION] = 'all 1000ms linear';
+                    }
+                }
             }
             if (state.isPolylineOnMap === false) {
                 state.isPolylineOnMap = true;
