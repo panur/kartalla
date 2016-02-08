@@ -25,6 +25,20 @@ function MapApiMap() {
             zoom: zoomLevel,
             layers: [baseMaps.Mapbox]
         });
+
+        // toggle CSS marker interpolation via a HTML class:
+        var mapElement = L.DomUtil.get('map_canvas');
+        L.DomUtil.addClass(mapElement, 'kartalla-interpolate');
+        state.map.on('zoomstart', function() {
+            L.DomUtil.removeClass(mapElement, 'kartalla-interpolate');
+        });
+        state.map.on('zoomend', function() {
+	    // re-enable interpolation starting at next render:
+            L.Util.requestAnimFrame(function() {
+                L.DomUtil.addClass(mapElement, 'kartalla-interpolate');
+            });
+        });
+
         state.map.on('zoomend', zoomChanged);
 
         L.control.layers(baseMaps).addTo(state.map);
@@ -252,14 +266,6 @@ function MapApiMarker(map, polyline) {
                 var marker = state.nativeMarker = createNativeMarker();
                 that.resize(state.size);
                 marker.addTo(map);
-                if (L.DomUtil.TRANSITION) {
-                    if (marker._icon) {
-                        marker._icon.style[L.DomUtil.TRANSITION] = 'all 1000ms linear';
-                    }
-                    if (marker._shadow) {
-                        marker._shadow.style[L.DomUtil.TRANSITION] = 'all 1000ms linear';
-                    }
-                }
             }
             if (state.isPolylineOnMap === false) {
                 state.isPolylineOnMap = true;
