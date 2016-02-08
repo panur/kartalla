@@ -1,0 +1,4 @@
+
+.kartalla-interpolate .leaflet-marker-icon {
+    transition: transform 1000ms linear;
+}
