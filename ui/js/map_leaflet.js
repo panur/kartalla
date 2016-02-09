@@ -23,19 +23,20 @@ function MapApiMap() {
         state.map = L.map('map_canvas', {
             center: [lat, lng],
             zoom: zoomLevel,
+            zoomControl: false,
             layers: [baseMaps.Mapbox]
         });
+        state.map.addControl(L.control.zoom({position: 'bottomright'}))
 
         // toggle CSS marker interpolation via a HTML class:
-        var mapElement = L.DomUtil.get('map_canvas');
-        L.DomUtil.addClass(mapElement, 'kartalla-interpolate');
+        L.DomUtil.addClass(state.map.getContainer(), 'kartalla-interpolate');
         state.map.on('zoomstart', function() {
-            L.DomUtil.removeClass(mapElement, 'kartalla-interpolate');
+            L.DomUtil.removeClass(state.map.getContainer(), 'kartalla-interpolate');
         });
         state.map.on('zoomend', function() {
 	    // re-enable interpolation starting at next render:
             L.Util.requestAnimFrame(function() {
-                L.DomUtil.addClass(mapElement, 'kartalla-interpolate');
+                L.DomUtil.addClass(state.map.getContainer(), 'kartalla-interpolate');
             });
         });
 
