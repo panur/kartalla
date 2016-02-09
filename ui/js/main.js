@@ -7,7 +7,7 @@ function main() {
     var utils = new Utils();
     var config = new Config(utils);
     var uiBar = new UiBar(utils);
-    var map = new Map();
+    var map = new Map(utils);
     var gtfs = new Gtfs();
     var controller = new Controller(gtfs, map);
     var timing = new Timing(controller, uiBar);
@@ -44,7 +44,7 @@ function main() {
             gtfs.init(JSON.parse(downloadRequest.responseText));
             uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(),
                               downloadRequest.responseText.length, duration,
-                              isDownloadCompressed());
+                              isDownloadCompressed(), mqtt.getDataCount);
             timing.downloadIsReady();
             window.onresize();
             if (mqtt.isVpUsed()) {
@@ -259,6 +259,7 @@ function Mqtt(controller) {
         var s = {};
         s.isVpUsed = null;
         s.client = null;
+        s.dataCount = 0;
         return s;
     }
 
@@ -306,6 +307,7 @@ function Mqtt(controller) {
                 controller.updateVp(routeId, parsedVp.dir - 1, parsedVp.start, parsedVp.tsi,
                                     parsedVp.lat, parsedVp.long);
             }
+            state.dataCount += topic.length + payload.length;
         }
     }
 
@@ -327,5 +329,13 @@ function Mqtt(controller) {
         state.client = null;
         controller.cleanVp();
         console.log('disconnected mqtt');
+    };
+
+    this.getDataCount = function () {
+        if (state.isVpUsed === undefined) {
+            return undefined;
+        } else {
+            return state.dataCount;
+        }
     };
 }

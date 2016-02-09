@@ -43,4 +43,13 @@ function Utils() {
         }
         return dateString;
     };
+
+    this.setDomTooltipPosition = function (tooltipElement, rect) {
+        var leftOffset = {true: 0,
+            false: tooltipElement.offsetWidth}[rect.left < (window.innerWidth / 2)];
+        tooltipElement.style.left = (rect.left - leftOffset) + 'px';
+        var topOffset = {true: -rect.height,
+            false: tooltipElement.offsetHeight}[rect.top < (window.innerHeight / 2)];
+        tooltipElement.style.top = (rect.top - topOffset) + 'px';
+    };
 }

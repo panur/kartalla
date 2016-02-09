@@ -2,7 +2,7 @@
 
 'use strict';
 
-function Map() {
+function Map(utils) {
     var that = this;
     var state = getState();
 
@@ -76,7 +76,7 @@ function Map() {
             state.polylineCache[pathId].count += 1;
         }
         var polyline = state.polylineCache[pathId].polyline;
-        var marker = new MapMarker(state.maMap);
+        var marker = new MapMarker(utils, state.maMap);
         marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), routeName,
                     getTitleText);
         state.markers[state.nextMarkerId] = {marker: marker, pathId: pathId};
@@ -143,7 +143,7 @@ function Map() {
     };
 }
 
-function MapMarker(maMap) {
+function MapMarker(utils, maMap) {
     var that = this;
     var state = getState();
 
@@ -225,13 +225,7 @@ function MapMarker(maMap) {
         var symbolTooltipElement = getSymbolTooltipElement();
         symbolTooltipElement.textContent = title;
         symbolTooltipElement.style.visibility = 'visible';
-
-        var leftOffset = {true: 0,
-            false: symbolTooltipElement.offsetWidth}[rect.left < (window.innerWidth / 2)];
-        symbolTooltipElement.style.left = (rect.left - leftOffset) + 'px';
-        var topOffset = {true: -rect.height,
-            false: symbolTooltipElement.offsetHeight}[rect.top < (window.innerHeight / 2)];
-        symbolTooltipElement.style.top = (rect.top - topOffset) + 'px';
+        utils.setDomTooltipPosition(symbolTooltipElement, rect);
     }
 
     function hideSymbolTooltipElement(symbolElement) {

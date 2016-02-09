@@ -339,13 +339,27 @@ function UiBar(utils) {
         return ((bytes / 1024) / 1024).toFixed(1);
     }
 
-    this.setDataInfo = function (dtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed) {
+    this.setDataInfo = function (dtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed,
+                                 getMqttDataCount) {
         setElementText('dataStatus', 'OK');
         var infoElement = createElement('span', undefined, '*');
         infoElement.className = 'dataInfo';
-        infoElement.title = getDataInfoTitle({'gtfsDate': epochToString(dtfsEpoch, false),
-            'jsonDate': epochToString(jsonEpoch, true), 'size': getMegaBytes(sizeBytes),
-            'duration': downloadDuration, 'compressed': isCompressed});
+        var tooltipElement = createElement('div');
+        tooltipElement.className = 'dataInfoToolTip';
+        document.body.appendChild(tooltipElement);
+        infoElement.addEventListener('mouseover', function () {
+            tooltipElement.textContent = getDataInfoTitle({
+                'gtfsDate': epochToString(dtfsEpoch, false),
+                'jsonDate': epochToString(jsonEpoch, true), 'size': getMegaBytes(sizeBytes),
+                'duration': downloadDuration, 'compressed': isCompressed,
+                'mqtt': formatMqttDataCount(getMqttDataCount())
+            });
+            tooltipElement.style.visibility = 'visible';
+            utils.setDomTooltipPosition(tooltipElement, infoElement.getBoundingClientRect());
+        });
+        infoElement.addEventListener('mouseout', function () {
+            tooltipElement.style.visibility = 'hidden';
+        });
         document.getElementById('dataStatus').appendChild(infoElement);
     };
 
@@ -353,14 +367,24 @@ function UiBar(utils) {
         return utils.dateToString(new Date(epoch * 1000), isTimeIncluded);
     }
 
+    function formatMqttDataCount(dataCount) {
+        if (dataCount === undefined) {
+            return undefined;
+        } else {
+            return getMegaBytes(dataCount);
+        }
+    }
+
     function getDataInfoTitle(dataInfo) {
-        var titleItems = ['gtfsDate', 'jsonDate', 'size', 'duration', 'compressed'];
+        var titleItems = ['gtfsDate', 'jsonDate', 'size', 'duration', 'compressed', 'mqtt'];
         var dataInfoTitle = '';
         for (var i = 0; i < titleItems.length; i++) {
-            dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' +
-                getDataInfoItemValue(dataInfo[titleItems[i]]);
-            if (i < (titleItems.length - 1)) {
-                dataInfoTitle += '\n';
+            var itemValue = getDataInfoItemValue(dataInfo[titleItems[i]]);
+            if (itemValue !== undefined) {
+                dataInfoTitle += getDataInfoItemName(titleItems[i]) + ': ' + itemValue;
+                if (i < (titleItems.length - 1)) {
+                    dataInfoTitle += '\n';
+                }
             }
         }
         return dataInfoTitle;
@@ -369,12 +393,12 @@ function UiBar(utils) {
     function getDataInfoItemName(dataInfoItem) {
         if (state.lang === 'fi') {
             return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'size': 'Koko (megatavua)',
-                    'duration': 'Lataus (sekuntia)',
-                    'compressed': 'Lataus (pakattu)'}[dataInfoItem];
+                    'duration': 'Lataus (sekuntia)', 'compressed': 'Lataus (pakattu)',
+                    'mqtt': 'MQTT (megatavua)'}[dataInfoItem];
         } else {
             return {'gtfsDate': 'GTFS', 'jsonDate': 'JSON', 'size': 'Size (megabytes)',
-                    'duration': 'Download (seconds)',
-                    'compressed': 'Download (compressed)'}[dataInfoItem];
+                    'duration': 'Download (seconds)', 'compressed': 'Download (compressed)',
+                    'mqtt': 'MQTT (megabytes)'}[dataInfoItem];
         }
     }
 

@@ -23,6 +23,14 @@ span.dataInfo {
     color: teal;
 }
 
+div.dataInfoToolTip {
+    position: absolute;
+    padding: 5px;
+    white-space: pre;
+    background: linear-gradient(to bottom, khaki, white);
+    z-index: 1000;
+}
+
 div.editShareLink {
     padding: 5px;
     color: #000000;
