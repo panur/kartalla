@@ -49,6 +49,12 @@ function Controller(gtfs, map) {
         state.vpCache[routeId][direction][startTime]['lng'] = lng;
     };
 
+    this.cleanVp = function () {
+        for (var routeId in state.vpCache) {
+            delete state.vpCache[routeId];
+        }
+    };
+
     this.update = function (mapDate) {
         var mapDateString = getDateString(mapDate);
 
@@ -435,10 +441,9 @@ function ControllerTrip(map, vpCache) {
         return secondsAfterMidnight - (state.startTime * 60);
     }
 
-    function getSecondsAfterMidnight(date) {
+    function getSecondsAfterMidnight(date) { // possible values: 0 - 86 399.999
         var minutesAfterMidnight = (date.getHours() * 60) + date.getMinutes();
-        return (minutesAfterMidnight * 60) + date.getSeconds() + date.getMilliseconds()/1000;
-        // possible values: 0 - 86 399.999
+        return ((minutesAfterMidnight * 60) + date.getSeconds()) + (date.getMilliseconds() / 1000);
     }
 
     function isTimeToUpdateMarker(realTime) {

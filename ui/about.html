@@ -12,18 +12,19 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2016-01-24.</p>
+<p>Last updated 2016-02-09.</p>
 
 <h2 id="overview">Overview</h2>
 
 <p>
 <a href="index.en.html">Kartalla</a> displays in real-time the location of public transport vehicles
-in Finland based on the route and timetable information published by
+in Finland based on the position, route and timetable information published by
 <a href="https://www.hsl.fi/en">HSL</a> and
 <a href="http://www.liikennevirasto.fi/web/en">Finnish Transport Agency</a> as
-open data. The displayed location is not based on measured location (like for example
-<a href="https://en.wikipedia.org/wiki/Global_Positioning_System">GPS</a> position) and therefore it
-may and is even likely to differ from the actual location.
+open data. If measured vehicle positions are not available then positions are computed based on
+route and timetable information. Measured vehicle positions are available only for some HSL routes.
+Whether measured or computed positions are used the shown vehicle position may and is even likely to
+differ from the actual location.
 </p>
 
 <p>
@@ -32,7 +33,7 @@ metro, ferry or airplane). The visibility of the icons by type can be controlled
 below the map. The form of the icon is a square for one minute before the departure time and a
 circle for one minute after the arrival time. In between the form of the icon is an array pointing
 into the direction the vehicle is moving to. Information like in the following example is shown when
-pointer is moved over an icon.
+pointer is moved over an icon (computed vehicle position).
 </p>
 
 <ul>
@@ -46,6 +47,22 @@ pointer is moved over an icon.
     <li>Speed (km/h): 30</li>
     <li>Average speed (km/h): 34</li>
     <li>Stops: 40</li>
+</ul>
+
+<p>
+When measured vehicle positions are used the route name is shown inside a white circle in the
+vehicle icon. The longer the duration from the last position measurement the more transparent the
+icon is. The duration is also shown as Update in the route information.
+</p>
+
+<ul>
+    <li>Route name: 4</li>
+    <li>Route: Katajanokka - Munkkiniemi</li>
+    <li>Direction: &larr;</li>
+    <li>Departure time: 17:45</li>
+    <li>Arrival time: 18:16</li>
+    <li>Update (s): 14</li>
+    <li>Stops: 23</li>
 </ul>
 
 <h2 id="maps">Other Maps</h2>
@@ -120,11 +137,17 @@ then displays the locations of the public transport vehicles as icons on a map u
 API</a>. The JSON file is downloaded as a compressed file if the browser supports
 <a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>. In that case size of
 the downloaded file is about 0.5 megabytes. After the JSON file has been downloaded no more data is
-downloaded except maybe more map data. The user interface is implemented in
+downloaded except maybe more map data unless measured vehicle positions are used. The user interface
+is implemented in
 <a href="http://javascript.crockford.com/">JavaScript</a> programming language and it utilizes
 <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a>,
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a> and
 <a href="https://www.w3.org/TR/SVG/Overview.html">SVG</a> technologies.
+</p>
+
+<p>
+Measured vehicle positions are downloaded in JSON format from HSL's server using
+<a href="http://mqtt.org/">MQTT</a> protocol.
 </p>
 
 <p>
@@ -196,6 +219,11 @@ The user interface can be controlled with the following URL parameters.
         <ul>
         <li>routes to be shown (separated by underscore)</li>
         <li>default value: - (all routes are shown)</li>
+        </ul></li>
+    <li><var>vp</var>
+        <ul>
+        <li>is measured vehicle positions used (0 or 1)</li>
+        <li>default value: 0 (no)</li>
         </ul></li>
     <li><var>_file</var>, <var>_stop</var>
         <ul>

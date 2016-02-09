@@ -5,7 +5,7 @@
 function Config(utils) {
     var that = this;
     var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
-        'types', 'routes', '_file', '_stop', '_vp'];
+        'types', 'routes', 'vp', '_file', '_stop'];
     var urlParams = getUrlParams();
     this.dataType = urlParams.data || 'hsl';
     this.stopAfter = urlParams._stop || null;
@@ -20,7 +20,7 @@ function Config(utils) {
     this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
     this.jsonUrl = getJsonUrl(urlParams._file);
-    this.isVpUsed = urlParams._vp || false;
+    this.isVpUsed = getIsVpUsed(urlParams.vp);
 
     this.restart = function (newDataType) {
         that.dataType = newDataType;
@@ -30,9 +30,10 @@ function Config(utils) {
         that.vehicleTypes = getVehicleTypes();
         that.visibleTypes = getVisibleTypes();
         that.jsonUrl = getJsonUrl(undefined);
+        that.isVpUsed = getIsVpUsed(urlParams.vp);
     };
 
-    this.getShareLinkParamsList = function (mapParams, date, tripTypes) {
+    this.getShareLinkParamsList = function (mapParams, date, tripTypes, isVpUsed) {
         var paramsList = [];
         paramsList.push({'name': 'data', 'on': true, 'value': that.dataType});
         paramsList.push({'name': 'lat', 'on': true, 'value': formatLatLng(mapParams['lat'])});
@@ -42,6 +43,9 @@ function Config(utils) {
         paramsList.push({'name': 'time', 'on': false, 'value': getShareLinkTime(date)});
         paramsList.push({'name': 'speed', 'on': false, 'value': that.speed});
         paramsList.push({'name': 'interval', 'on': false, 'value': that.interval});
+        if (isVpUsed !== undefined) {
+            paramsList.push({'name': 'vp', 'on': false, 'value': ~~isVpUsed});
+        }
         if (that.vehicleTypes.length > 1) {
             var types = getShareLinkTypes(tripTypes);
             if (types !== '') {
@@ -139,7 +143,7 @@ function Config(utils) {
         } else if (parameterName === '_stop') {
             var re = /\d+/;
             return re.test(parameterValue);
-        } else if (parameterName === '_vp') {
+        } else if (parameterName === 'vp') {
             return checkValueInterval(parameterValue, 0, 1);
         }
     }
@@ -245,6 +249,14 @@ function Config(utils) {
             } else {
                 return 'json/split/' + that.dataType + '.json';
             }
+        }
+    }
+
+    function getIsVpUsed(urlParamsVp) {
+        if (that.dataType === 'hsl') {
+            return urlParamsVp || false;
+        } else {
+            return undefined;
         }
     }
 }

@@ -12,7 +12,7 @@
 
 <h1>Kartalla - Tietoja</h1>
 
-<p>Viimeksi päivitetty 24.1.2016.</p>
+<p>Viimeksi päivitetty 9.2.2016.</p>
 
 <h2 id="yleista">Yleistä</h2>
 
@@ -20,9 +20,10 @@
 <a href="index.fi.html">Kartalla</a> näyttää tosiaikaisesti joukkoliikennevälineiden sijainnin
 <a href="https://www.hsl.fi/">HSL</a>:n ja
 <a href="http://www.liikennevirasto.fi/">Liikennevirasto</a>n avoimena datana julkaisemien
-aikataulu- ja reittitietojen perusteella. Näytetty sijainti ei siis perustu mitattuun paikkatietoon
-(esimerkiksi <a href="https://fi.wikipedia.org/wiki/GPS">GPS</a>-sijaintiin) eli poikkeamat
-todelliseen sijaintiin ovat mahdollisia ja luultavia.
+sijainti-, aikataulu- ja reittitietojen perusteella. Mikäli mitattua sijantia ei ole saatavilla,
+niin sijainti lasketaan aikataulu- ja reittitiedoista. Mitattu sijainti on saatavilla ainoastaan
+osasta HSL:n liikennevälineistä. Riippumatta käytetystä menetelmästä poikkeamat todelliseen
+sijaintiin ovat mahdollisia ja luultavia.
 </p>
 
 <p>
@@ -30,7 +31,7 @@ Sijainti esitetään kuvakkeena, jonka väri kertoo liikennevälineen tyypin (bu
 metro, lautta tai lentokone). Kuvakkeiden näkyvyyttä tyypeittäin voi säätää kartan alalaidan
 painikkeilla. Kuvakkeen muoto on neliö minuutin ennen lähtöaikaa ja ympyrä minuutin tuloajan
 jälkeen. Näiden välillä muotona on kulkuvälineen kulkusuunnan osoittava nuoli. Siirtämällä
-osoittimen kuvakkeen päälle tulee näkyviin seuraavan esimerkin mukaisia tietoja.
+osoittimen kuvakkeen päälle tulee näkyviin seuraavan esimerkin mukaisia tietoja (laskettu sijanti).
 </p>
 
 <ul>
@@ -44,6 +45,22 @@ osoittimen kuvakkeen päälle tulee näkyviin seuraavan esimerkin mukaisia tieto
     <li>Nopeus (km/h): 30</li>
     <li>Keskinopeus (km/h): 34</li>
     <li>Pysäkkejä: 40</li>
+</ul>
+
+<p>
+Kun käytössä on mitattu sijainti niin kuvakkeessa linjatunniste on valkoisen ympyrän sisällä.
+Kuvake on sitä läpikuultavampi mitä pidempi aika mittauksesta on kulunut. Aika näkyy myös
+Päivitys-kohdassa.
+</p>
+
+<ul>
+    <li>Linja: 4</li>
+    <li>Reitti: Katajanokka - Munkkiniemi</li>
+    <li>Suunta: &larr;</li>
+    <li>Lähtöaika: 17:45</li>
+    <li>Tuloaika: 18:16</li>
+    <li>Päivitys (s): 14</li>
+    <li>Pysäkkejä: 23</li>
 </ul>
 
 <h2 id="karttoja">Muita karttoja</h2>
@@ -119,11 +136,16 @@ esittää sen perusteella joukkoliikennevälineiden sijainnin kartalla käyttäe
 API</a>:a. JSON-tiedosto ladataan palvelimelta pakattuna mikäli selain tukee
 <a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>-tekniikka. Tällöin
 siirrettävän tiedon määrä on noin 0,5 megatavua. Tämän jälkeen verkosta ei ladata muuta kuin
-mahdollisesti lisää karttadataa. Käyttöliittymä on toteutettu
+mahdollisesti lisää karttadataa ellei käytössä ole mitattu sijainti. Käyttöliittymä on toteutettu
 <a href="http://javascript.crockford.com/">JavaScript</a>-ohjelmointikielellä sekä
 <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a>-,
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a>- ja
 <a href="https://www.w3.org/TR/SVG/Overview.html">SVG</a>-tekniikoilla.
+</p>
+
+<p>
+Mitattu sijaintitieto ladataan HSL:n palvelimelta JSON-muodossa käyttäen
+<a href="http://mqtt.org/">MQTT</a>-protokollaa.
 </p>
 
 <p>
@@ -195,6 +217,11 @@ Käyttöliittymän toimintaa voi ohjata seuraavilla URL-parametreillä.
         <ul>
         <li>näytetyt reitit alaviivalla eroteltuna</li>
         <li>oletusarvo: - (näytetään kaikki reitit)</li>
+        </ul></li>
+    <li><var>vp</var>
+        <ul>
+        <li>onko mitattu sijanti käytössä (0 tai 1)</li>
+        <li>oletusarvo: 0 (ei)</li>
         </ul></li>
     <li><var>_file</var>, <var>_stop</var>
         <ul>

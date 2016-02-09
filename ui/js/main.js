@@ -12,10 +12,12 @@ function main() {
     var controller = new Controller(gtfs, map);
     var timing = new Timing(controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
+    var mqtt = new Mqtt(controller);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
+    mqtt.init(config.isVpUsed);
     uiBar.init(config.lang, tripTypeInfos, onUiBarVisibilityChange, createDataSelection(),
-               createMapSelection(), getUrlParams);
+               createMapSelection(), createPositionType(), getUrlParams);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
@@ -45,8 +47,8 @@ function main() {
                               isDownloadCompressed());
             timing.downloadIsReady();
             window.onresize();
-            if (config.isVpUsed) {
-                initVp();
+            if (mqtt.isVpUsed()) {
+                mqtt.connect();
             }
         }
 
@@ -54,41 +56,6 @@ function main() {
             var contentEncoding = downloadRequest.getResponseHeader('Content-Encoding');
             return ((contentEncoding !== null) && (contentEncoding === 'gzip'));
         }
-    }
-
-    function initVp() {
-        var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
-        var client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
-        client.onMessageArrived = onMessageArrived;
-        client.connect({onSuccess:onConnect});
-
-        function onConnect() {
-            client.subscribe('/hfp/journey/#');
-        }
-
-        function onMessageArrived(message) {
-            var topic = message.destinationName;
-            var payload = message.payloadString;
-            var parsedVp = JSON.parse(payload).VP;
-            if (isVpMessageOk(parsedVp)) {
-                var routeId = topic.split('/')[5];
-                controller.updateVp(routeId, parsedVp.dir - 1, parsedVp.start, parsedVp.tsi,
-                                    parsedVp.lat, parsedVp.long);
-            }
-        }
-    }
-
-    function isVpMessageOk(parsedVp) {
-        var fields = ['dir', 'start', 'tsi', 'lat', 'long'];
-        for (var i = 0; i < fields.length; i++) {
-            if (parsedVp[fields[i]] === undefined) {
-                return false;
-            }
-        }
-        if (['1', '2'].indexOf(parsedVp.dir) === -1) {
-            return false;
-        }
-        return true;
     }
 
     function initResizeHandler() {
@@ -117,6 +84,7 @@ function main() {
         return {values: names, selectedValue: selectedData, changeType : function (newType) {
             config.restart(getDataType(newType));
             tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
+            mqtt.restart(config.isVpUsed);
             uiBar.restart();
             controller.restart();
             timing.restart();
@@ -149,9 +117,14 @@ function main() {
         }};
     }
 
+    function createPositionType() {
+        return {'isVpUsed': mqtt.isVpUsed, 'toggleUsage': mqtt.toggleUsage};
+    }
+
     function getUrlParams() {
         var tripTypes = tripTypeInfos.getTypes();
-        return config.getShareLinkParamsList(map.getParams(), timing.getMapDate(), tripTypes);
+        return config.getShareLinkParamsList(map.getParams(), timing.getMapDate(), tripTypes,
+                                             mqtt.isVpUsed());
     }
 }
 
@@ -275,5 +248,84 @@ function TripTypeInfos(controller, uiBar) {
     this.toggleVisibility = function (tripTypeName) {
         state.types[tripTypeName].isVisible = !state.types[tripTypeName].isVisible;
         controller.updateTripTypeVisibility(tripTypeName);
+    };
+}
+
+function Mqtt(controller) {
+    var that = this;
+    var state = getState();
+
+    function getState() {
+        var s = {};
+        s.isVpUsed = null;
+        s.client = null;
+        return s;
+    }
+
+    this.init = function (isVpUsed) {
+        state.isVpUsed = isVpUsed;
+    };
+
+    this.restart = function (isVpUsed) {
+        if (state.isVpUsed) {
+            disconnect();
+        }
+        state.isVpUsed = isVpUsed;
+    };
+
+    this.isVpUsed = function () {
+        return state.isVpUsed;
+    };
+
+    this.toggleUsage = function () {
+        state.isVpUsed = !state.isVpUsed;
+        if (state.isVpUsed) {
+            that.connect();
+        } else {
+            disconnect();
+        }
+    };
+
+    this.connect = function () {
+        var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
+        state.client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
+        state.client.onMessageArrived = onMessageArrived;
+        state.client.connect({onSuccess:onConnect});
+
+        function onConnect() {
+            state.client.subscribe('/hfp/journey/#');
+            console.log('connected mqtt');
+        }
+
+        function onMessageArrived(message) {
+            var topic = message.destinationName;
+            var payload = message.payloadString;
+            var parsedVp = JSON.parse(payload).VP;
+            if (isVpMessageOk(parsedVp)) {
+                var routeId = topic.split('/')[5];
+                controller.updateVp(routeId, parsedVp.dir - 1, parsedVp.start, parsedVp.tsi,
+                                    parsedVp.lat, parsedVp.long);
+            }
+        }
+    }
+
+    function isVpMessageOk(parsedVp) {
+        var fields = ['dir', 'start', 'tsi', 'lat', 'long'];
+        for (var i = 0; i < fields.length; i++) {
+            if (parsedVp[fields[i]] === undefined) {
+                return false;
+            }
+        }
+        if (['1', '2'].indexOf(parsedVp.dir) === -1) {
+            return false;
+        }
+        return true;
+    }
+
+    function disconnect() {
+        state.client.disconnect();
+        state.client = null;
+        controller.cleanVp();
+        console.log('disconnected mqtt');
     };
 }

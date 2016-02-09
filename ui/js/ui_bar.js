@@ -10,13 +10,15 @@ function UiBar(utils) {
         var s = {};
         s.lang = null;
         s.tripTypeInfos = null;
+        s.positionType = null;
         return s;
     }
 
     this.init = function (lang, tripTypeInfos, onUiBarVisibilityChange, dataSelection, mapSelection,
-                          getUrlParams) {
+                          positionType, getUrlParams) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
+        state.positionType = positionType;
 
         var uiBarElement = document.getElementById('ui_bar');
         uiBarElement.innerHTML = '';
@@ -35,6 +37,7 @@ function UiBar(utils) {
         line2Element.appendChild(createJsonDataElement(dataSelection));
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createMapSelectionElement(mapSelection));
+        line2Element.appendChild(createPositionElement());
         line2Element.appendChild(createTextElement(' | '));
         line2Element.appendChild(createShareElement(getUrlParams, mapSelection.selectedValue));
         line2Element.appendChild(createTextElement(' | '));
@@ -46,6 +49,10 @@ function UiBar(utils) {
         var oldTripTypeElement = document.getElementById('tripType');
         var newTripTypeElement = createTripTypeElement();
         oldTripTypeElement.parentNode.replaceChild(newTripTypeElement, oldTripTypeElement);
+
+        var oldPositionElement = document.getElementById('positionType');
+        var newPositionElement = createPositionElement();
+        oldPositionElement.parentNode.replaceChild(newPositionElement, oldPositionElement);
     }
 
     function createTripTypeElement() {
@@ -125,13 +132,12 @@ function UiBar(utils) {
     function createLanguageElement(selectedMap) {
         var languageElement = createElement('span');
         if (state.lang === 'fi') {
-            languageElement.appendChild(createTextElement('Kieli: suomi / '));
+            languageElement.appendChild(createTextElement('suomi / '));
             var linkElement = createElement('a', undefined, 'English');
             linkElement.href = getUrl(selectedMap, 'en');
             linkElement.title = 'show English version of this page';
             languageElement.appendChild(linkElement);
         } else {
-            languageElement.appendChild(createTextElement('Language: '));
             var linkElement = createElement('a', undefined, 'suomi');
             linkElement.href = getUrl(selectedMap, 'fi');
             linkElement.title = 'näytä sivun suomenkielinen versio';
@@ -179,6 +185,45 @@ function UiBar(utils) {
             selectionData.changeType(event.target.value);
         };
         return selectElement;
+    }
+
+    function createPositionElement() {
+        var positionElement = createElement('span', 'positionType');
+        if (state.positionType.isVpUsed() !== undefined) {
+            updatePositionElement(positionElement);
+        }
+        return positionElement;
+    }
+
+    function updatePositionElement(positionElement) {
+        var computeLabel = {'en': 'computed', 'fi': 'laskettu'}[state.lang];
+        var measureLabel = {'en': 'measured', 'fi': 'mitattu'}[state.lang];
+
+        if (state.positionType.isVpUsed()) {
+            var computeElement = createTextElement('(' + computeLabel + ')');
+            computeElement.title =
+                {'en': 'show computed positions', 'fi': 'näytä laskettu sijainti'}[state.lang];
+            var measureElement = createTextElement('/' + measureLabel);
+            var buttonElement = computeElement;
+        } else {
+            var computeElement = createTextElement(computeLabel + '/');
+            var measureElement = createTextElement('(' + measureLabel + ')');
+            measureElement.title =
+                {'en': 'show measured positions', 'fi': 'näytä mitattu sijainti'}[state.lang];
+            var buttonElement = measureElement;
+        }
+        buttonElement.className = 'button';
+        buttonElement.addEventListener('click', function () {
+            state.positionType.toggleUsage();
+            updatePositionElement(positionElement);
+        });
+
+        while (positionElement.firstChild !== null) {
+            positionElement.removeChild(positionElement.firstChild);
+        }
+        positionElement.appendChild(createTextElement(' | '));
+        positionElement.appendChild(computeElement);
+        positionElement.appendChild(measureElement);
     }
 
     function createShareElement(getUrlParams, selectedMap) {

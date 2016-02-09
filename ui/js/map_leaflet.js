@@ -263,9 +263,9 @@ function MapApiMarker(map, polyline) {
         if ((state.isVisible === true) && (isInViewport == true)) {
             if (state.isMarkerOnMap === false) {
                 state.isMarkerOnMap = true;
-                var marker = state.nativeMarker = createNativeMarker();
+                state.nativeMarker = createNativeMarker();
                 that.resize(state.size);
-                marker.addTo(map);
+                state.nativeMarker.addTo(map);
             }
             if (state.isPolylineOnMap === false) {
                 state.isPolylineOnMap = true;
