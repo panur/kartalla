@@ -4,6 +4,12 @@ html, body {
     overflow: hidden;
 }
 
+div.uiBar {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
 span.button {
     cursor: pointer;
 }
