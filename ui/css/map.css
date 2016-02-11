@@ -5,7 +5,8 @@
 div.symbolToolTip {
     position: absolute;
     padding: 5px;
-    white-space: pre;
+    white-space: pre-wrap;
     background: linear-gradient(to bottom, khaki, white);
     z-index: 1000;
+    max-width: 30ch;
 }
