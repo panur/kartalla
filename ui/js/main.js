@@ -12,7 +12,7 @@ function main() {
     var controller = new Controller(gtfs, map);
     var timing = new Timing(controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
-    var mqtt = new Mqtt(controller);
+    var mqtt = new Mqtt(utils, controller);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
     mqtt.init(config.isVpUsed);
@@ -251,7 +251,7 @@ function TripTypeInfos(controller, uiBar) {
     };
 }
 
-function Mqtt(controller) {
+function Mqtt(utils, controller) {
     var that = this;
     var state = getState();
 
@@ -288,6 +288,27 @@ function Mqtt(controller) {
     };
 
     this.connect = function () {
+        var readyEvent = document.createEvent('Event');
+        readyEvent.initEvent('vpCacheDownloadIsReady', false, false);
+        document.addEventListener('vpCacheDownloadIsReady', downloadIsReady, false);
+        var downloadRequest = null;
+        utils.downloadUrl('http://dev.hsl.fi/hfp/journey/', null, function (request) {
+            downloadRequest = request;
+            document.dispatchEvent(readyEvent);
+        });
+        function downloadIsReady() {
+            var messages = JSON.parse(downloadRequest.responseText);
+            for (var topic in messages) {
+                var parsedVp = messages[topic].VP;
+                if (isVpMessageOk(parsedVp)) {
+                    updateCache(topic, parsedVp);
+                }
+            }
+            connectMqtt();
+        }
+    };
+
+    function connectMqtt() {
         var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
         state.client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
         state.client.onMessageArrived = onMessageArrived;
@@ -303,9 +324,7 @@ function Mqtt(controller) {
             var payload = message.payloadString;
             var parsedVp = JSON.parse(payload).VP;
             if (isVpMessageOk(parsedVp)) {
-                var routeId = topic.split('/')[5];
-                controller.updateVp(routeId, parsedVp.dir - 1, parsedVp.start, parsedVp.tsi,
-                                    parsedVp.lat, parsedVp.long);
+                updateCache(topic, parsedVp);
             }
             state.dataCount += topic.length + payload.length;
         }
@@ -318,17 +337,25 @@ function Mqtt(controller) {
                 return false;
             }
         }
-        if (['1', '2'].indexOf(parsedVp.dir) === -1) {
+        if (['1', '2'].indexOf(parsedVp['dir']) === -1) {
             return false;
         }
         return true;
     }
 
+    function updateCache(topic, parsedVp) {
+        var routeId = topic.split('/')[5];
+        controller.updateVp(routeId, parsedVp['dir'] - 1, parsedVp['start'], parsedVp['tsi'],
+                            parsedVp['lat'], parsedVp['long']);
+    }
+
     function disconnect() {
-        state.client.disconnect();
-        state.client = null;
+        if (state.client !== null) {
+            state.client.disconnect();
+            state.client = null;
+            console.log('disconnected mqtt');
+        }
         controller.cleanVp();
-        console.log('disconnected mqtt');
     };
 
     this.getDataCount = function () {
