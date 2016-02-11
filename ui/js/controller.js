@@ -413,11 +413,12 @@ function ControllerTrip(map, vpCache) {
         if (updateMarkerByDistance) {
             var distance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
             opacity = getDistanceMarkerOpacity(secondsFromStart, fadeSeconds);
-            state.previousSecondsFromStart = secondsFromStart;
             state.previousDistance = distance;
             var isPastLastArrival = secondsFromStart > state.lastArrivalSeconds;
             map.updateDistanceMarker(state.marker, distance, isPastLastArrival);
         }
+
+        state.previousSecondsFromStart = secondsFromStart;
 
         map.updateMarkerOpacity(state.marker, opacity);
     }
@@ -487,6 +488,27 @@ function ControllerTrip(map, vpCache) {
         return distance;
     }
 
+    function getTimeFromStart(distanceFromStart, timesAndDistances) {
+        var seconds = 0;
+
+        for (var i = 1; i < timesAndDistances.length; i++) {
+            if (distanceFromStart > timesAndDistances[i].distance) {
+                continue;
+            } else {
+                var secondsInc =
+                    (timesAndDistances[i].arrival - timesAndDistances[i - 1].departure) * 60;
+                var distanceInc =
+                    (timesAndDistances[i].distance - timesAndDistances[i - 1].distance);
+                var distanceSincePrevious = distanceFromStart - timesAndDistances[i - 1].distance;
+                var fraction = distanceSincePrevious / distanceInc;
+                seconds = (timesAndDistances[i - 1].departure * 60) + (fraction * secondsInc);
+                break;
+            }
+        }
+
+        return seconds;
+    }
+
     function getVpMarkerOpacity(tsi) {
         return Math.max(0.2, 1.0 - (getVpEntryAge(tsi) / getMaxVpEntryAge()));
     }
@@ -521,7 +543,7 @@ function ControllerTrip(map, vpCache) {
                 'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
                 'totalDistance': totalDistance, 'distance': null, 'speed': null,
                 'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops,
-                'update': null};
+                'update': null, 'delayDistance': null, 'delayTime': null};
     }
 
     function minutesToString(minutesAfterMidnight) {
@@ -551,6 +573,9 @@ function ControllerTrip(map, vpCache) {
         if (state.vpCacheEntries['valid'] !== null) {
             var age = getVpEntryAge(state.vpCacheEntries['valid']['tsi']);
             state.tripInfo.update = Math.round(age);
+            var delays = getDelays(secondsFromStart, state.vpCacheEntries['valid']);
+            state.tripInfo.delayDistance = delays['distance'];
+            state.tripInfo.delayTime = delays['time'];
         }
     }
 
@@ -567,9 +592,22 @@ function ControllerTrip(map, vpCache) {
         }
     }
 
+    function getDelays(secondsFromStart, vpCacheEntry) {
+        var timetableDistance = getDistanceFromStart(secondsFromStart, state.timesAndDistances);
+        var vpDistance =
+            map.computeVpDistance(state.marker, vpCacheEntry['lat'], vpCacheEntry['lng']);
+        var delayDistanceMeters = timetableDistance - vpDistance;
+        var delayTime = 0;
+        if (Math.abs(delayDistanceMeters) > 25) {
+            var timeFromStart = getTimeFromStart(vpDistance, state.timesAndDistances);
+            delayTime = ((secondsFromStart - timeFromStart) / 60).toFixed(1);
+        }
+        return {'distance': ((delayDistanceMeters) / 1000).toFixed(1), 'time': delayTime};
+    }
+
     function getMarkerTitle(previousUpdateType) {
         var vpTitleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
-                            'update', 'stops'];
+                            'update', 'delayDistance', 'delayTime', 'stops'];
         var distanceTitleItems = ['routeName', 'route', 'direction', 'startTime', 'lastArrivalTime',
                                   'duration', 'distance', 'speed', 'averageSpeed', 'stops'];
         var titleItems = {'vp': vpTitleItems, 'distance': distanceTitleItems}[previousUpdateType];
@@ -595,13 +633,15 @@ function ControllerTrip(map, vpCache) {
                     'startTime': 'Lähtöaika', 'lastArrivalTime': 'Tuloaika',
                     'duration': 'Kesto (min)', 'distance': 'Matka (km)',
                     'speed': 'Nopeus (km/h)', 'averageSpeed': 'Keskinopeus (km/h)',
-                    'stops': 'Pysäkkejä', 'update': 'Päivitys (s)'}[markerTitleItem];
+                    'stops': 'Pysäkkejä', 'update': 'Päivitys (s)',
+                    'delayDistance': 'Viive (km)', 'delayTime': 'Viive (min)'}[markerTitleItem];
         } else {
             return {'routeName': 'Route name', 'route': 'Route', 'direction': 'Direction',
                     'startTime': 'Departure time', 'lastArrivalTime': 'Arrival time',
                     'duration': 'Duration (min)', 'distance': 'Distance (km)',
                     'speed': 'Speed (km/h)', 'averageSpeed': 'Average speed (km/h)',
-                    'stops': 'Stops', 'update': 'Update (s)'}[markerTitleItem];
+                    'stops': 'Stops', 'update': 'Update (s)',
+                    'delayDistance': 'Delay (km)', 'delayTime': 'Delay (min)'}[markerTitleItem];
         }
     }
 }

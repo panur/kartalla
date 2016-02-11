@@ -88,6 +88,10 @@ function Map(utils) {
         return marker.updateVp(lat, lng);
     };
 
+    this.computeVpDistance = function (marker, lat, lng) {
+        return marker.computeVpDistance(lat, lng);
+    };
+
     this.updateDistanceMarker = function (marker, distanceFromStart, isPastLastArrival) {
         marker.updateDistance(distanceFromStart, isPastLastArrival);
     };
@@ -268,7 +272,7 @@ function MapMarker(utils, maMap) {
     function getMinDistanceToPolyline(latLon) {
         var polylinePath = maMap.getPolylinePath(state.maPolyline);
         var pathLength = maMap.getPathLength(polylinePath);
-        var result = {'d': Number.MAX_VALUE, 'p1': null, 'p2': null};
+        var result = {'d': Number.MAX_VALUE, 'p1': null, 'p2': null, 'p': null};
 
         for (var i = 1; i < pathLength; i++) {
             var p1 = maMap.getPathLatLon(polylinePath, i - 1);
@@ -279,9 +283,31 @@ function MapMarker(utils, maMap) {
                 result['d'] = d; // distance from latLon to segment in meters
                 result['p1'] = p1; // segment start LatLon
                 result['p2'] = p2; // segment end LatLon
+                result['p'] = p; // segment LatLon closest to latLon
             }
         }
         return result;
+    };
+
+    this.computeVpDistance = function (lat, lng) {
+        var latLon = new LatLon(lat, lng);
+        var minDist = getMinDistanceToPolyline(latLon);
+        var polylinePath = maMap.getPolylinePath(state.maPolyline);
+        var pathLength = maMap.getPathLength(polylinePath);
+        var distance = 0;
+
+        for (var i = 1; i < pathLength; i++) {
+            var p1 = maMap.getPathLatLon(polylinePath, i - 1);
+            var p2 = maMap.getPathLatLon(polylinePath, i);
+            if (minDist['p1'].equals(p1)) {
+                distance += p1.distanceTo(minDist['p']);
+                break;
+            } else {
+                distance += p1.distanceTo(p2);
+            }
+        }
+
+        return distance;
     };
 
     this.updateDistance = function (distanceFromStart, isPastLastArrival) {
