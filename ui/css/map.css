@@ -1,4 +1,11 @@
-
 .kartalla-interpolate .leaflet-marker-icon {
     transition: transform 1000ms linear;
+}
+
+div.symbolToolTip {
+    position: absolute;
+    padding: 5px;
+    white-space: pre;
+    background: linear-gradient(to bottom, khaki, white);
+    z-index: 1000;
 }

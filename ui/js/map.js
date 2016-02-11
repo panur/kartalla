@@ -212,10 +212,7 @@ function MapMarker(utils, maMap) {
     function createSymbolTooltipElement(elementId) {
         var symbolTooltipElement = document.createElement('div');
         symbolTooltipElement.id = elementId;
-        symbolTooltipElement.style.position = 'absolute';
-        symbolTooltipElement.style.padding = '5px';
-        symbolTooltipElement.style.whiteSpace = 'pre';
-        symbolTooltipElement.style.background = 'linear-gradient(to bottom, khaki, white)';
+        symbolTooltipElement.className = 'symbolToolTip';
         return symbolTooltipElement;
     }
 

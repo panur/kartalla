@@ -33,7 +33,7 @@ div.dataInfoToolTip {
     position: absolute;
     padding: 5px;
     white-space: pre;
-    background: linear-gradient(to bottom, khaki, white);
+    background: linear-gradient(to bottom, azure, white);
     z-index: 1000;
 }
 
