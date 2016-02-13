@@ -10,14 +10,16 @@ function UiBar(utils) {
         var s = {};
         s.lang = null;
         s.tripTypeInfos = null;
+        s.alertsInfo = null;
         s.positionType = null;
         return s;
     }
 
-    this.init = function (lang, tripTypeInfos, onUiBarVisibilityChange, dataSelection, mapSelection,
-                          positionType, getUrlParams) {
+    this.init = function (lang, tripTypeInfos, alertsInfo, onUiBarVisibilityChange, dataSelection,
+                          mapSelection, positionType, getUrlParams) {
         state.lang = lang;
         state.tripTypeInfos = tripTypeInfos;
+        state.alertsInfo = alertsInfo;
         state.positionType = positionType;
 
         var uiBarElement = document.getElementById('ui_bar');
@@ -27,6 +29,7 @@ function UiBar(utils) {
         line1Element.appendChild(createElement('span', 'clock'));
         line1Element.appendChild(createTextElement(' | '));
         line1Element.appendChild(createTripTypeElement());
+        line1Element.appendChild(createAlertsElement());
         uiBarElement.appendChild(line1Element);
 
         var line2Element = createElement('div');
@@ -49,6 +52,10 @@ function UiBar(utils) {
         var oldTripTypeElement = document.getElementById('tripType');
         var newTripTypeElement = createTripTypeElement();
         oldTripTypeElement.parentNode.replaceChild(newTripTypeElement, oldTripTypeElement);
+
+        var oldAlertElement = document.getElementById('alerts');
+        var newAlertElement = createAlertsElement();
+        oldAlertElement.parentNode.replaceChild(newAlertElement, oldAlertElement);
 
         var oldPositionElement = document.getElementById('positionType');
         var newPositionElement = createPositionElement();
@@ -109,6 +116,50 @@ function UiBar(utils) {
         var hideText = {'en': 'hide', 'fi': 'piilota'}[state.lang];
         visibilityElement.title = {false: showText, true: hideText}[isVisible];
         visibilityElement.textContent = '(' + visibilityElement.title.charAt(0) + ')';
+    }
+
+    function createAlertsElement() {
+        var alertsElement = createElement('span', 'alerts');
+        if (state.alertsInfo.isUsed()) {
+            alertsElement.appendChild(createTextElement(' | '));
+            alertsElement.appendChild(createTextElement('\u26A0: '));
+            alertsElement.appendChild(createAlertCountElement(undefined));
+        }
+        return alertsElement;
+    }
+
+    function createAlertCountElement(alerts) {
+        var elementId = 'alertCount';
+        if ((alerts === undefined) || (alerts.length === 0)) {
+            var countElement = createElement('span', elementId, '0');
+            countElement.title =
+                {'en': 'no traffic alerts', 'fi': 'ei häiriötiedotteita'}[state.lang];
+        } else {
+            var countElement = createElement('span', elementId, '(' + alerts.length + ')');
+            countElement.title =
+                {'en': 'show traffic alerts', 'fi': 'näytä häiriötiedotteet'}[state.lang];
+            countElement.className = 'alert button';
+            countElement.addEventListener('click', function () {
+                var alertListElementId = 'alertList';
+                if (document.getElementById(alertListElementId) === null) {
+                    createAlertListElement(alertListElementId, alerts);
+                }
+            });
+        }
+        return countElement;
+    }
+
+    function createAlertListElement(elementId, alerts) {
+        var alertListElement = createElement('div', elementId);
+        alertListElement.className = 'textBox';
+        alertListElement.appendChild(createCloseButtonElement());
+        var listElement = createElement('ul', elementId);
+        for (var i = 0; i < alerts.length; i++) {
+            listElement.appendChild(createElement('li', undefined, alerts[i]));
+        }
+        alertListElement.appendChild(listElement);
+        document.body.appendChild(alertListElement);
+        centerElement(alertListElement);
     }
 
     function createHideElement(onUiBarVisibilityChange) {
@@ -243,7 +294,7 @@ function UiBar(utils) {
 
     function createEditShareLinkElement(urlParams, elementId, selectedMap) {
         var editShareLinkElement = createElement('div', elementId);
-        editShareLinkElement.className = 'editShareLink';
+        editShareLinkElement.className = 'textBox';
         editShareLinkElement.appendChild(createCloseButtonElement());
         var linkElement = createElement('a');
         var itemElementIdPrefix = 'editShareLinkCheckBox';
@@ -426,5 +477,11 @@ function UiBar(utils) {
                 setElementText(elementId, tripTypes[tripTypeName].count);
             }
         }
+    };
+
+    this.updateAlerts = function (alerts) {
+        var oldAlertCountElement = document.getElementById('alertCount');
+        var newAlertCountElement = createAlertCountElement(alerts);
+        oldAlertCountElement.parentNode.replaceChild(newAlertCountElement, oldAlertCountElement);
     };
 }

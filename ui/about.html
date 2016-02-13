@@ -12,7 +12,7 @@
 
 <h1>Kartalla - About</h1>
 
-<p>Last updated 2016-02-11.</p>
+<p>Last updated 2016-02-13.</p>
 
 <h2 id="overview">Overview</h2>
 
@@ -138,9 +138,7 @@ then displays the locations of the public transport vehicles as icons on a map u
 <a href="https://developers.google.com/maps/documentation/javascript/">Google Maps JavaScript
 API</a>. The JSON file is downloaded as a compressed file if the browser supports
 <a href="https://en.wikipedia.org/wiki/HTTP_compression">HTTP compression</a>. In that case size of
-the downloaded file is about 0.5 megabytes. After the JSON file has been downloaded no more data is
-downloaded except maybe more map data unless measured vehicle positions are used. The user interface
-is implemented in
+the downloaded file is about 0.5 megabytes. The user interface is implemented in
 <a href="http://javascript.crockford.com/">JavaScript</a> programming language and it utilizes
 <a href="https://developer.mozilla.org/en-US/docs/Web/HTML">HTML</a>,
 <a href="https://developer.mozilla.org/en-US/docs/Web/CSS">CSS</a> and
@@ -222,6 +220,11 @@ The user interface can be controlled with the following URL parameters.
         <ul>
         <li>routes to be shown (separated by underscore)</li>
         <li>default value: - (all routes are shown)</li>
+        </ul></li>
+    <li><var>alerts</var>
+        <ul>
+        <li>is traffic alerts used (0 or 1)</li>
+        <li>default value: 1 (yes, hsl)</li>
         </ul></li>
     <li><var>vp</var>
         <ul>

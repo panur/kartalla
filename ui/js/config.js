@@ -5,7 +5,7 @@
 function Config(utils) {
     var that = this;
     var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
-        'types', 'routes', 'vp', '_file', '_stop'];
+        'types', 'routes', 'alerts', 'vp', '_file', '_stop'];
     var urlParams = getUrlParams();
     this.dataType = urlParams.data || 'hsl';
     this.stopAfter = urlParams._stop || null;
@@ -20,6 +20,7 @@ function Config(utils) {
     this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
     this.jsonUrl = getJsonUrl(urlParams._file);
+    this.isAlertsUsed = getIsAlertsUsed(urlParams.alerts);
     this.isVpUsed = getIsVpUsed(urlParams.vp);
 
     this.restart = function (newDataType) {
@@ -30,6 +31,7 @@ function Config(utils) {
         that.vehicleTypes = getVehicleTypes();
         that.visibleTypes = getVisibleTypes();
         that.jsonUrl = getJsonUrl(undefined);
+        that.isAlertsUsed = getIsAlertsUsed(urlParams.alerts);
         that.isVpUsed = getIsVpUsed(urlParams.vp);
     };
 
@@ -43,6 +45,9 @@ function Config(utils) {
         paramsList.push({'name': 'time', 'on': false, 'value': getShareLinkTime(date)});
         paramsList.push({'name': 'speed', 'on': false, 'value': that.speed});
         paramsList.push({'name': 'interval', 'on': false, 'value': that.interval});
+        if (that.isAlertsUsed !== undefined) {
+            paramsList.push({'name': 'alerts', 'on': false, 'value': ~~that.isAlertsUsed});
+        }
         if (isVpUsed !== undefined) {
             paramsList.push({'name': 'vp', 'on': false, 'value': ~~isVpUsed});
         }
@@ -143,7 +148,7 @@ function Config(utils) {
         } else if (parameterName === '_stop') {
             var re = /\d+/;
             return re.test(parameterValue);
-        } else if (parameterName === 'vp') {
+        } else if ((parameterName === 'alerts') || (parameterName === 'vp')) {
             return checkValueInterval(parameterValue, 0, 1);
         }
     }
@@ -252,9 +257,17 @@ function Config(utils) {
         }
     }
 
+    function getIsAlertsUsed(urlParamsAlers) {
+        if (that.dataType === 'hsl') {
+            return urlParamsAlers !== '0';
+        } else {
+            return undefined;
+        }
+    }
+
     function getIsVpUsed(urlParamsVp) {
         if (that.dataType === 'hsl') {
-            return urlParamsVp || false;
+            return urlParamsVp === '1';
         } else {
             return undefined;
         }

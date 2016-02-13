@@ -9,15 +9,17 @@ function main() {
     var uiBar = new UiBar(utils);
     var map = new Map(utils);
     var gtfs = new Gtfs();
+    var alerts = new Alerts(uiBar);
     var controller = new Controller(gtfs, map);
-    var timing = new Timing(controller, uiBar);
+    var timing = new Timing(alerts, controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
     var mqtt = new Mqtt(utils, controller);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
+    alerts.init(config.isAlertsUsed, config.lang);
     mqtt.init(config.isVpUsed);
-    uiBar.init(config.lang, tripTypeInfos, onUiBarVisibilityChange, createDataSelection(),
-               createMapSelection(), createPositionType(), getUrlParams);
+    uiBar.init(config.lang, tripTypeInfos, createAlertsInfo(), onUiBarVisibilityChange,
+               createDataSelection(), createMapSelection(), createPositionType(), getUrlParams);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
     map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
@@ -72,6 +74,10 @@ function main() {
         }
     }
 
+    function createAlertsInfo() {
+        return {'isUsed': alerts.isUsed};
+    }
+
     function onUiBarVisibilityChange(controlElement) {
         map.toggleControl(controlElement);
         window.onresize();
@@ -84,6 +90,7 @@ function main() {
         return {values: names, selectedValue: selectedData, changeType : function (newType) {
             config.restart(getDataType(newType));
             tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
+            alerts.restart(config.isAlertsUsed);
             mqtt.restart(config.isVpUsed);
             uiBar.restart();
             controller.restart();
@@ -128,7 +135,84 @@ function main() {
     }
 }
 
-function Timing(controller, uiBar) {
+function Alerts(uiBar) {
+    var that = this;
+    var state = getState();
+
+    function getState() {
+        var s = {};
+        s.isUsed = false;
+        s.lang = null;
+        s.nextUpdate = 0;
+        return s;
+    }
+
+    this.init = function (isUsed, lang) {
+        state.isUsed = isUsed;
+        state.lang = lang;
+    };
+
+    this.restart = function (isUsed) {
+        state.isUsed = isUsed;
+        state.nextUpdate = 0;
+    };
+
+    this.isUsed = function () {
+        return state.isUsed;
+    };
+
+    this.update = function (mapDate) {
+        if (state.isUsed === true) {
+            if (mapDate.getTime() > state.nextUpdate) {
+                var updatePeriodInMinutes = 1;
+                state.nextUpdate = mapDate.getTime() + (updatePeriodInMinutes * (60 * 1000));
+                downloadAlerts();
+            }
+        }
+    };
+
+    function downloadAlerts() {
+        var request = new XMLHttpRequest();
+        request.onreadystatechange = function () {
+            if (request.readyState === 4) {
+                var status = request.status;
+                if ((status === 0) || (status === 200)) {
+                    var jsonAlerts = JSON.parse(request.responseText).data.alerts;
+                    uiBar.updateAlerts(parseAlerts(jsonAlerts));
+                    request.onreadystatechange = function () {};
+                } else {
+                    console.error('unexpected status: ' + status);
+                }
+            }
+        };
+        request.open('POST', 'http://digitransit.fi/otp/routers/finland/index/graphql', true);
+        request.setRequestHeader('Content-Type', 'application/graphql');
+        request.send(getQuery());
+    }
+
+    function getQuery() {
+        var routeQuery = ' route { gtfsId type shortName longName } ';
+        var tripQuery = ' trip { gtfsId directionId stoptimes { scheduledArrival } } ';
+        var textQuery = ' alertDescriptionTextTranslations { language text } ';
+        return '{ alerts { ' + routeQuery + tripQuery + textQuery + ' } }';
+    }
+
+    function parseAlerts(jsonAlerts) {
+        var alerts = [];
+        for (var i = 0; i < jsonAlerts.length; i++) {
+            var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
+            for (var j = 0; j < translations.length; j++) {
+                var translation = translations[j];
+                if (translation['language'] === state.lang) {
+                    alerts.push(translation['text']);
+                }
+            }
+        }
+        return alerts;
+    }
+}
+
+function Timing(alerts, controller, uiBar) {
     var that = this;
     var state = getState();
 
@@ -164,6 +248,7 @@ function Timing(controller, uiBar) {
 
         if (state.downloadIsReady) {
             controller.update(mapDate);
+            alerts.update(mapDate);
         }
 
         if ((state.stopAfter !== null) && isTimeToStop(mapDate)) {
