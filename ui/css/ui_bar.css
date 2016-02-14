@@ -55,6 +55,10 @@ div.textBox {
     z-index: 1000;
 }
 
+ul.alertList {
+    padding-left: 20px;
+}
+
 a:link {
     color: #0000FF;
     background-color: #FFFFFF;

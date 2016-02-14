@@ -154,6 +154,7 @@ function UiBar(utils) {
         alertListElement.className = 'textBox';
         alertListElement.appendChild(createCloseButtonElement());
         var listElement = createElement('ul', elementId);
+        listElement.className = 'alertList';
         for (var i = 0; i < alerts.length; i++) {
             var itemElement = createElement('li', undefined, alerts[i]['text']);
             var alertColor = getAlertColor(alerts[i]['type']);
