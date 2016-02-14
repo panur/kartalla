@@ -2,7 +2,7 @@
 
 'use strict';
 
-function HslAlerts(uiBar) {
+function HslAlerts(controller, uiBar) {
     var that = this;
     var state = getState();
 
@@ -45,7 +45,9 @@ function HslAlerts(uiBar) {
                 var status = request.status;
                 if ((status === 0) || (status === 200)) {
                     var jsonAlerts = JSON.parse(request.responseText).data.alerts;
-                    uiBar.updateAlerts(parseAlerts(jsonAlerts));
+                    var parsedAlerts = parseAlerts(jsonAlerts);
+                    uiBar.updateAlerts(parsedAlerts['uiBar']);
+                    controller.updateAlerts(parsedAlerts['controller']);
                     request.onreadystatechange = function () {};
                 } else {
                     console.error('unexpected status: ' + status);
@@ -65,22 +67,44 @@ function HslAlerts(uiBar) {
     }
 
     function parseAlerts(jsonAlerts) {
-        var alerts = [];
+        var uiBarAlerts = [];
         var alertTexts = [];
+        var controllerAlerts = [];
         for (var i = 0; i < jsonAlerts.length; i++) {
             var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
             for (var j = 0; j < translations.length; j++) {
                 var translation = translations[j];
                 if (translation['language'] === state.lang) {
+                    var route = jsonAlerts[i]['route'];
                     if (alertTexts.indexOf(translation['text']) === -1) {
                         alertTexts.push(translation['text']);
-                        var route = jsonAlerts[i]['route'];
-                        alerts.push({'text': translation['text'], 'type': route['type']});
+                        var routeType = '-';
+                        if (route !== null) {
+                            routeType = route['type'];
+                        }
+                        uiBarAlerts.push({'text': translation['text'], 'type': routeType});
+                    }
+                    if (route !== null) {
+                        controllerAlerts.push(getControllerAlert(route, jsonAlerts[i]['trip'],
+                                                                 translation['text']));
                     }
                 }
             }
         }
-        return alerts;
+
+        return {'uiBar': uiBarAlerts, 'controller': controllerAlerts};
+    }
+
+    function getControllerAlert(route, trip, alertText) {
+        var routeId = route['gtfsId'].split(':')[1];
+        var direction = undefined;
+        var startTime = undefined;
+        if (trip !== null) {
+            direction = trip['directionId'];
+            startTime = trip['stoptimes'][0]['scheduledArrival'];
+        }
+        return {'routeId': routeId, 'direction': direction, 'startTime': startTime,
+                'text': alertText};
     }
 }
 

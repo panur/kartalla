@@ -9,8 +9,8 @@ function main() {
     var uiBar = new UiBar(utils);
     var map = new Map(utils);
     var gtfs = new Gtfs();
-    var alerts = new HslAlerts(uiBar);
     var controller = new Controller(gtfs, map);
+    var alerts = new HslAlerts(controller, uiBar);
     var timing = new Timing(alerts, controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
     var mqtt = new HslMqtt(utils, controller);

@@ -84,6 +84,10 @@ function Map(utils) {
         return marker;
     };
 
+    this.setAlert = function (marker, isAlert) {
+        return marker.setAlert(isAlert);
+    };
+
     this.updateVpMarker = function (marker, lat, lng) {
         return marker.updateVp(lat, lng);
     };
@@ -162,6 +166,7 @@ function MapMarker(utils, maMap) {
         s.routeName = null;
         s.getTitleText = null;
         s.previousUpdateType = null;
+        s.isAlert = false;
         return s;
     }
 
@@ -251,6 +256,10 @@ function MapMarker(utils, maMap) {
     function createSvgElement(elementType) {
         return document.createElementNS('http://www.w3.org/2000/svg', elementType);
     }
+
+    this.setAlert = function (isAlert) {
+        state.isAlert = isAlert;
+    };
 
     this.updateVp = function (lat, lng) {
         var latLon = new LatLon(lat, lng);
@@ -407,6 +416,15 @@ function MapMarker(utils, maMap) {
 
     function createTextTitleElement() {
         var textTitleElement = createSvgElement('g');
+        if (state.isAlert) {
+            var alertElement = createSvgElement('path');
+            alertElement.setAttribute('d', 'M 1,7 5,1 9,7 z');
+            alertElement.setAttribute('fill', 'yellow');
+            alertElement.setAttribute('fill-opacity', '0.5');
+            alertElement.setAttribute('stroke', 'red');
+            alertElement.setAttribute('stroke-width', '0.5');
+            textTitleElement.appendChild(alertElement);
+        }
         if (state.symbolForm === 'arrow') {
             var backgroundElement = createSvgElement('circle');
             backgroundElement.setAttribute('cx', '5');
