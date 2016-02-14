@@ -155,11 +155,28 @@ function UiBar(utils) {
         alertListElement.appendChild(createCloseButtonElement());
         var listElement = createElement('ul', elementId);
         for (var i = 0; i < alerts.length; i++) {
-            listElement.appendChild(createElement('li', undefined, alerts[i]));
+            var itemElement = createElement('li', undefined, alerts[i]['text']);
+            var alertColor = getAlertColor(alerts[i]['type']);
+            if (alertColor !== undefined) {
+                itemElement.style.color = alertColor;
+            }
+            listElement.appendChild(itemElement);
         }
         alertListElement.appendChild(listElement);
         document.body.appendChild(alertListElement);
         centerElement(alertListElement);
+    }
+
+    function getAlertColor(alertType) {
+        var alertTypes =
+            {'BUS': 'bus', 'RAIL': 'train', 'TRAM': 'tram', 'SUBWAY': 'metro', 'FERRY': 'ferry'};
+
+        if (alertTypes[alertType] !== undefined) {
+            var tripTypes = state.tripTypeInfos.getTypes();
+            return tripTypes[alertTypes[alertType]]['color'];
+        } else {
+            return undefined;
+        }
     }
 
     function createHideElement(onUiBarVisibilityChange) {

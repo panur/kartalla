@@ -66,12 +66,17 @@ function HslAlerts(uiBar) {
 
     function parseAlerts(jsonAlerts) {
         var alerts = [];
+        var alertTexts = [];
         for (var i = 0; i < jsonAlerts.length; i++) {
             var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
             for (var j = 0; j < translations.length; j++) {
                 var translation = translations[j];
                 if (translation['language'] === state.lang) {
-                    alerts.push(translation['text']);
+                    if (alertTexts.indexOf(translation['text']) === -1) {
+                        alertTexts.push(translation['text']);
+                        var route = jsonAlerts[i]['route'];
+                        alerts.push({'text': translation['text'], 'type': route['type']});
+                    }
                 }
             }
         }
