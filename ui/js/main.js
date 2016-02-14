@@ -9,11 +9,11 @@ function main() {
     var uiBar = new UiBar(utils);
     var map = new Map(utils);
     var gtfs = new Gtfs();
-    var alerts = new Alerts(uiBar);
+    var alerts = new HslAlerts(uiBar);
     var controller = new Controller(gtfs, map);
     var timing = new Timing(alerts, controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
-    var mqtt = new Mqtt(utils, controller);
+    var mqtt = new HslMqtt(utils, controller);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
     alerts.init(config.isAlertsUsed, config.lang);
@@ -132,83 +132,6 @@ function main() {
         var tripTypes = tripTypeInfos.getTypes();
         return config.getShareLinkParamsList(map.getParams(), timing.getMapDate(), tripTypes,
                                              mqtt.isVpUsed());
-    }
-}
-
-function Alerts(uiBar) {
-    var that = this;
-    var state = getState();
-
-    function getState() {
-        var s = {};
-        s.isUsed = false;
-        s.lang = null;
-        s.nextUpdate = 0;
-        return s;
-    }
-
-    this.init = function (isUsed, lang) {
-        state.isUsed = isUsed;
-        state.lang = lang;
-    };
-
-    this.restart = function (isUsed) {
-        state.isUsed = isUsed;
-        state.nextUpdate = 0;
-    };
-
-    this.isUsed = function () {
-        return state.isUsed;
-    };
-
-    this.update = function (mapDate) {
-        if (state.isUsed === true) {
-            if (mapDate.getTime() > state.nextUpdate) {
-                var updatePeriodInMinutes = 1;
-                state.nextUpdate = mapDate.getTime() + (updatePeriodInMinutes * (60 * 1000));
-                downloadAlerts();
-            }
-        }
-    };
-
-    function downloadAlerts() {
-        var request = new XMLHttpRequest();
-        request.onreadystatechange = function () {
-            if (request.readyState === 4) {
-                var status = request.status;
-                if ((status === 0) || (status === 200)) {
-                    var jsonAlerts = JSON.parse(request.responseText).data.alerts;
-                    uiBar.updateAlerts(parseAlerts(jsonAlerts));
-                    request.onreadystatechange = function () {};
-                } else {
-                    console.error('unexpected status: ' + status);
-                }
-            }
-        };
-        request.open('POST', 'http://digitransit.fi/otp/routers/finland/index/graphql', true);
-        request.setRequestHeader('Content-Type', 'application/graphql');
-        request.send(getQuery());
-    }
-
-    function getQuery() {
-        var routeQuery = ' route { gtfsId type shortName longName } ';
-        var tripQuery = ' trip { gtfsId directionId stoptimes { scheduledArrival } } ';
-        var textQuery = ' alertDescriptionTextTranslations { language text } ';
-        return '{ alerts { ' + routeQuery + tripQuery + textQuery + ' } }';
-    }
-
-    function parseAlerts(jsonAlerts) {
-        var alerts = [];
-        for (var i = 0; i < jsonAlerts.length; i++) {
-            var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
-            for (var j = 0; j < translations.length; j++) {
-                var translation = translations[j];
-                if (translation['language'] === state.lang) {
-                    alerts.push(translation['text']);
-                }
-            }
-        }
-        return alerts;
     }
 }
 
@@ -333,121 +256,5 @@ function TripTypeInfos(controller, uiBar) {
     this.toggleVisibility = function (tripTypeName) {
         state.types[tripTypeName].isVisible = !state.types[tripTypeName].isVisible;
         controller.updateTripTypeVisibility(tripTypeName);
-    };
-}
-
-function Mqtt(utils, controller) {
-    var that = this;
-    var state = getState();
-
-    function getState() {
-        var s = {};
-        s.isVpUsed = null;
-        s.client = null;
-        s.dataCount = 0;
-        return s;
-    }
-
-    this.init = function (isVpUsed) {
-        state.isVpUsed = isVpUsed;
-    };
-
-    this.restart = function (isVpUsed) {
-        if (state.isVpUsed) {
-            disconnect();
-        }
-        state.isVpUsed = isVpUsed;
-    };
-
-    this.isVpUsed = function () {
-        return state.isVpUsed;
-    };
-
-    this.toggleUsage = function () {
-        state.isVpUsed = !state.isVpUsed;
-        if (state.isVpUsed) {
-            that.connect();
-        } else {
-            disconnect();
-        }
-    };
-
-    this.connect = function () {
-        var readyEvent = document.createEvent('Event');
-        readyEvent.initEvent('vpCacheDownloadIsReady', false, false);
-        document.addEventListener('vpCacheDownloadIsReady', downloadIsReady, false);
-        var downloadRequest = null;
-        utils.downloadUrl('http://dev.hsl.fi/hfp/journey/', null, function (request) {
-            downloadRequest = request;
-            document.dispatchEvent(readyEvent);
-        });
-        function downloadIsReady() {
-            var messages = JSON.parse(downloadRequest.responseText);
-            for (var topic in messages) {
-                var parsedVp = messages[topic].VP;
-                if (isVpMessageOk(parsedVp)) {
-                    updateCache(topic, parsedVp);
-                }
-            }
-            connectMqtt();
-        }
-    };
-
-    function connectMqtt() {
-        var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
-        state.client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
-        state.client.onMessageArrived = onMessageArrived;
-        state.client.connect({onSuccess:onConnect});
-
-        function onConnect() {
-            state.client.subscribe('/hfp/journey/#');
-            console.log('connected mqtt');
-        }
-
-        function onMessageArrived(message) {
-            var topic = message.destinationName;
-            var payload = message.payloadString;
-            var parsedVp = JSON.parse(payload).VP;
-            if (isVpMessageOk(parsedVp)) {
-                updateCache(topic, parsedVp);
-            }
-            state.dataCount += topic.length + payload.length;
-        }
-    }
-
-    function isVpMessageOk(parsedVp) {
-        var fields = ['dir', 'start', 'tsi', 'lat', 'long'];
-        for (var i = 0; i < fields.length; i++) {
-            if (parsedVp[fields[i]] === undefined) {
-                return false;
-            }
-        }
-        if (['1', '2'].indexOf(parsedVp['dir']) === -1) {
-            return false;
-        }
-        return true;
-    }
-
-    function updateCache(topic, parsedVp) {
-        var routeId = topic.split('/')[5];
-        controller.updateVp(routeId, parsedVp['dir'] - 1, parsedVp['start'], parsedVp['tsi'],
-                            parsedVp['lat'], parsedVp['long']);
-    }
-
-    function disconnect() {
-        if (state.client !== null) {
-            state.client.disconnect();
-            state.client = null;
-            console.log('disconnected mqtt');
-        }
-        controller.cleanVp();
-    };
-
-    this.getDataCount = function () {
-        if (state.isVpUsed === undefined) {
-            return undefined;
-        } else {
-            return state.dataCount;
-        }
     };
 }
