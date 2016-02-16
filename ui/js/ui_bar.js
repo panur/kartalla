@@ -226,10 +226,10 @@ function UiBar(utils) {
 
     function createJsonDataElement(dataSelection) {
         var jsonDataElement = createElement('span');
-        jsonDataElement.appendChild(createTextElement('Data '));
-        jsonDataElement.appendChild(createSelectionElement(dataSelection));
+        jsonDataElement.appendChild(createElement('span', 'dataInfo', 'Data'));
         jsonDataElement.appendChild(createTextElement(': '));
-        jsonDataElement.appendChild(createElement('span', 'dataStatus'));
+        jsonDataElement.appendChild(createSelectionElement(dataSelection));
+        jsonDataElement.appendChild(createElement('span', 'dataDownloadStatus'));
         return jsonDataElement;
     }
 
@@ -401,7 +401,7 @@ function UiBar(utils) {
     this.updateDownloadProgress = function (progressEvent) {
         var loaded = getMegaBytes(progressEvent.loaded);
         var statusText = {'en': 'downloaded (megabytes)', 'fi': 'ladattu (megatavua)'}[state.lang];
-        setElementText('dataStatus', statusText + ' ' + loaded + '...');
+        setElementText('dataDownloadStatus', ' ' + statusText + ' ' + loaded + '...');
     };
 
     function getMegaBytes(bytes) {
@@ -410,8 +410,8 @@ function UiBar(utils) {
 
     this.setDataInfo = function (dtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed,
                                  getMqttDataCount) {
-        setElementText('dataStatus', 'OK');
-        var infoElement = createElement('span', undefined, '*');
+        setElementText('dataDownloadStatus', '');
+        var infoElement = document.getElementById('dataInfo');
         infoElement.className = 'dataInfo';
         var tooltipElement = createElement('div');
         tooltipElement.className = 'dataInfoToolTip';
@@ -429,7 +429,6 @@ function UiBar(utils) {
         infoElement.addEventListener('mouseout', function () {
             tooltipElement.style.visibility = 'hidden';
         });
-        document.getElementById('dataStatus').appendChild(infoElement);
     };
 
     function epochToString(epoch, isTimeIncluded) {
