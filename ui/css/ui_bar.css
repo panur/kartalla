@@ -20,6 +20,9 @@ span.closeButton {
     position: absolute;
     top: 1px;
     right: 1px;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
 }
 
 span.alert {
