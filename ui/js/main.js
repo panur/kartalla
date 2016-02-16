@@ -222,11 +222,11 @@ function TripTypeInfos(controller, uiBar) {
 
     function createTypes() {
         var types = {};
-        types.bus = {isUsed: false, isVisible: false, color: 'blue', count: 0};
-        types.train = {isUsed: false, isVisible: false, color: 'red', count: 0};
-        types.tram = {isUsed: false, isVisible: false, color: 'green', count: 0};
-        types.metro = {isUsed: false, isVisible: false, color: 'orange', count: 0};
-        types.ferry = {isUsed: false, isVisible: false, color: 'purple', count: 0};
+        types.bus = {isUsed: false, isVisible: false, color: '#007AC9', count: 0};
+        types.train = {isUsed: false, isVisible: false, color: '#8C4799', count: 0};
+        types.tram = {isUsed: false, isVisible: false, color: '#00985F', count: 0};
+        types.metro = {isUsed: false, isVisible: false, color: '#FF6319', count: 0};
+        types.ferry = {isUsed: false, isVisible: false, color: '#00B9E4', count: 0};
         types.airplane = {isUsed: false, isVisible: false, color: 'olive', count: 0};
         return types;
     }
