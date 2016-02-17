@@ -258,7 +258,12 @@ function MapMarker(utils, maMap) {
     }
 
     this.setAlert = function (isAlert) {
+        var previousIsAlert = state.isAlert;
         state.isAlert = isAlert;
+        if ((state.previousUpdateType !== null) && (state.isAlert !== previousIsAlert)) {
+            updateSymbol();
+            updateTextTitle();
+        }
     };
 
     this.updateVp = function (lat, lng) {

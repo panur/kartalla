@@ -130,7 +130,11 @@ function UiBar(utils) {
 
     function createAlertCountElement(alerts) {
         var elementId = 'alertCount';
-        if ((alerts === undefined) || (alerts.length === 0)) {
+        if (alerts === undefined) {
+            var countElement = createElement('span', elementId, '-');
+            countElement.title =
+                {'en': 'getting traffic alerts', 'fi': 'haetaan häiriötiedotteita'}[state.lang];
+        } else if (alerts.length === 0) {
             var countElement = createElement('span', elementId, '0');
             countElement.title =
                 {'en': 'no traffic alerts', 'fi': 'ei häiriötiedotteita'}[state.lang];
