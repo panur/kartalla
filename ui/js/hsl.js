@@ -44,11 +44,13 @@ function HslAlerts(controller, uiBar) {
             if (request.readyState === 4) {
                 var status = request.status;
                 if ((status === 0) || (status === 200)) {
-                    var jsonAlerts = JSON.parse(request.responseText).data.alerts;
-                    var parsedAlerts = parseAlerts(jsonAlerts);
-                    uiBar.updateAlerts(parsedAlerts['uiBar']);
-                    controller.updateAlerts(parsedAlerts['controller']);
-                    request.onreadystatechange = function () {};
+                    if (request.responseText.length > 0) {
+                        var jsonAlerts = JSON.parse(request.responseText).data.alerts;
+                        var parsedAlerts = parseAlerts(jsonAlerts);
+                        uiBar.updateAlerts(parsedAlerts['uiBar']);
+                        controller.updateAlerts(parsedAlerts['controller']);
+                        request.onreadystatechange = function () {};
+                    }
                 } else {
                     console.error('unexpected status: ' + status);
                 }
