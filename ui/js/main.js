@@ -22,7 +22,7 @@ function main() {
                createDataSelection(), createMapSelection(), createPositionType(), getUrlParams);
     controller.init(config.lang, config.onlyRoutes, tripTypeInfos, config.interval);
     timing.init(config);
-    map.init(config.mapLat, config.mapLng, config.mapZoomLevel);
+    map.init(config.lang, config.mapLat, config.mapLng, config.mapZoomLevel);
 
     initResizeHandler();
 
@@ -79,7 +79,7 @@ function main() {
     }
 
     function onUiBarVisibilityChange(controlElement) {
-        map.toggleControl(controlElement);
+        map.toggleUiBarControl(controlElement);
         window.onresize();
     }
 

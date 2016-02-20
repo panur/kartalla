@@ -16,10 +16,14 @@ function Map(utils) {
         return s;
     }
 
-    this.init = function (lat, lng, zoomLevel) {
+    this.init = function (lang, lat, lng, zoomLevel) {
         state.maMap = new MapApiMap();
         state.maMap.init(lat, lng, zoomLevel, zoomChanged);
         state.previousSymbolScale = getSymbolScale();
+
+        if ('geolocation' in navigator) {
+            createOwnLocationControl(lang);
+        }
     };
 
     function getSymbolScale() {
@@ -47,6 +51,45 @@ function Map(utils) {
         for (var markerId in state.markers) {
             var marker = state.markers[markerId]['marker'];
             marker.resize(newScale);
+        }
+    }
+
+    function createOwnLocationControl(lang) {
+        var ownLocationElement = document.createElement('div');
+        initFindOwnLocationElement();
+        ownLocationElement.addEventListener('click', function () {
+            ownLocationElement.className = 'findingOwnLocation';
+            ownLocationElement.title =
+                {'en': 'finding own location', 'fi': 'etsitään omaa sijaintia'}[lang];
+            ownLocationElement.textContent = '(\u25CE)';
+            navigator.geolocation.getCurrentPosition(onPositionSuccess, onPositionError);
+        });
+
+        state.maMap.addLocationControl(ownLocationElement);
+
+        function initFindOwnLocationElement(statusClassName) {
+            ownLocationElement.className = 'findOwnLocation';
+            if (statusClassName !== undefined) {
+                ownLocationElement.className += ' ' + statusClassName;
+            }
+            ownLocationElement.title =
+                {'en': 'show own location', 'fi': 'näytä oma sijainti'}[lang];
+            ownLocationElement.textContent = '(\u25C9)';
+        }
+
+        function onPositionSuccess(position) {
+            initFindOwnLocationElement('locatingSuccess');
+            var radius = Math.max(10, position.coords.accuracy);
+            var circleOptions = {'strokeColor': 'blue', 'strokeOpacity': 0.4, 'strokeWeight': 2,
+                                 'fillColor': 'black', 'fillOpacity': 0.05};
+            state.maMap.updateOwnLocation(position.coords.latitude, position.coords.longitude,
+                                          radius, circleOptions);
+        }
+
+        function onPositionError(err) {
+            initFindOwnLocationElement('locatingError');
+            ownLocationElement.textContent = '(\u25EC)';
+            console.log('failed to find own position: %o', err);
         }
     }
 
@@ -146,8 +189,8 @@ function Map(utils) {
         return state.maMap.getParams();
     };
 
-    this.toggleControl = function (controlElement) {
-        state.maMap.toggleControl(controlElement);
+    this.toggleUiBarControl = function (controlElement) {
+        state.maMap.toggleUiBarControl(controlElement);
     };
 }
 

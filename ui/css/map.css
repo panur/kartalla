@@ -10,3 +10,34 @@ div.symbolToolTip {
     z-index: 1000;
     max-width: 30ch;
 }
+
+div.findOwnLocation {
+    cursor: pointer;
+    font-size: large;
+}
+
+div.findingOwnLocation {
+    font-size: large;
+    animation-duration: 2s;
+    animation-name: blink;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes blink {
+    from {
+        opacity: 1.0;
+    }
+
+    to {
+        opacity: 0.2;
+    }
+}
+
+div.locatingSuccess {
+    color: green;
+}
+
+div.locatingError {
+    color: red;
+}

@@ -14,6 +14,7 @@ function MapApiMap() {
         var s = {};
         s.map = null;
         s.control = null;
+        s.ownLocation = null;
         return s;
     }
 
@@ -26,7 +27,7 @@ function MapApiMap() {
             zoomControl: false,
             layers: [baseMaps.Mapbox]
         });
-        state.map.addControl(L.control.zoom({position: 'bottomright'}))
+        state.map.addControl(L.control.zoom({position: 'bottomright'}));
 
         // toggle CSS marker interpolation via a HTML class:
         L.DomUtil.addClass(state.map.getContainer(), 'kartalla-interpolate');
@@ -42,7 +43,7 @@ function MapApiMap() {
 
         state.map.on('zoomend', zoomChanged);
 
-        L.control.layers(baseMaps).addTo(state.map);
+        L.control.layers(baseMaps, null, {position: 'topleft'}).addTo(state.map);
     };
 
     function getBaseMaps() {
@@ -81,6 +82,23 @@ function MapApiMap() {
     this.resize = function (newHeight) {
         state.map.getContainer().style.height = newHeight + 'px';
         state.map.invalidateSize();
+    };
+
+    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
+        if (state.ownLocation !== null) {
+            state.map.removeLayer(state.ownLocation);
+        }
+        var pathOptions = {
+            'color': circleOptions['strokeColor'],
+            'weight': circleOptions['strokeWeight'],
+            'opacity': circleOptions['strokeOpacity'],
+            'fillColor': circleOptions['fillColor'],
+            'fillOpacity': circleOptions['fillOpacity'],
+            'clickable': false
+        };
+        state.ownLocation = L.circle([lat, lng], radius, pathOptions);
+        state.ownLocation.addTo(state.map);
+        state.map.fitBounds(state.ownLocation.getBounds(), {'maxZoom': 16});
     };
 
     this.decodePath = function (encodedPath) {
@@ -189,7 +207,21 @@ function MapApiMap() {
         return {'lat': center.lat, 'lng': center.lng, 'zoom': state.map.getZoom()};
     };
 
-    this.toggleControl = function (controlElement) {
+    this.addLocationControl = function (controlElement) {
+        var CustomControl = L.Control.extend({
+            options: {
+                position: 'topright'
+            },
+            onAdd: function (map) {
+                var wrapperElement = document.createElement('div');
+                wrapperElement.appendChild(controlElement);
+                return wrapperElement;
+            }
+        });
+        state.map.addControl(new CustomControl());
+    };
+
+    this.toggleUiBarControl = function (controlElement) {
         if (controlElement === undefined) {
             state.map.removeControl(state.control);
             state.control = null;

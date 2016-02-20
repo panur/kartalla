@@ -14,6 +14,7 @@ function MapApiMap() {
         var s = {};
         s.map = null;
         s.control = null;
+        s.ownLocation = null;
         return s;
     }
 
@@ -52,6 +53,24 @@ function MapApiMap() {
     this.resize = function (newHeight) {
         state.map.getDiv().style.height = newHeight + 'px';
         google.maps.event.trigger(state.map, 'resize');
+    };
+
+    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
+        if (state.ownLocation !== null) {
+            state.ownLocation.setMap(null);
+        }
+        state.ownLocation = new google.maps.Circle({
+            'strokeColor': circleOptions['strokeColor'],
+            'strokeOpacity': circleOptions['strokeOpacity'],
+            'strokeWeight': circleOptions['strokeWeight'],
+            'fillColor': circleOptions['fillColor'],
+            'fillOpacity': circleOptions['fillOpacity'],
+            'map': state.map,
+            'center': {'lat': lat, 'lng': lng},
+            'radius': radius,
+            'clickable': false
+        });
+        state.map.fitBounds(state.ownLocation.getBounds());
     };
 
     this.decodePath = function (encodedPath) {
@@ -118,7 +137,11 @@ function MapApiMap() {
         return {'lat': center.lat(), 'lng': center.lng(), 'zoom': state.map.getZoom()};
     };
 
-    this.toggleControl = function (controlElement) {
+    this.addLocationControl = function (controlElement) {
+        state.map.controls[google.maps.ControlPosition.RIGHT_TOP].push(controlElement) - 1;
+    };
+
+    this.toggleUiBarControl = function (controlElement) {
         var position = google.maps.ControlPosition.LEFT_BOTTOM;
         if (controlElement === undefined) {
             state.map.controls[position].removeAt(state.control);
