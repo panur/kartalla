@@ -145,8 +145,11 @@ function UiBar(utils) {
             countElement.className = 'alert button';
             countElement.addEventListener('click', function () {
                 var alertListElementId = 'alertList';
-                if (document.getElementById(alertListElementId) === null) {
+                var alertListElement = document.getElementById(alertListElementId);
+                if (alertListElement === null) {
                     createAlertListElement(alertListElementId, alerts);
+                } else {
+                    document.body.removeChild(alertListElement);
                 }
             });
         }
@@ -307,8 +310,11 @@ function UiBar(utils) {
             {'en': 'create link to this page', 'fi': 'tee linkki tähän näkymään'}[state.lang];
         shareElement.addEventListener('click', function () {
             var elementId = 'editShareLink';
-            if (document.getElementById(elementId) === null) {
+            var editShareLinkElement = document.getElementById(elementId);
+            if (editShareLinkElement === null) {
                 createEditShareLinkElement(getUrlParams(), elementId, selectedMap);
+            } else {
+                document.body.removeChild(editShareLinkElement);
             }
         });
         return shareElement;

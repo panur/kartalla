@@ -261,6 +261,9 @@ function MapMarker(utils, maMap) {
         var symbolTooltipElement = document.createElement('div');
         symbolTooltipElement.id = elementId;
         symbolTooltipElement.className = 'symbolToolTip';
+        symbolTooltipElement.addEventListener('click', function () {
+            symbolTooltipElement.style.visibility = 'hidden';
+        });
         return symbolTooltipElement;
     }
 
