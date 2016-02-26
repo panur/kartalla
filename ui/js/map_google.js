@@ -21,24 +21,17 @@ function MapApiMap() {
     this.init = function (lat, lng, zoomLevel, zoomChanged) {
         var mapElement = document.getElementById('map_canvas');
         var mapOptions = {
-            mapTypeId: google.maps.MapTypeId.ROADMAP,
-            mapTypeControlOptions: {style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR},
-            zoomControlOptions: {style: google.maps.ZoomControlStyle.DEFAULT},
-            panControl: true,
-            zoomControl: true,
-            scaleControl: true,
-            streetViewControl: true,
-            styles: [{
-                featureType: 'road.arterial',
-                elementType: 'geometry.fill',
-                stylers: [{color: '#FBF8A5' }]
+            'tilt': 0,
+            'styles': [{
+                'featureType': 'road.arterial',
+                'elementType': 'geometry.fill',
+                'stylers': [{'color': '#FBF8A5'}]
             }]
         };
 
         state.map = new google.maps.Map(mapElement, mapOptions);
-        state.map.setOptions({center: new google.maps.LatLng(lat, lng), zoom: zoomLevel});
+        state.map.setOptions({'center': new google.maps.LatLng(lat, lng), 'zoom': zoomLevel});
         state.map.addListener('zoom_changed', zoomChanged);
-        state.map.setTilt(0);
     };
 
     this.getMap = function () {
@@ -80,12 +73,12 @@ function MapApiMap() {
     // path as returned by decodePath()
     this.newPolyline = function (path, polylineOptions) {
         var polyline = new google.maps.Polyline({
-            path: path,
-            geodesic: true,
-            clickable: false, // https://github.com/panur/kartalla/issues/8
-            strokeColor: polylineOptions.color,
-            strokeOpacity: polylineOptions.opacity,
-            strokeWeight: polylineOptions.weight
+            'path': path,
+            'geodesic': true,
+            'clickable': false, // https://github.com/panur/kartalla/issues/8
+            'strokeColor': polylineOptions.color,
+            'strokeOpacity': polylineOptions.opacity,
+            'strokeWeight': polylineOptions.weight
         });
         return polyline;
     };
@@ -138,7 +131,7 @@ function MapApiMap() {
     };
 
     this.addLocationControl = function (controlElement) {
-        state.map.controls[google.maps.ControlPosition.RIGHT_TOP].push(controlElement) - 1;
+        state.map.controls[google.maps.ControlPosition.RIGHT_TOP].push(controlElement);
     };
 
     this.toggleUiBarControl = function (controlElement) {
