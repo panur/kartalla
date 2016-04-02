@@ -1,7 +1,9 @@
 [
-{"filename": "jyvaskyla.json", "agencies": ["195293"]},
 {"filename": "joensuu.json", "agencies": ["196454", "196455"]},
+{"filename": "jyvaskyla.json", "agencies": ["195293"]},
+{"filename": "kouvola.json", "agencies": ["196441", "196442", "196443", "196444", "196445", "196446", "196447"]},
 {"filename": "kuopio.json", "agencies": ["196462", "196463", "196464", "196465", "196466"]},
+{"filename": "lahti.json", "agencies": ["196448", "196449", "196450", "196451", "196452", "196453"]},
 {"filename": "lappeenranta.json", "agencies": ["196461"]},
 {"filename": "oulu.json", "agencies": ["193721", "193722", "193723", "193724", "193725", "193726"]},
 {"filename": "seinajoki.json", "agencies": ["196436"]},
