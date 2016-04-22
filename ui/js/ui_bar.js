@@ -57,10 +57,14 @@ function UiBar(utils) {
         var newAlertElement = createAlertsElement();
         oldAlertElement.parentNode.replaceChild(newAlertElement, oldAlertElement);
 
+        that.updatePositionType();
+    }
+
+    this.updatePositionType = function () {
         var oldPositionElement = document.getElementById('positionType');
         var newPositionElement = createPositionElement();
         oldPositionElement.parentNode.replaceChild(newPositionElement, oldPositionElement);
-    }
+    };
 
     function createTripTypeElement() {
         var tripTypes = state.tripTypeInfos.getTypes();

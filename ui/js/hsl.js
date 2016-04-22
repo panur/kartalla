@@ -110,7 +110,7 @@ function HslAlerts(controller, uiBar) {
     }
 }
 
-function HslMqtt(utils, controller) {
+function HslMqtt(utils, controller, uiBar) {
     var that = this;
     var state = getState();
 
@@ -147,20 +147,24 @@ function HslMqtt(utils, controller) {
     };
 
     this.connect = function () {
+        var readyEventName = 'vpCacheDownloadIsReady';
         var readyEvent = document.createEvent('Event');
-        readyEvent.initEvent('vpCacheDownloadIsReady', false, false);
-        document.addEventListener('vpCacheDownloadIsReady', downloadIsReady, false);
+        readyEvent.initEvent(readyEventName, false, false);
+        document.addEventListener(readyEventName, downloadIsReady, false);
         var downloadRequest = null;
         utils.downloadUrl('http://dev.hsl.fi/hfp/journey/', null, function (request) {
             downloadRequest = request;
             document.dispatchEvent(readyEvent);
         });
         function downloadIsReady() {
-            var messages = JSON.parse(downloadRequest.responseText);
-            for (var topic in messages) {
-                var parsedVp = messages[topic].VP;
-                if (isVpMessageOk(parsedVp)) {
-                    updateCache(topic, parsedVp);
+            document.removeEventListener(readyEventName, downloadIsReady, false);
+            if (downloadRequest.responseText !== '') {
+                var messages = JSON.parse(downloadRequest.responseText);
+                for (var topic in messages) {
+                    var parsedVp = messages[topic].VP;
+                    if (isVpMessageOk(parsedVp)) {
+                        updateCache(topic, parsedVp);
+                    }
                 }
             }
             connectMqtt();
@@ -170,12 +174,29 @@ function HslMqtt(utils, controller) {
     function connectMqtt() {
         var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
         state.client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
+        state.client.onConnectionLost = onConnectionLost;
         state.client.onMessageArrived = onMessageArrived;
-        state.client.connect({onSuccess:onConnect});
+        state.client.connect({onSuccess: onConnect, onFailure: onFailedConnect});
+
+        function onConnectionLost(responseObject) {
+            processFailure('lost mqtt connection', responseObject);
+        }
 
         function onConnect() {
             state.client.subscribe('/hfp/journey/#');
             console.log('connected mqtt');
+        }
+
+        function onFailedConnect(responseObject) {
+            processFailure('failed to connect mqtt', responseObject);
+        }
+
+        function processFailure(failureText, responseObject) {
+            console.log('%s: errorCode=%o, errorMessage=%o',
+                        failureText, responseObject.errorCode, responseObject.errorMessage);
+            controller.cleanVp();
+            state.isVpUsed = false;
+            uiBar.updatePositionType();
         }
 
         function onMessageArrived(message) {

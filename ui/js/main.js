@@ -13,7 +13,7 @@ function main() {
     var alerts = new HslAlerts(controller, uiBar);
     var timing = new Timing(alerts, controller, uiBar);
     var tripTypeInfos = new TripTypeInfos(controller, uiBar);
-    var mqtt = new HslMqtt(utils, controller);
+    var mqtt = new HslMqtt(utils, controller, uiBar);
 
     tripTypeInfos.init(config.vehicleTypes, config.visibleTypes);
     alerts.init(config.isAlertsUsed, config.lang);
@@ -29,9 +29,10 @@ function main() {
     downloadGtfsJsonData(config.jsonUrl);
 
     function downloadGtfsJsonData(filename) {
+        var readyEventName = 'gtfsDownloadIsReady';
         var readyEvent = document.createEvent('Event');
-        readyEvent.initEvent('gtfsDownloadIsReady', false, false);
-        document.addEventListener('gtfsDownloadIsReady', downloadIsReady, false);
+        readyEvent.initEvent(readyEventName, false, false);
+        document.addEventListener(readyEventName, downloadIsReady, false);
 
         var startTime = new Date();
         var downloadRequest = null;
@@ -42,6 +43,7 @@ function main() {
         });
 
         function downloadIsReady() {
+            document.removeEventListener(readyEventName, downloadIsReady, false);
             var duration = (((new Date()).getTime() - startTime.getTime()) / 1000).toFixed(1);
             gtfs.init(JSON.parse(downloadRequest.responseText));
             uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(),
