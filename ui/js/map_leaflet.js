@@ -157,6 +157,11 @@ function MapApiMap() {
         return polyline.getLatLngs();
     };
 
+    this.setPolylineOptions = function (polyline, polylineOptions) {
+        polyline.setStyle({'color': polylineOptions['color'],
+                           'weight': polylineOptions['weight']});
+    };
+
     this.removePolyline = function (polyline) {
         state.map.removeLayer(polyline);
     };

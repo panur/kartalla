@@ -239,10 +239,11 @@ function MapMarker(utils, maMap) {
         symbolElement.style.fill = color;
         symbolElement.addEventListener('mouseover', function () {
             updateSymbolTooltipElement(symbolElement);
+            maMap.setPolylineOptions(state.maPolyline, {'color': 'red', 'weight': 3});
         });
         symbolElement.addEventListener('mouseout', function () {
             hideSymbolTooltipElement(symbolElement);
-
+            maMap.setPolylineOptions(state.maPolyline, {'color': 'black', 'weight': 1});
         });
         return symbolElement;
     }

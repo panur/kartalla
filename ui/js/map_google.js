@@ -87,6 +87,11 @@ function MapApiMap() {
         return polyline.getPath();
     };
 
+    this.setPolylineOptions = function (polyline, polylineOptions) {
+        polyline.setOptions({'strokeColor': polylineOptions['color'],
+                             'strokeWeight': polylineOptions['weight']});
+    };
+
     this.removePolyline = function (polyline) {
         polyline.setMap(null);
     };
