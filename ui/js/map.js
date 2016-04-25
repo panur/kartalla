@@ -13,6 +13,7 @@ function Map(utils) {
         s.markers = {};
         s.nextMarkerId = 0;
         s.previousSymbolScale = null;
+        s.highlightedPolyline = null;
         return s;
     }
 
@@ -121,11 +122,25 @@ function Map(utils) {
         var polyline = state.polylineCache[pathId].polyline;
         var marker = new MapMarker(utils, state.maMap);
         marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), routeName,
-                    getTitleText);
+                    {'getTitleText': getTitleText, 'highlightPolyline': highlightPolyline});
         state.markers[state.nextMarkerId] = {marker: marker, pathId: pathId};
         state.nextMarkerId += 1;
         return marker;
     };
+
+    function highlightPolyline(maPolyline, isHighlighted) {
+        if (state.highlightedPolyline !== null) {
+            state.maMap.setPolylineOptions(state.highlightedPolyline,
+                                           {'color': 'black', 'weight': 1});
+        }
+        if (isHighlighted) {
+            state.highlightedPolyline = maPolyline;
+            state.maMap.setPolylineOptions(state.highlightedPolyline,
+                                           {'color': 'red', 'weight': 3});
+        } else {
+            state.highlightedPolyline = null;
+        }
+    }
 
     this.setAlert = function (marker, isAlert) {
         return marker.setAlert(isAlert);
@@ -207,13 +222,13 @@ function MapMarker(utils, maMap) {
         s.symbolBaseSize = 15;
         s.symbolForm = '';
         s.routeName = null;
-        s.getTitleText = null;
+        s.callbacks = null;
         s.previousUpdateType = null;
         s.isAlert = false;
         return s;
     }
 
-    this.init = function (markerId, maPolyline, isVisible, color, scale, routeName, getTitleText) {
+    this.init = function (markerId, maPolyline, isVisible, color, scale, routeName, callbacks) {
         state.markerId = markerId;
         state.maPolyline = maPolyline;
         state.symbolElement = createSymbolElement(isVisible, color);
@@ -221,7 +236,7 @@ function MapMarker(utils, maMap) {
         state.maMarker.init(createSymbolRootElement(state.symbolElement), isVisible,
                             scale * state.symbolBaseSize);
         state.routeName = routeName;
-        state.getTitleText = getTitleText;
+        state.callbacks = callbacks;
     };
 
     this.getMarkerId = function () {
@@ -239,11 +254,11 @@ function MapMarker(utils, maMap) {
         symbolElement.style.fill = color;
         symbolElement.addEventListener('mouseover', function () {
             updateSymbolTooltipElement(symbolElement);
-            maMap.setPolylineOptions(state.maPolyline, {'color': 'red', 'weight': 3});
+            state.callbacks.highlightPolyline(state.maPolyline, true);
         });
         symbolElement.addEventListener('mouseout', function () {
             hideSymbolTooltipElement(symbolElement);
-            maMap.setPolylineOptions(state.maPolyline, {'color': 'black', 'weight': 1});
+            state.callbacks.highlightPolyline(state.maPolyline, false);
         });
         return symbolElement;
     }
@@ -264,6 +279,7 @@ function MapMarker(utils, maMap) {
         symbolTooltipElement.className = 'symbolToolTip';
         symbolTooltipElement.addEventListener('click', function () {
             symbolTooltipElement.style.visibility = 'hidden';
+            state.callbacks.highlightPolyline(state.maPolyline, false);
         });
         return symbolTooltipElement;
     }
@@ -271,7 +287,7 @@ function MapMarker(utils, maMap) {
     function updateSymbolTooltipElement(symbolElement) {
         var rect = symbolElement.getBoundingClientRect();
         symbolElement.style.cursor = 'help';
-        showSymbolTooltipElement(rect, state.getTitleText(state.previousUpdateType));
+        showSymbolTooltipElement(rect, state.callbacks.getTitleText(state.previousUpdateType));
     }
 
     function showSymbolTooltipElement(rect, title) {
