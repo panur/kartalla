@@ -56,7 +56,7 @@ function HslAlerts(controller, uiBar) {
                 }
             }
         };
-        request.open('POST', 'http://dev.digitransit.fi/otp/routers/hsl/index/graphql', true);
+        request.open('POST', 'http://matka.hsl.fi/routing/v1/routers/hsl/index/graphql', true);
         request.setRequestHeader('Content-Type', 'application/graphql');
         request.send(getQuery());
     }
