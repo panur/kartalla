@@ -579,8 +579,9 @@ function ControllerTrip(map, alertCache, vpCache) {
                 'direction': getDirection(), 'startTime': startTime,
                 'lastArrivalTime': lastArrivalTime, 'totalDuration': duration, 'duration': null,
                 'totalDistance': totalDistance, 'distance': null, 'speed': null,
-                'averageSpeed': Math.round(totalDistance / (duration / 60)), 'stops': stops,
-                'update': null, 'delayDistance': null, 'delayTime': null, 'alert': null};
+                'averageSpeed': Math.round((distanceMeters / 1000) / (duration / 60)),
+                'stops': stops, 'update': null, 'delayDistance': null, 'delayTime': null,
+                'alert': null};
     }
 
     function minutesToString(minutesAfterMidnight) {
