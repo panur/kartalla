@@ -1,14 +1,14 @@
 [
-{"filename": "joensuu.json", "agencies": ["199884", "199885"]},
+{"filename": "joensuu.json", "agencies": ["200445", "200446"]},
 {"filename": "jyvaskyla.json", "agencies": ["197725", "197726", "197727"]},
-{"filename": "kouvola.json", "agencies": ["199871", "199872", "199873", "199874", "199875", "199876", "199877"]},
-{"filename": "kuopio.json", "agencies": ["199892", "199893", "199894", "199895", "199896"]},
-{"filename": "lahti.json", "agencies": ["199878", "199879", "199880", "199881", "199882", "199883"]},
-{"filename": "lappeenranta.json", "agencies": ["199891"]},
+{"filename": "kouvola.json", "agencies": ["200432", "200433", "200434", "200435", "200436", "200437", "200438"]},
+{"filename": "kuopio.json", "agencies": ["200453", "200454", "200455", "200456", "200457"]},
+{"filename": "lahti.json", "agencies": ["200439", "200440", "200441", "200442", "200443", "200444"]},
+{"filename": "lappeenranta.json", "agencies": ["200452"]},
 {"filename": "oulu.json", "agencies": ["198248", "198249", "198250", "198251", "198252"]},
-{"filename": "seinajoki.json", "agencies": ["199865"]},
+{"filename": "seinajoki.json", "agencies": ["200426"]},
 {"filename": "tampere.json", "agencies": ["3"]},
 {"filename": "turku.json", "agencies": ["14"]},
-{"filename": "vaasa.json", "agencies": ["199886", "199887", "199888", "199889", "199890"]},
+{"filename": "vaasa.json", "agencies": ["200447", "200448", "200449", "200450", "200451"]},
 {"filename": "vr.json", "agencies": ["4"]}
 ]
