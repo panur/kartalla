@@ -62,7 +62,7 @@ function MapApiMap() {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         });
-        var hsl = L.tileLayer('http://digitransit.fi/hsl-map/{z}/{x}/{y}.png', {
+        var hsl = L.tileLayer('http://api.digitransit.fi/map/v1/hsl-map/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: 'Map data &copy; ' +
                 '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
