@@ -162,8 +162,8 @@ function Config(utils) {
         return {
             'hsl': 60.302709, 'suomi': 65.229573, 'vr': 65.229573,
             'joensuu': 62.607072, 'jyvaskyla': 62.235599, 'kouvola': 60.866238, 'kuopio': 62.900360,
-            'lahti': 60.983510, 'lappeenranta': 61.058213, 'oulu': 65.021237,
-            'seinajoki': 62.786752, 'tampere': 61.475903, 'turku': 60.444043, 'vaasa': 63.097463
+            'lahti': 60.983510, 'lappeenranta': 61.058213, 'mikkeli': 61.683347, 'oulu': 65.021237,
+            'tampere': 61.475903, 'turku': 60.444043, 'vaasa': 63.097463
         }[that.dataType];
     }
 
@@ -171,8 +171,8 @@ function Config(utils) {
         return {
             'hsl': 24.940832, 'suomi': 26.918078, 'vr': 26.918078,
             'joensuu': 29.791886, 'jyvaskyla': 25.761523, 'kouvola': 26.705006, 'kuopio': 27.662373,
-            'lahti': 25.650401, 'lappeenranta': 28.188472, 'oulu': 25.468197,
-            'seinajoki': 22.845576, 'tampere': 23.774071, 'turku': 22.276154, 'vaasa': 21.621426
+            'lahti': 25.650401, 'lappeenranta': 28.188472, 'mikkeli': 27.283888, 'oulu': 25.468197,
+            'tampere': 23.774071, 'turku': 22.276154, 'vaasa': 21.621426
         }[that.dataType];
     }
 
@@ -180,8 +180,8 @@ function Config(utils) {
         return {
             'hsl': 10, 'suomi': 5, 'vr': 5,
             'joensuu': 12, 'jyvaskyla': 11, 'kouvola': 11, 'kuopio': 12,
-            'lahti': 11, 'lappeenranta': 12, 'oulu': 11,
-            'seinajoki': 12, 'tampere': 11, 'turku': 11, 'vaasa': 13
+            'lahti': 11, 'lappeenranta': 12, 'mikkeli': 12, 'oulu': 11,
+            'tampere': 11, 'turku': 11, 'vaasa': 13
         }[that.dataType];
     }
 
