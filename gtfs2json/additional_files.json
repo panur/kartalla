@@ -1,14 +1,14 @@
 [
-{"filename": "joensuu.json", "agencies": ["210634", "210635"]},
-{"filename": "jyvaskyla.json", "agencies": ["209523", "209524", "209525", "209526", "209527"]},
-{"filename": "kouvola.json", "agencies": ["210620", "210621", "210622", "210623", "210624", "210625", "210626", "210627"]},
-{"filename": "kuopio.json", "agencies": ["210647", "210648", "210649", "210650", "210651", "210652"]},
-{"filename": "lahti.json", "agencies": ["210628", "210629", "210630", "210631", "210632", "210633"]},
-{"filename": "lappeenranta.json", "agencies": ["210641", "210642", "210643", "210644", "210645", "210646"]},
-{"filename": "mikkeli.json", "agencies": ["210653", "210654", "210655", "210656", "210657", "210658", "210659"]},
-{"filename": "oulu.json", "agencies": ["208768", "208769", "208770", "208771", "208772", "208773", "208774"]},
+{"filename": "joensuu.json", "agencies": ["211336", "211337"]},
+{"filename": "jyvaskyla.json", "agencies": ["210902", "210903", "210904", "210905", "210906"]},
+{"filename": "kouvola.json", "agencies": ["211322", "211323", "211324", "211325", "211326", "211327", "211328", "211329"]},
+{"filename": "kuopio.json", "agencies": ["211349", "211350", "211351", "211352", "211353", "211354"]},
+{"filename": "lahti.json", "agencies": ["211330", "211331", "211332", "211333", "211334", "211335"]},
+{"filename": "lappeenranta.json", "agencies": ["211343", "211344", "211345", "211346", "211347", "211348"]},
+{"filename": "mikkeli.json", "agencies": ["211355", "211356", "211357", "211358", "211359", "211360", "211361", "211362"]},
+{"filename": "oulu.json", "agencies": ["210982", "210983", "210984", "210985", "210986", "210987", "210988"]},
 {"filename": "tampere.json", "agencies": ["3"]},
 {"filename": "turku.json", "agencies": ["14"]},
-{"filename": "vaasa.json", "agencies": ["210636", "210637", "210638", "210639", "210640"]},
+{"filename": "vaasa.json", "agencies": ["211338", "211339", "211340", "211341", "211342"]},
 {"filename": "vr.json", "agencies": ["4"]}
 ]
