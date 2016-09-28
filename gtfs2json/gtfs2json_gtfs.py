@@ -46,7 +46,7 @@ def _parse_shapes(shapes_txt):
                 shapes[row['shape_id']] = {'is_invalid': False, 'points': []}
             point = (float(row['shape_pt_lat']), float(row['shape_pt_lon']))
             shapes[row['shape_id']]['points'].append(point)
-            if point == (58.432233, 20.142573):
+            if (point == (58.432233, 20.142573)) or (point[0] < 0) or (point[1] < 0):
                 shapes[row['shape_id']]['is_invalid'] = True
 
     logging.debug('parsed {} shapes'.format(len(shapes)))
