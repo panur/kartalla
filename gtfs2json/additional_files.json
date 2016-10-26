@@ -1,15 +1,16 @@
 [
-{"filename": "hameenlinna.json", "agencies": ["215043", "215044", "215045", "215046", "215047", "215048", "215049", "215050", "215073"]},
-{"filename": "joensuu.json", "agencies": ["215011", "215012"]},
-{"filename": "jyvaskyla.json", "agencies": ["214417", "214418", "214419", "214420", "214421"]},
-{"filename": "kotka.json", "agencies": ["215038", "215039", "215040", "215041", "215042"]},
-{"filename": "kouvola.json", "agencies": ["215065", "215066", "215067", "215068", "215069", "215070", "215071", "215072"]},
+{"filename": "hameenlinna.json", "agencies": ["215184", "215185", "215186", "215187", "215188", "215189", "215190", "215191", "215192"]},
+{"filename": "joensuu.json", "agencies": ["215158", "215159"]},
+{"filename": "jyvaskyla.json", "agencies": ["215138", "215139", "215140", "215141", "215142"]},
+{"filename": "kotka.json", "agencies": ["215179", "215180", "215181", "215182", "215183"]},
+{"filename": "kouvola.json", "agencies": ["215150", "215151", "215152", "215153", "215154", "215155", "215156", "215157"]},
 {"filename": "kuopio.json", "agencies": ["215024", "215025", "215026", "215027", "215028", "215029"]},
 {"filename": "lahti.json", "agencies": ["215005", "215006", "215007", "215008", "215009", "215010"]},
-{"filename": "lappeenranta.json", "agencies": ["215018", "215019", "215020", "215021", "215022", "215023"]},
-{"filename": "mikkeli.json", "agencies": ["215030", "215031", "215032", "215033", "215034", "215035", "215036", "215037"]},
+{"filename": "lappeenranta.json", "agencies": ["215165", "215166", "215167", "215168", "215169", "215170"]},
+{"filename": "mikkeli.json", "agencies": ["215171", "215172", "215173", "215174", "215175", "215176", "215177", "215178"]},
 {"filename": "oulu.json", "agencies": ["214284", "214285", "214286", "214287", "214288", "214289", "214290"]},
 {"filename": "tampere.json", "agencies": ["3"]},
 {"filename": "turku.json", "agencies": ["14"]},
-{"filename": "vaasa.json", "agencies": ["215013", "215014", "215015", "215016", "215017"]}
+{"filename": "vaasa.json", "agencies": ["215160", "215161", "215162", "215163", "215164"]},
+{"filename": "vr.json", "agencies": ["4"]}
 ]

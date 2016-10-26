@@ -86,8 +86,9 @@ function main() {
     }
 
     function createDataSelection() {
-        var names = ['HSL', 'Suomi', 'Hämeenlinna', 'Joensuu', 'Jyväskylä', 'Kotka', 'Kouvola',
-            'Kuopio', 'Lahti', 'Lappeenranta', 'Mikkeli', 'Oulu', 'Tampere', 'Turku', 'Vaasa'];
+        var names = ['HSL', 'Suomi', 'VR', 'Hämeenlinna', 'Joensuu', 'Jyväskylä', 'Kotka',
+            'Kouvola', 'Kuopio', 'Lahti', 'Lappeenranta', 'Mikkeli', 'Oulu', 'Tampere', 'Turku',
+            'Vaasa'];
         var selectedData = getDataTypeName(names, config.dataType);
         return {values: names, selectedValue: selectedData, changeType : function (newType) {
             config.restart(getDataType(newType));

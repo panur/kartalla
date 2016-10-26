@@ -160,7 +160,7 @@ function Config(utils) {
 
     function getMapLat() {
         return {
-            'hsl': 60.302709, 'suomi': 65.229573,
+            'hsl': 60.302709, 'suomi': 65.229573, 'vr': 65.229573,
             'hameenlinna': 60.993705, 'joensuu': 62.607072, 'jyvaskyla': 62.235599,
             'kotka': 60.487563, 'kouvola': 60.866238, 'kuopio': 62.900360, 'lahti': 60.983510,
             'lappeenranta': 61.058213, 'mikkeli': 61.683347, 'oulu': 65.021237,
@@ -170,7 +170,7 @@ function Config(utils) {
 
     function getMapLng() {
         return {
-            'hsl': 24.940832, 'suomi': 26.918078,
+            'hsl': 24.940832, 'suomi': 26.918078, 'vr': 26.918078,
             'hameenlinna': 24.458368, 'joensuu': 29.791886, 'jyvaskyla': 25.761523,
             'kotka': 26.906511, 'kouvola': 26.705006, 'kuopio': 27.662373, 'lahti': 25.650401,
             'lappeenranta': 28.188472, 'mikkeli': 27.283888, 'oulu': 25.468197,
@@ -180,7 +180,7 @@ function Config(utils) {
 
     function getMapZoomLevel() {
         return {
-            'hsl': 10, 'suomi': 5,
+            'hsl': 10, 'suomi': 5, 'vr': 5,
             'hameenlinna': 12, 'joensuu': 12, 'jyvaskyla': 11,
             'kotka': 12, 'kouvola': 11, 'kuopio': 12, 'lahti': 11,
             'lappeenranta': 12, 'mikkeli': 12, 'oulu': 11,
@@ -219,6 +219,8 @@ function Config(utils) {
             return ['bus', 'train', 'tram', 'metro', 'ferry'];
         } else if (that.dataType === 'suomi') {
             return ['bus', 'train', 'tram', 'metro', 'ferry', 'airplane'];
+        } else if (that.dataType === 'vr') {
+            return ['bus', 'train'];
         } else {
             return ['bus'];
         }
@@ -230,7 +232,7 @@ function Config(utils) {
         } else {
             if (that.dataType === 'hsl') {
                 return ['train', 'ferry'];
-            } else if (that.dataType === 'suomi') {
+            } else if ((that.dataType === 'suomi') || (that.dataType === 'vr')) {
                 return ['train'];
             } else {
                 return ['bus'];
