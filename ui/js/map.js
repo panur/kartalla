@@ -56,30 +56,38 @@ function Map(utils) {
     }
 
     function createOwnLocationControl(lang) {
-        var ownLocationElement = document.createElement('div');
-        initFindOwnLocationElement();
-        ownLocationElement.addEventListener('click', function () {
-            ownLocationElement.className = 'findingOwnLocation';
-            ownLocationElement.title =
-                {'en': 'finding own location', 'fi': 'etsitään omaa sijaintia'}[lang];
-            ownLocationElement.textContent = '(\u25CE)';
-            navigator.geolocation.getCurrentPosition(onPositionSuccess, onPositionError);
-        });
+        var ownLocationElement = createOwnLocationElement();
+        var wrapperElement = document.createElement('div');
+        wrapperElement.appendChild(ownLocationElement);
 
-        state.maMap.addLocationControl(ownLocationElement);
+        state.maMap.addLocationControl(wrapperElement);
 
-        function initFindOwnLocationElement(statusClassName) {
-            ownLocationElement.className = 'findOwnLocation';
+        function createOwnLocationElement(statusClassName) {
+            var newControlElement = document.createElement('div');
+            newControlElement.className = 'findOwnLocation';
             if (statusClassName !== undefined) {
-                ownLocationElement.className += ' ' + statusClassName;
+                newControlElement.className += ' ' + statusClassName;
             }
-            ownLocationElement.title =
+            newControlElement.title =
                 {'en': 'show own location', 'fi': 'näytä oma sijainti'}[lang];
-            ownLocationElement.textContent = '(\u25C9)';
+            newControlElement.textContent = '(\u25C9)';
+            newControlElement.addEventListener('click', onClick, false);
+            return newControlElement;
+
+            function onClick() {
+                newControlElement.removeEventListener('click', onClick, false);
+                state.maMap.clearOwnLocation();
+                newControlElement.className = 'findingOwnLocation';
+                newControlElement.title =
+                    {'en': 'finding own location', 'fi': 'etsitään omaa sijaintia'}[lang];
+                newControlElement.textContent = '(\u25CE)';
+                navigator.geolocation.getCurrentPosition(onPositionSuccess, onPositionError,
+                                                         {'timeout': 20000});
+            }
         }
 
         function onPositionSuccess(position) {
-            initFindOwnLocationElement('locatingSuccess');
+            updateOwnLocationElement('locatingSuccess');
             var radius = Math.max(10, position.coords.accuracy);
             var circleOptions = {'strokeColor': 'blue', 'strokeOpacity': 0.4, 'strokeWeight': 2,
                                  'fillColor': 'black', 'fillOpacity': 0.05};
@@ -88,9 +96,16 @@ function Map(utils) {
         }
 
         function onPositionError(err) {
-            initFindOwnLocationElement('locatingError');
+            updateOwnLocationElement('locatingError');
             ownLocationElement.textContent = '(\u25EC)';
             console.log('failed to find own position: %o', err);
+        }
+
+        function updateOwnLocationElement(statusClassName) {
+            var oldElement = ownLocationElement;
+            var newElement = createOwnLocationElement(statusClassName);
+            oldElement.parentNode.replaceChild(newElement, oldElement);
+            ownLocationElement = newElement;
         }
     }
 

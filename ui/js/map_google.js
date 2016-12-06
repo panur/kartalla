@@ -48,10 +48,13 @@ function MapApiMap() {
         google.maps.event.trigger(state.map, 'resize');
     };
 
-    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
+    this.clearOwnLocation = function () {
         if (state.ownLocation !== null) {
             state.ownLocation.setMap(null);
         }
+    };
+
+    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
         state.ownLocation = new google.maps.Circle({
             'strokeColor': circleOptions['strokeColor'],
             'strokeOpacity': circleOptions['strokeOpacity'],

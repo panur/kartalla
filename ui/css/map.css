@@ -17,6 +17,7 @@ div.findOwnLocation {
 }
 
 div.findingOwnLocation {
+    color: black;
     font-size: large;
     animation-duration: 2s;
     animation-name: blink;

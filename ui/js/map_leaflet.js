@@ -84,10 +84,13 @@ function MapApiMap() {
         state.map.invalidateSize();
     };
 
-    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
+    this.clearOwnLocation = function () {
         if (state.ownLocation !== null) {
             state.map.removeLayer(state.ownLocation);
         }
+    };
+
+    this.updateOwnLocation = function (lat, lng, radius, circleOptions) {
         var pathOptions = {
             'color': circleOptions['strokeColor'],
             'weight': circleOptions['strokeWeight'],
@@ -218,9 +221,7 @@ function MapApiMap() {
                 position: 'topright'
             },
             onAdd: function (map) {
-                var wrapperElement = document.createElement('div');
-                wrapperElement.appendChild(controlElement);
-                return wrapperElement;
+                return controlElement;
             }
         });
         state.map.addControl(new CustomControl());
