@@ -4,7 +4,7 @@
 
 JSON: http://www.json.org/
 
-Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html
+Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
 import collections

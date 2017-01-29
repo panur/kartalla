@@ -5,7 +5,7 @@
 HSL GTFS: http://developer.reittiopas.fi/pages/en/other-apis.php
 Liikennevirasto (Finnish Transport Agency) GTFS: http://developer.matka.fi/pages/en/home.php
 
-Author: Panu Ranta, panu.ranta@iki.fi, http://14142.net/kartalla/about.html
+Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
 import argparse
