@@ -153,7 +153,7 @@ function HslMqtt(utils, controller, uiBar) {
         readyEvent.initEvent(readyEventName, false, false);
         document.addEventListener(readyEventName, downloadIsReady, false);
         var downloadRequest = null;
-        utils.downloadUrl('http://dev.hsl.fi/hfp/journey/', null, function (request) {
+        utils.downloadUrl('https://dev.hsl.fi/hfp/journey/', null, function (request) {
             downloadRequest = request;
             document.dispatchEvent(readyEvent);
         });
