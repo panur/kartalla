@@ -174,7 +174,7 @@ function HslMqtt(utils, controller, uiBar) {
 
     function connectMqtt() {
         var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
-        state.client = new Paho.MQTT.Client('213.138.147.225', 1883, clientId);
+        state.client = new Paho.MQTT.Client('wss://dev.hsl.fi/mqtt-proxy', clientId);
         state.client.onConnectionLost = onConnectionLost;
         state.client.onMessageArrived = onMessageArrived;
         state.client.connect({onSuccess: onConnect, onFailure: onFailedConnect});
