@@ -70,9 +70,9 @@ def _parse_stops(stops_txt):
 def _parse_routes(routes_txt):
     routes = {}  # by route_id
     # 109: https://github.com/HSLdevcom/kalkati2gtfs/commit/d4758fb74d7455ddbf4032175ef8ff51c587ec7f
-    route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '106': 'train',
-                   '109': 'train', '2': 'train', '7': 'train', '700': 'bus', '701': 'bus', '702': 'bus',
-                   '704': 'bus', '715': 'bus', '1104': 'airplane'}
+    route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '6': 'bus', '106': 'train',
+                   '109': 'train', '2': 'train', '7': 'train', '700': 'bus', '701': 'bus',
+                   '702': 'bus', '704': 'bus', '715': 'bus', '1104': 'airplane'}
 
     with open(routes_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
