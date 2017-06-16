@@ -7,6 +7,7 @@ General Transit Feed Specification Reference: https://developers.google.com/tran
 Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
+import codecs
 import csv
 import logging
 import os
@@ -235,6 +236,7 @@ def _add_stop_times_to_trips(routes, stop_times_txt):
     is_seconds_in_time = False
 
     with open(stop_times_txt, 'r') as input_file:
+        _skip_utf8_bom(input_file)
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if not is_seconds_in_time:
@@ -259,6 +261,12 @@ def _get_trips(routes):
             for trip_id, trip in service['trips'].iteritems():
                 trips[trip_id] = trip
     return trips
+
+
+def _skip_utf8_bom(input_file):
+    start = input_file.read(3)
+    if start != codecs.BOM_UTF8:
+        input_file.seek(0)
 
 
 def _is_seconds_in_time(row):  # row in stop_times.txt
