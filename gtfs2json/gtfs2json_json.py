@@ -23,7 +23,7 @@ def create(routes, output_filename, gtfs_modification_time):
     output_data[array_keys['root']['array_keys']] = array_keys
     output_data[array_keys['root']['gtfs_epoch']] = gtfs_modification_time
     output_data[array_keys['root']['json_epoch']] = int(time.time())
-    output_data[array_keys['root']['is_direction']] = int(routes.values()[0]['is_direction'])
+    output_data[array_keys['root']['trip_types']] = []
     output_data[array_keys['root']['dates']] = output_dates
     output_data[array_keys['root']['routes']] = output_routes
 
@@ -33,25 +33,26 @@ def create(routes, output_filename, gtfs_modification_time):
 
 def _get_array_keys():
     array_keys = {}
-    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'is_direction': 3,
+    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'trip_types': 3,
                           'dates': 4, 'routes': 5}
     array_keys['route'] = {'id': 0, 'name': 1, 'long_name': 2, 'type': 3, 'shapes': 4,
-                           'directions': 5, 'services': 6}
-    array_keys['direction'] = {'shape_i': 0, 'stop_distances': 1, 'is_departure_times': 2,
-                               'stop_times': 3, 'trips': 4}
-    array_keys['service'] = {'start_date_i': 0, 'end_date_i': 1, 'weekdays': 2,
-                             'exception_dates': 3, 'directions_i': 4}
-    array_keys['trip'] = {'first_start_time': 0, 'start_times': 1, 'stop_times_indexes': 2}
-    array_keys['exception_dates'] = {'added': 0, 'removed': 1}
+                           'stop_distances': 5, 'trip_dates': 6, 'trip_groups': 7, 'stop_times': 8,
+                           'is_departure_times': 9, 'directions': 10}
+    array_keys['trip_dates'] = {'start_date_i': 0, 'end_date_i': 1, 'weekdays': 2,
+                                'added': 3, 'removed': 4}
+    array_keys['trip_group'] = {'shape_i': 0, 'stop_distances_i': 1, 'trip_dates_i': 2}
+    array_keys['direction'] = {'trips': 0}
+    array_keys['trip'] = {'first_start_time': 0, 'start_times': 1, 'stop_times_indexes': 2,
+                          'trip_group_indexes': 3}
     return array_keys
 
 
 def _get_output_dates(routes):
     output_dates = {}
     for route in routes.itervalues():
-        for service in route['services'].itervalues():
-            dates = [service['start_date'], service['end_date']]
-            for exception_dates in service['exception_dates'].itervalues():
+        for trip in route['trips'].itervalues():
+            dates = [trip['dates']['start_date'], trip['dates']['end_date']]
+            for exception_dates in trip['dates']['exception_dates'].itervalues():
                 dates = dates + exception_dates
             for date in dates:
                 if date not in output_dates:
@@ -63,124 +64,120 @@ def _get_output_dates(routes):
 
 def _get_output_routes(array_keys, output_dates, routes):
     output_routes = []
-    stats = {'route_ids': len(routes), 'services': 0, 'trip_ids': 0, 'shapes': 0,
-             'directions': 0, 'stop_times': 0}
+    stats = {'route_ids': len(routes), 'shapes': 0}
 
     for route_id in sorted(routes):
         route = routes[route_id]
-        output_directions = _get_output_directions(array_keys, route['services'])
-        output_services = _get_output_services(array_keys, route['services'], output_dates)
+        output_values = _get_route_trips_output_values(
+            array_keys, route['trips'], route['is_departure_times'], output_dates)
+        output_trip_groups = _get_route_trips_groups(array_keys, route['trips'])
+        # cache indexes must be set before this
+        output_directions = _get_output_directions(array_keys, route['trips'])
         output_route = [None] * len(array_keys['route'])
         output_route[array_keys['route']['id']] = route['route_id']
         output_route[array_keys['route']['name']] = route['name']
         output_route[array_keys['route']['long_name']] = route['long_name']
         output_route[array_keys['route']['type']] = route['type']
         output_route[array_keys['route']['shapes']] = route['shapes']
-        output_route[array_keys['route']['directions']] = output_directions['directions']
-        output_route[array_keys['route']['services']] = output_services
+        output_route[array_keys['route']['stop_distances']] = output_values['stop_distances']
+        output_route[array_keys['route']['trip_dates']] = output_values['trip_dates']
+        output_route[array_keys['route']['trip_groups']] = output_trip_groups
+        output_route[array_keys['route']['stop_times']] = output_values['stop_times']
+        output_route[array_keys['route']['is_departure_times']] = int(route['is_departure_times'])
+        output_route[array_keys['route']['directions']] = output_directions
         output_routes.append(output_route)
-        stats['services'] += len(route['services'])
-        stats['trip_ids'] += output_directions['stats']['trip_ids']
-        stats['stop_times'] += output_directions['stats']['stop_times']
         stats['shapes'] += len(route['shapes'])
-        stats['directions'] += len(output_directions['directions'])
 
     logging.debug('output stats: {}'.format(stats))
 
     return output_routes
 
 
-def _get_output_directions(array_keys, services):
-    output = {'directions': [], 'stats': {'trip_ids': 0, 'stop_times': 0}}
-
-    for _, service in sorted(services.iteritems()):
-        output['stats']['trip_ids'] += len(service['trips'])
-        output_directions = [None, None]
-        for direction_id, direction in sorted(service['directions'].iteritems()):
-            if direction['shape_id']:  # some services operate only in one direction
-                output_direction = _get_output_direction(array_keys, service, direction_id,
-                                                         direction, output['stats'])
-            else:
-                output_direction = []
-            output_directions[int(direction_id)] = output_direction
-        try:
-            service['directions_i'] = output['directions'].index(output_directions)
-        except ValueError:
-            output['directions'].append(output_directions)
-            service['directions_i'] = len(output['directions']) - 1
-
-    return output
+def _get_route_trips_output_values(array_keys, trips, is_departure_times, output_dates):
+    output_values = {'stop_distances': [], 'stop_times': [], 'trip_dates': []}
+    get_new_value = {
+        'stop_distances': _get_new_value_stop_distances,
+        'stop_times': _get_new_value_stop_times,
+        'trip_dates': _get_new_value_trip_dates,
+    }
+    for trip in sorted(trips.itervalues()):
+        trip['times']['is_departure_times'] = is_departure_times
+        for value_name in output_values:
+            new_value = get_new_value[value_name](array_keys, trip, output_dates)
+            trip['cache_indexes'][value_name + '_i'] = _get_cache_index(output_values[value_name],
+                                                                        new_value)
+    return output_values
 
 
-def _get_output_direction(array_keys, service, direction_id, direction, stats):
-    delta_stop_distances = _get_delta_list(direction['stop_distances'])
-    output_stop_distances = _integer_list_to_string(delta_stop_distances)
-    is_departure_times = _is_departure_times_in_service(service)
-    output_stop_times = _get_service_stop_times(service, direction_id, is_departure_times)
-    stats['stop_times'] += len(output_stop_times)
-    # stop times must be set before this
-    output_trips = _get_output_trips(array_keys, service['trips'], direction_id)
+def _get_new_value_stop_distances(_, trip, dummy):
+    delta_stop_distances = _get_delta_list(trip['stop_distances'])
+    return _integer_list_to_string(delta_stop_distances)
+
+
+def _get_cache_index(cache_values, new_value):
+    try:
+        return cache_values.index(new_value)
+    except ValueError:
+        cache_values.append(new_value)
+        return len(cache_values) - 1
+
+
+def _get_route_trips_groups(array_keys, trips):
+    route_trip_groups = []
+    for trip in sorted(trips.itervalues()):
+        cis = trip['cache_indexes']
+        output_trip_group = [None] * len(array_keys['trip_group'])
+        output_trip_group[array_keys['trip_group']['shape_i']] = cis['shape_i']
+        output_trip_group[array_keys['trip_group']['stop_distances_i']] = cis['stop_distances_i']
+        output_trip_group[array_keys['trip_group']['trip_dates_i']] = cis['trip_dates_i']
+        cis['trip_group_i'] = _get_cache_index(route_trip_groups, output_trip_group)
+    return route_trip_groups
+
+
+def _get_output_directions(array_keys, trips):
+    output_directions = []
+    if trips.values()[0]['direction_id'] == '-':
+        directions = ['-']
+    else:
+        directions = ['0', '1']
+    for direction in directions:
+        output_directions.append(_get_output_direction(array_keys, trips, direction))
+    return output_directions
+
+
+def _get_output_direction(array_keys, trips, direction_id):
+    output_trips = _get_output_trips(array_keys, trips, direction_id)
     output_direction = [None] * len(array_keys['direction'])
-    output_direction[array_keys['direction']['shape_i']] = direction['shape_i']
-    output_direction[array_keys['direction']['stop_distances']] = output_stop_distances
-    output_direction[array_keys['direction']['is_departure_times']] = int(is_departure_times)
-    output_direction[array_keys['direction']['stop_times']] = output_stop_times
     output_direction[array_keys['direction']['trips']] = output_trips
     return output_direction
 
 
-def _get_output_services(array_keys, services, output_dates):
-    output_services = []
-
-    for _, service in sorted(services.iteritems()):
-        start_date_i = output_dates.index(service['start_date'])
-        end_date_i = output_dates.index(service['end_date'])
-        exception_dates = _get_output_exception_dates(array_keys, service['exception_dates'],
-                                                      output_dates)
-        output_service = [None] * len(array_keys['service'])
-        output_service[array_keys['service']['start_date_i']] = start_date_i
-        output_service[array_keys['service']['end_date_i']] = end_date_i
-        output_service[array_keys['service']['weekdays']] = service['weekdays']
-        output_service[array_keys['service']['exception_dates']] = exception_dates
-        output_service[array_keys['service']['directions_i']] = service['directions_i']
-        output_services.append(output_service)
-
-    return output_services
+def _get_new_value_trip_dates(array_keys, trip, output_dates):
+    start_date_i = output_dates.index(trip['dates']['start_date'])
+    end_date_i = output_dates.index(trip['dates']['end_date'])
+    exception_dates = _get_output_exception_dates(trip['dates']['exception_dates'], output_dates)
+    output_trip_dates = [None] * len(array_keys['trip_dates'])
+    output_trip_dates[array_keys['trip_dates']['start_date_i']] = start_date_i
+    output_trip_dates[array_keys['trip_dates']['end_date_i']] = end_date_i
+    output_trip_dates[array_keys['trip_dates']['weekdays']] = trip['dates']['weekdays']
+    output_trip_dates[array_keys['trip_dates']['added']] = exception_dates['added']
+    output_trip_dates[array_keys['trip_dates']['removed']] = exception_dates['removed']
+    return output_trip_dates
 
 
-def _get_output_exception_dates(array_keys, exception_dates, output_dates):
-    output_exception_dates = [None] * len(array_keys['exception_dates'])
-    output_exception_dates[array_keys['exception_dates']['added']] = []
-    output_exception_dates[array_keys['exception_dates']['removed']] = []
-
+def _get_output_exception_dates(exception_dates, output_dates):
+    output_exception_dates = {'added': [], 'removed': []}
     for exception_type in sorted(exception_dates):
         for exception_date in exception_dates[exception_type]:
-            dates = output_exception_dates[array_keys['exception_dates'][exception_type]]
+            dates = output_exception_dates[exception_type]
             dates.append(output_dates.index(exception_date))
     return output_exception_dates
 
 
-def _is_departure_times_in_service(service):
-    for trip in service['trips'].itervalues():
-        if trip['is_departure_times']:
-            return True
-    return False
-
-
-def _get_service_stop_times(service, direction_id, is_departure_times):
-    service_stop_times = []
-
-    for _, trip in sorted(service['trips'].iteritems()):
-        if trip['direction_id'] == direction_id:
-            trip_stop_times = _get_trip_stop_times(trip['stop_times'], is_departure_times)
-            delta_stop_times = _integer_list_to_string(_get_delta_list(trip_stop_times))
-            try:
-                trip['stop_times_i'] = service_stop_times.index(delta_stop_times)
-            except ValueError:
-                service_stop_times.append(delta_stop_times)
-                trip['stop_times_i'] = len(service_stop_times) - 1
-
-    return service_stop_times
+def _get_new_value_stop_times(_, trip, dummy):
+    trip_stop_times = _get_trip_stop_times(trip['times']['stop_times'],
+                                           trip['times']['is_departure_times'])
+    return _integer_list_to_string(_get_delta_list(trip_stop_times))
 
 
 def _get_trip_stop_times(stop_times, is_departure_times):
@@ -215,22 +212,39 @@ def _integer_list_to_string(integer_list):
     return output_string
 
 
-def _get_output_trips(array_keys, trips, direction_id):
-    times = {}
+def _get_output_trips(array_keys, input_trips, direction_id):
+    trips = {}  # by start time
 
-    for _, trip in sorted(trips.iteritems()):
+    for _, trip in sorted(input_trips.iteritems()):
         if trip['direction_id'] == direction_id:
-            times[trip['start_time']] = trip['stop_times_i']
+            start_time = trip['times']['start_time']
+            if start_time not in trips:
+                trips[start_time] = []
+            trips[start_time].append({
+                'stop_times_i': trip['cache_indexes']['stop_times_i'],
+                'trip_group_i': trip['cache_indexes']['trip_group_i']
+            })
 
-    sorted_times = collections.OrderedDict(sorted(times.items()))
-    start_times = sorted_times.keys()
-    stop_times_indexes = sorted_times.values()
+    if len(trips) == 0:
+        return []  # some routes operate only in one direction
 
-    delta_start_times = _integer_list_to_string(_get_delta_list([0] + start_times)[1:])
-    stop_times_indexes_string = _integer_list_to_string(stop_times_indexes)
+    sorted_trips = collections.OrderedDict(sorted(trips.items()))
+    start_times = []
+    stop_times_indexes = []
+    trip_group_indexes = []
+
+    for start_time in sorted_trips:
+        for trip in sorted_trips[start_time]:
+            start_times.append(start_time)
+            stop_times_indexes.append(trip['stop_times_i'])
+            trip_group_indexes.append(trip['trip_group_i'])
 
     output_trips = [None] * len(array_keys['trip'])
     output_trips[array_keys['trip']['first_start_time']] = start_times[0]
-    output_trips[array_keys['trip']['start_times']] = delta_start_times
-    output_trips[array_keys['trip']['stop_times_indexes']] = stop_times_indexes_string
+    output_trips[array_keys['trip']['start_times']] = _integer_list_to_string(
+        _get_delta_list([0] + start_times)[1:])
+    output_trips[array_keys['trip']['stop_times_indexes']] = _integer_list_to_string(
+        stop_times_indexes)
+    output_trips[array_keys['trip']['trip_group_indexes']] = _integer_list_to_string(
+        trip_group_indexes)
     return output_trips

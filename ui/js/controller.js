@@ -13,8 +13,7 @@ function Controller(gtfs, map) {
         s.tripTypeInfos = null;
         s.markerUpdateInterval = null;
         s.nextTripUpdate = 0;
-        s.activeServicesDateString = null;
-        s.activeServices = {};
+        s.activeTripsDateString = null;
         s.activeTrips = {};
         s.alertCache = {};
         s.vpCache = {};
@@ -33,8 +32,7 @@ function Controller(gtfs, map) {
             state.activeTrips[tripId].remove();
         }
         state.nextTripUpdate = 0;
-        state.activeServicesDateString = null;
-        state.activeServices = {};
+        state.activeTripsDateString = null;
         state.activeTrips = {};
     };
 
@@ -78,23 +76,19 @@ function Controller(gtfs, map) {
     this.update = function (mapDate) {
         var mapDateString = getDateString(mapDate);
 
-        if (((Object.keys(state.activeServices)).length === 0) && (mapDate.getHours() < 6)) {
-            /* if we start soon after midnight (let's assume 6 hours to be safe) we need to start
-            with yesterday's services */
-            var yesterdayDate = new Date(mapDate.getTime() - (24 * 60 * 60 * 1000));
-            updateActiveServices(getDateString(yesterdayDate), yesterdayDate);
-        }
-
-        if (state.activeServicesDateString !== mapDateString) {
-            updateActiveServices(mapDateString, mapDate);
-            state.activeServicesDateString = mapDateString;
-        }
-
-        if (mapDate.getTime() > state.nextTripUpdate) {
-            deleteOldServices(mapDate);
+        if ((mapDate.getTime() > state.nextTripUpdate) ||
+            (state.activeTripsDateString !== mapDateString)) {
+            state.activeTripsDateString = mapDateString;
             var updatePeriodInMinutes = 10;
+            if (mapDate.getHours() < 6) {
+                /* if we start soon after midnight (let's assume 6 hours to be safe) we need to
+                start with yesterday's trips */
+                var yesterdayDate = new Date(mapDate.getTime() - (24 * 60 * 60 * 1000));
+                updateActiveTrips(getDateString(yesterdayDate), yesterdayDate,
+                                  updatePeriodInMinutes, true);
+            }
             state.nextTripUpdate = mapDate.getTime() + (updatePeriodInMinutes * 60 * 1000);
-            updateActiveTrips(mapDate, updatePeriodInMinutes);
+            updateActiveTrips(mapDateString, mapDate, updatePeriodInMinutes, false);
         }
 
         updateTripsOnMap(mapDate);
@@ -137,105 +131,45 @@ function Controller(gtfs, map) {
         return '' + date.getFullYear() + pad(date.getMonth() + 1) + pad(date.getDate());
     }
 
-    function updateActiveServices(dateString, date) { // dateString = YYYYMMDD
-        var numNewServices = 0;
+    function updateActiveTrips(dateString, mapDate,
+                               updatePeriodInMinutes, isAfterMidnight) { // dateString = YYYYMMDD
+        var numNewTrips = 0;
         var routes = gtfs.getRoutes();
         for (var i = 0; i < routes.length; i++) {
             if ((state.onlyRoutes === null) ||
                 (state.onlyRoutes.indexOf(routes[i].getName()) !== -1)) {
-                var activeServices = routes[i].getActiveServices(dateString);
-                for (var j = 0; j < activeServices.length; j++) {
-                    var serviceId = activeServices[j].getId();
-                    var activeService = new ControllerService();
-                    activeService.init(activeServices[j], date);
-                    state.activeServices[serviceId] = activeService;
-                    numNewServices += 1;
-                }
-            }
-        }
-
-        console.log('found %d new active services for %s', numNewServices, dateString);
-    }
-
-    function deleteOldServices(mapDate) {
-        var servicesToBeDeleted = [];
-        for (var serviceId in state.activeServices) {
-            if (state.activeServices[serviceId].isTimeToDelete(mapDate)) {
-                servicesToBeDeleted.push(serviceId);
-            }
-        }
-        for (var i = 0; i < servicesToBeDeleted.length; i++) {
-            delete state.activeServices[servicesToBeDeleted[i]];
-        }
-        if (servicesToBeDeleted.length > 0) {
-            console.log('deleted %d services', servicesToBeDeleted.length);
-        }
-    }
-
-    function updateActiveTrips(mapDate, updatePeriodInMinutes) {
-        var numNewTrips = 0;
-        for (var serviceId in state.activeServices) {
-            var activeTrips =
-                state.activeServices[serviceId].getActiveTrips(mapDate, updatePeriodInMinutes);
-            for (var j = 0; j < activeTrips.length; j++) {
-                var tripId = activeTrips[j].getId();
-                if (state.activeTrips[tripId] === undefined) {
-                    var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
-                    var serviceStartDate = state.activeServices[serviceId].getStartDate();
-                    var activeTrip = new ControllerTrip(map, state.alertCache, state.vpCache);
-                    activeTrip.init(activeTrips[j], serviceStartDate, state.lang, tripTypeInfo,
-                                    state.markerUpdateInterval);
-                    state.activeTrips[tripId] = activeTrip;
-                    numNewTrips += 1;
+                var activeTrips = getActiveTrips(routes[i], dateString, mapDate,
+                                                 updatePeriodInMinutes, isAfterMidnight);
+                for (var j = 0; j < activeTrips.length; j++) {
+                    var tripId = activeTrips[j].getId();
+                    if (state.activeTrips[tripId] === undefined) {
+                        var tripTypeInfo = state.tripTypeInfos.getType(activeTrips[j].getType());
+                        var activeTrip = new ControllerTrip(map, state.alertCache, state.vpCache);
+                        activeTrip.init(activeTrips[j], mapDate, state.lang, tripTypeInfo,
+                                        state.markerUpdateInterval);
+                        state.activeTrips[tripId] = activeTrip;
+                        numNewTrips += 1;
+                    }
                 }
             }
         }
         console.log('found %d new active trips for %s', numNewTrips, mapDate.toLocaleString());
     }
-}
 
-function ControllerService() {
-    var that = this;
-    var state = getState();
-
-    function getState() {
-        var s = {};
-        s.gtfsService = null;
-        s.startDate = null;
-        return s;
-    }
-
-    this.init = function (gtfsService, startDate) {
-        state.gtfsService = gtfsService;
-        state.startDate = startDate;
-    };
-
-    this.isTimeToDelete = function (mapDate) {
-        if (mapDate.getDate() !== state.startDate.getDate()) {
-            if (mapDate.getHours() >= 6) {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    this.getActiveTrips = function (mapDate, updatePeriodInMinutes) {
+    function getActiveTrips(gtfsRoute, dateString, mapDate,
+                            updatePeriodInMinutes, isAfterMidnight) { // dateString = YYYYMMDD
         var fromMinutesAfterMidnight = getMinutesAfterMidnight(mapDate);
-        if (mapDate.getDate() !== state.startDate.getDate()) {
+        if (isAfterMidnight) {
             /* GTFS clock does not wrap around after 24 hours (or 24 * 60 = 1440 minutes) */
             fromMinutesAfterMidnight += 24 * 60;
         }
-        return state.gtfsService.getActiveTrips(fromMinutesAfterMidnight,
+        return gtfsRoute.getActiveTrips(dateString, fromMinutesAfterMidnight,
             fromMinutesAfterMidnight + updatePeriodInMinutes);
     };
 
     function getMinutesAfterMidnight(date) {
         return (date.getHours() * 60) + date.getMinutes(); // possible values: 0 - 1439
     }
-
-    this.getStartDate = function () {
-        return state.startDate;
-    };
 }
 
 function ControllerTrip(map, alertCache, vpCache) {

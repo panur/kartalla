@@ -2,7 +2,7 @@
 
 """Convert HSL/Liikennevirasto GTFS files into JSON.
 
-HSL GTFS: http://developer.reittiopas.fi/pages/en/other-apis.php
+HSL GTFS: http://dev.hsl.fi/gtfs/
 Liikennevirasto (Finnish Transport Agency) GTFS: http://developer.matka.fi/pages/en/home.php
 
 Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
