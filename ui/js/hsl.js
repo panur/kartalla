@@ -46,7 +46,7 @@ function HslAlerts(controller, uiBar) {
                 if ((status === 0) || (status === 200)) {
                     if (request.responseText.length > 0) {
                         var jsonAlerts = JSON.parse(request.responseText).data.alerts;
-                        var parsedAlerts = parseAlerts(jsonAlerts);
+                        var parsedAlerts = parseAlerts(jsonAlerts, controller.getRouteTypes());
                         uiBar.updateAlerts(parsedAlerts['uiBar']);
                         controller.updateAlerts(parsedAlerts['controller']);
                         request.onreadystatechange = function () {};
@@ -69,7 +69,7 @@ function HslAlerts(controller, uiBar) {
         return '{ alerts { ' + routeQuery + tripQuery + textQuery + ' } }';
     }
 
-    function parseAlerts(jsonAlerts) {
+    function parseAlerts(jsonAlerts, routeTypes) {
         var uiBarAlerts = [];
         var alertTexts = [];
         var controllerAlerts = [];
@@ -82,8 +82,8 @@ function HslAlerts(controller, uiBar) {
                     if (alertTexts.indexOf(translation['text']) === -1) {
                         alertTexts.push(translation['text']);
                         var routeType = '-';
-                        if (route !== null) {
-                            routeType = route['type'];
+                        if ((route !== null) && (routeTypes[route['type']])) {
+                            routeType = routeTypes[route['type']];
                         }
                         uiBarAlerts.push({'text': translation['text'], 'type': routeType});
                     }

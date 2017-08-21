@@ -10,12 +10,14 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 import collections
 import json
 import logging
+import os
 import time
 
 
 def create(routes, output_filename, gtfs_modification_time):
     """Create JSON file from parsed GTFS routes."""
     array_keys = _get_array_keys()
+    output_route_types = _get_output_route_types()
     output_dates = _get_output_dates(routes)
     output_routes = _get_output_routes(array_keys, output_dates, routes)
 
@@ -23,7 +25,7 @@ def create(routes, output_filename, gtfs_modification_time):
     output_data[array_keys['root']['array_keys']] = array_keys
     output_data[array_keys['root']['gtfs_epoch']] = gtfs_modification_time
     output_data[array_keys['root']['json_epoch']] = int(time.time())
-    output_data[array_keys['root']['trip_types']] = []
+    output_data[array_keys['root']['route_types']] = output_route_types
     output_data[array_keys['root']['dates']] = output_dates
     output_data[array_keys['root']['routes']] = output_routes
 
@@ -33,7 +35,7 @@ def create(routes, output_filename, gtfs_modification_time):
 
 def _get_array_keys():
     array_keys = {}
-    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'trip_types': 3,
+    array_keys['root'] = {'array_keys': 0, 'gtfs_epoch': 1, 'json_epoch': 2, 'route_types': 3,
                           'dates': 4, 'routes': 5}
     array_keys['route'] = {'id': 0, 'name': 1, 'long_name': 2, 'type': 3, 'shapes': 4,
                            'stop_distances': 5, 'trip_dates': 6, 'trip_groups': 7, 'stop_times': 8,
@@ -45,6 +47,13 @@ def _get_array_keys():
     array_keys['trip'] = {'first_start_time': 0, 'start_times': 1, 'stop_times_indexes': 2,
                           'trip_group_indexes': 3}
     return array_keys
+
+
+def _get_output_route_types():
+    route_types_path = os.path.join(os.path.dirname(__file__), 'route_types.json')
+    with open(route_types_path) as route_types_file:
+        route_types = json.load(route_types_file)
+    return route_types
 
 
 def _get_output_dates(routes):

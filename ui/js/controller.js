@@ -12,6 +12,7 @@ function Controller(gtfs, map) {
         s.onlyRoutes = null;
         s.tripTypeInfos = null;
         s.markerUpdateInterval = null;
+        s.routeTypes = null;
         s.nextTripUpdate = 0;
         s.activeTripsDateString = null;
         s.activeTrips = {};
@@ -31,6 +32,7 @@ function Controller(gtfs, map) {
         for (var tripId in state.activeTrips) {
             state.activeTrips[tripId].remove();
         }
+        state.routeTypes = null;
         state.nextTripUpdate = 0;
         state.activeTripsDateString = null;
         state.activeTrips = {};
@@ -53,6 +55,19 @@ function Controller(gtfs, map) {
                 state.alertCache[routeId]['general'] = alerts[i]['text'];
             }
         }
+    };
+
+    this.getRouteTypes = function () {
+        if (state.routeTypes === null) {
+            state.routeTypes = {};  // key: number (0), value: string ('tram')
+            var gtfsRouteTypes = gtfs.getRouteTypes();
+            for (var routeType in gtfsRouteTypes) {
+                for (var i = 0; i < gtfsRouteTypes[routeType].length; i++) {
+                    state.routeTypes[gtfsRouteTypes[routeType][i]] = routeType;
+                }
+            }
+        }
+        return state.routeTypes;
     };
 
     this.updateVp = function (routeId, direction, startTime, tsi, lat, lng) {

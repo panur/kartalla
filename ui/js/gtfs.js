@@ -34,6 +34,10 @@ function Gtfs() {
         return state.root[getArrayKey('json_epoch')];
     };
 
+    this.getRouteTypes = function () {
+        return state.root[getArrayKey('route_types')];
+    };
+
     this.getDates = function () {
         return state.root[getArrayKey('dates')];
     };

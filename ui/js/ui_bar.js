@@ -180,12 +180,9 @@ function UiBar(utils) {
     }
 
     function getAlertColor(alertType) {
-        var alertTypes =
-            {'BUS': 'bus', 'RAIL': 'train', 'TRAM': 'tram', 'SUBWAY': 'metro', 'FERRY': 'ferry'};
-
-        if (alertTypes[alertType] !== undefined) {
-            var tripTypes = state.tripTypeInfos.getTypes();
-            return tripTypes[alertTypes[alertType]]['color'];
+        var tripTypes = state.tripTypeInfos.getTypes();
+        if (tripTypes[alertType] !== undefined) {
+            return tripTypes[alertType]['color'];
         } else {
             return undefined;
         }

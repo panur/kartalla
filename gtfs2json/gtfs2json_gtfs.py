@@ -9,6 +9,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 
 import codecs
 import csv
+import json
 import logging
 import os
 
@@ -81,11 +82,7 @@ def _parse_stops(stops_txt):
 
 def _parse_routes(routes_txt):
     routes = {}  # by route_id
-    # 109: https://github.com/HSLdevcom/kalkati2gtfs/commit/d4758fb74d7455ddbf4032175ef8ff51c587ec7f
-    route_types = {'0': 'tram', '1': 'metro', '3': 'bus', '4': 'ferry', '6': 'bus',
-                   '102': 'train', '106': 'train', '109': 'train', '2': 'train', '7': 'train',
-                   '700': 'bus', '701': 'bus', '702': 'bus', '704': 'bus', '715': 'bus',
-                   '1104': 'airplane'}
+    route_types = _get_route_types(os.path.join(os.path.dirname(__file__), 'route_types.json'))
 
     with open(routes_txt, 'r') as input_file:
         csv_reader = csv.DictReader(input_file)
@@ -108,6 +105,19 @@ def _parse_routes(routes_txt):
     logging.debug('parsed {} routes'.format(len(routes)))
 
     return routes
+
+
+def _get_route_types(route_types_path):
+    # https://developers.google.com/transit/gtfs/reference/routes-file#routes_route_type_field
+    # https://developers.google.com/transit/gtfs/reference/extended-route-types
+    # 109: https://github.com/HSLdevcom/kalkati2gtfs/commit/d4758fb74d7455ddbf4032175ef8ff51c587ec7f
+    with open(route_types_path) as route_types_file:
+        input_route_types = json.load(route_types_file)
+    route_types = {}  # key: number str ('0'), value: text str ('tram')
+    for route_description in input_route_types:
+        for route_type in input_route_types[route_description]:
+            route_types[str(route_type)] = route_description
+    return route_types
 
 
 def _get_route_name(row):  # row in routes.txt
