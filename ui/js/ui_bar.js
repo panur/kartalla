@@ -419,7 +419,7 @@ function UiBar(utils) {
         return ((bytes / 1024) / 1024).toFixed(1);
     }
 
-    this.setDataInfo = function (dtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed,
+    this.setDataInfo = function (gtfsEpoch, jsonEpoch, sizeBytes, downloadDuration, isCompressed,
                                  getMqttDataCount) {
         setElementText('dataDownloadStatus', '');
         var infoElement = document.getElementById('dataInfo');
@@ -429,7 +429,7 @@ function UiBar(utils) {
         document.body.appendChild(tooltipElement);
         infoElement.addEventListener('mouseover', function () {
             tooltipElement.textContent = getDataInfoTitle({
-                'gtfsDate': epochToString(dtfsEpoch, false),
+                'gtfsDate': epochToString(gtfsEpoch, false),
                 'jsonDate': epochToString(jsonEpoch, true), 'size': getMegaBytes(sizeBytes),
                 'duration': downloadDuration, 'compressed': isCompressed,
                 'mqtt': formatMqttDataCount(getMqttDataCount())

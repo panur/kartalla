@@ -26,7 +26,7 @@ function Gtfs() {
         return that.getArrayKeys('root')[keyId];
     }
 
-    this.getDtfsEpoch = function () {
+    this.getGtfsEpoch = function () {
         return state.root[getArrayKey('gtfs_epoch')];
     };
 

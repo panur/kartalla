@@ -46,7 +46,7 @@ function main() {
             document.removeEventListener(readyEventName, downloadIsReady, false);
             var duration = (((new Date()).getTime() - startTime.getTime()) / 1000).toFixed(1);
             gtfs.init(JSON.parse(downloadRequest.responseText));
-            uiBar.setDataInfo(gtfs.getDtfsEpoch(), gtfs.getJsonEpoch(),
+            uiBar.setDataInfo(gtfs.getGtfsEpoch(), gtfs.getJsonEpoch(),
                               downloadRequest.responseText.length, duration,
                               isDownloadCompressed(), mqtt.getDataCount);
             timing.downloadIsReady();
