@@ -9,29 +9,32 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 
 import codecs
 import csv
+import datetime
 import json
 import logging
 import os
+import time
+import zipfile
 
 import polyline
 
 
-def get_routes(input_dir):
+def get_routes(input_dir_or_zip):
     """Parse GTFS files into dict of routes."""
     print 'parsing shapes...'
-    shapes = _parse_shapes(os.path.join(input_dir, 'shapes.txt'))
+    shapes = _parse_shapes(input_dir_or_zip, 'shapes.txt')
     print 'parsing stops...'
-    stops = _parse_stops(os.path.join(input_dir, 'stops.txt'))
+    stops = _parse_stops(input_dir_or_zip, 'stops.txt')
     print 'parsing calendar...'
-    calendar_entries = _parse_calendar(os.path.join(input_dir, 'calendar.txt'))
+    calendar_entries = _parse_calendar(input_dir_or_zip, 'calendar.txt')
     print 'parsing calendar dates...'
-    calendar_dates = _parse_calendar_dates(os.path.join(input_dir, 'calendar_dates.txt'))
+    calendar_dates = _parse_calendar_dates(input_dir_or_zip, 'calendar_dates.txt')
     print 'parsing stop times...'
-    stop_times = _parse_stop_times(os.path.join(input_dir, 'stop_times.txt'))
+    stop_times = _parse_stop_times(input_dir_or_zip, 'stop_times.txt')
     print 'parsing routes...'
-    routes = _parse_routes(os.path.join(input_dir, 'routes.txt'))
+    routes = _parse_routes(input_dir_or_zip, 'routes.txt')
     print 'parsing trips...'
-    trips = _parse_trips(os.path.join(input_dir, 'trips.txt'))
+    trips = _parse_trips(input_dir_or_zip, 'trips.txt')
 
     print 'adding dates to trips...'
     _add_dates_to_trips(trips, calendar_entries, calendar_dates)
@@ -49,10 +52,10 @@ def get_routes(input_dir):
     return routes
 
 
-def _parse_shapes(shapes_txt):
+def _parse_shapes(input_dir_or_zip, shapes_txt):
     shapes = {}  # by shape_id
 
-    with open(shapes_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, shapes_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['shape_id'] not in shapes:
@@ -67,10 +70,18 @@ def _parse_shapes(shapes_txt):
     return shapes
 
 
-def _parse_stops(stops_txt):
+def _open_file(input_dir_or_zip, path):
+    if os.path.isdir(input_dir_or_zip):
+        return open(os.path.join(input_dir_or_zip, path), 'r')
+    else:
+        with zipfile.ZipFile(input_dir_or_zip) as zip_file:
+            return zip_file.open(path)
+
+
+def _parse_stops(input_dir_or_zip, stops_txt):
     stops = {}
 
-    with open(stops_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, stops_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             stops[row['stop_id']] = (float(row['stop_lat']), float(row['stop_lon']))
@@ -80,11 +91,11 @@ def _parse_stops(stops_txt):
     return stops
 
 
-def _parse_routes(routes_txt):
+def _parse_routes(input_dir_or_zip, routes_txt):
     routes = {}  # by route_id
     route_types = _get_route_types(os.path.join(os.path.dirname(__file__), 'route_types.json'))
 
-    with open(routes_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, routes_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['route_type'] not in route_types:
@@ -127,10 +138,10 @@ def _get_route_name(row):  # row in routes.txt
         return row['route_id']  # HSL metro routes do not have short names
 
 
-def _parse_trips(trips_txt):
+def _parse_trips(input_dir_or_zip, trips_txt):
     trips = {}  # by trip_id
 
-    with open(trips_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, trips_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if ('direction_id' in row) and (row['direction_id'] not in ['0', '1']):
@@ -174,9 +185,9 @@ def _parse_trips(trips_txt):
     return trips
 
 
-def _parse_calendar(calendar_txt):
+def _parse_calendar(input_dir_or_zip, calendar_txt):
     calendar_entries = {}
-    with open(calendar_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, calendar_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['service_id'] in calendar_entries:
@@ -202,10 +213,10 @@ def _get_service_weekdays(row):  # row in calendar.txt
         return ''.join(days)
 
 
-def _parse_calendar_dates(calendar_dates_txt):
+def _parse_calendar_dates(input_dir_or_zip, calendar_dates_txt):
     calendar_dates = {}
     exception_types = {'1': 'added', '2': 'removed'}
-    with open(calendar_dates_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, calendar_dates_txt) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['exception_type'] in exception_types:
@@ -222,11 +233,11 @@ def _parse_calendar_dates(calendar_dates_txt):
     return calendar_dates
 
 
-def _parse_stop_times(stop_times_txt):
+def _parse_stop_times(input_dir_or_zip, stop_times_txt):
     stop_time_trips = {}  # by trip_id
     is_seconds_in_time = False
 
-    with open(stop_times_txt, 'r') as input_file:
+    with _open_file(input_dir_or_zip, stop_times_txt) as input_file:
         _skip_utf8_bom(input_file)
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
@@ -460,6 +471,12 @@ def _delete_invalid_routes(routes):
         del routes[route_id]
 
 
-def get_modification_time(input_dir):
+def get_modification_time(input_dir_or_zip):
     """Get time of most recent content modification as seconds since the epoch."""
-    return int(os.stat(os.path.join(input_dir, 'routes.txt')).st_mtime)
+    path = 'routes.txt'
+    if os.path.isdir(input_dir_or_zip):
+        return int(os.stat(os.path.join(input_dir_or_zip, path)).st_mtime)
+    else:
+        with zipfile.ZipFile(input_dir_or_zip) as zip_file:
+            modified_dt = datetime.datetime(*zip_file.getinfo(path).date_time)
+            return int(time.mktime(modified_dt.timetuple()))

@@ -22,7 +22,7 @@ import gtfs2json_json
 
 def _main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_dir', help='GTFS input directory')
+    parser.add_argument('input_dir_or_zip', help='GTFS input directory or ZIP file')
     parser.add_argument('output_file', help='JSON output file')
     parser.add_argument('--additional-files', help='Additional JSON output files')
     args = parser.parse_args()
@@ -32,8 +32,8 @@ def _main():
     start_time = time.time()
     logging.debug('started {}'.format(sys.argv))
 
-    routes = gtfs2json_gtfs.get_routes(args.input_dir)
-    gtfs_modification_time = gtfs2json_gtfs.get_modification_time(args.input_dir)
+    routes = gtfs2json_gtfs.get_routes(args.input_dir_or_zip)
+    gtfs_modification_time = gtfs2json_gtfs.get_modification_time(args.input_dir_or_zip)
     print 'creating output file...'
     gtfs2json_json.create(routes, args.output_file, gtfs_modification_time)
 
