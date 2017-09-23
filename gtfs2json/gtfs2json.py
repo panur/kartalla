@@ -24,10 +24,11 @@ def _main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_dir_or_zip', help='GTFS input directory or ZIP file')
     parser.add_argument('output_file', help='JSON output file')
+    parser.add_argument('--log-file', default='gtfs2json.log', help='Log file')
     parser.add_argument('--additional-files', help='Additional JSON output files')
     args = parser.parse_args()
 
-    _init_logging()
+    _init_logging(args.log_file)
 
     start_time = time.time()
     logging.debug('started {}'.format(sys.argv))
@@ -50,9 +51,9 @@ def _main():
         int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
 
 
-def _init_logging():
+def _init_logging(filename):
     log_format = '%(asctime)s %(levelname)s %(filename)s:%(lineno)d %(funcName)s: %(message)s'
-    logging.basicConfig(filename='gtfs2json.log', format=log_format, level=logging.DEBUG)
+    logging.basicConfig(filename=filename, format=log_format, level=logging.DEBUG)
 
 
 def _get_additional_output_files(filename):

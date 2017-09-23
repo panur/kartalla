@@ -1,0 +1,7 @@
+{
+"name": "hsl",
+"url": "http://dev.hsl.fi/gtfs/hsl.zip",
+"log_dir": "log",
+"gtfs_dir": "gtfs",
+"json_dir": "ui/json"
+}
