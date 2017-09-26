@@ -73,10 +73,12 @@ def _get_output_dates(routes):
 
 def _get_output_routes(array_keys, output_dates, routes):
     output_routes = []
+    route_types = set()
     stats = {'route_ids': len(routes), 'shapes': 0}
 
     for route_id in sorted(routes):
         route = routes[route_id]
+        route_types.add(route['type'])
         output_values = _get_route_trips_output_values(
             array_keys, route['trips'], route['is_departure_times'], output_dates)
         output_trip_groups = _get_route_trips_groups(array_keys, route['trips'])
@@ -97,6 +99,7 @@ def _get_output_routes(array_keys, output_dates, routes):
         output_routes.append(output_route)
         stats['shapes'] += len(route['shapes'])
 
+    logging.debug('route types: {}'.format(route_types))
     logging.debug('output stats: {}'.format(stats))
 
     return output_routes

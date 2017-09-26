@@ -86,9 +86,7 @@ function main() {
     }
 
     function createDataSelection() {
-        var names = ['HSL', 'Suomi', 'VR', 'Hämeenlinna', 'Joensuu', 'Jyväskylä', 'Kotka',
-            'Kouvola', 'Kuopio', 'Lahti', 'Lappeenranta', 'Mikkeli', 'Oulu', 'Tampere', 'Turku',
-            'Vaasa'];
+        var names = config.names;
         var selectedData = getDataTypeName(names, config.dataType);
         return {values: names, selectedValue: selectedData, changeType : function (newType) {
             config.restart(getDataType(newType));
@@ -106,7 +104,7 @@ function main() {
 
     function getDataTypeName(dataTypeNames, dataType) {
         for (var i = 0; i < dataTypeNames.length; i++) {
-            if (getDataType(dataTypeNames[i]) == dataType) {
+            if (getDataType(dataTypeNames[i]) === dataType) {
                 return dataTypeNames[i];
             }
         }
@@ -213,8 +211,8 @@ function TripTypeInfos(controller, uiBar) {
     this.init = function (vehicleTypes, visibleTypes) {
         state.types = createTypes();
         for (var typeName in state.types) {
-            state.types[typeName].isUsed = (vehicleTypes.indexOf(typeName) != -1);
-            state.types[typeName].isVisible = (visibleTypes.indexOf(typeName) != -1);
+            state.types[typeName].isUsed = (vehicleTypes.indexOf(typeName) !== -1);
+            state.types[typeName].isVisible = (visibleTypes.indexOf(typeName) !== -1);
         }
         state.names = vehicleTypes;
     }

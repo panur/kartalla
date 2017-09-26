@@ -45,6 +45,7 @@ def _main():
         for additional_output_file in additional_output_files:
             output_filename = os.path.join(output_dir, additional_output_file['filename'])
             filtered_routes = _get_filtered_routes(routes, additional_output_file['agencies'])
+            logging.debug('creating {}'.format(output_filename))
             gtfs2json_json.create(filtered_routes, output_filename, gtfs_modification_time)
 
     logging.debug('took {} seconds, max mem: {} megabytes'.format(

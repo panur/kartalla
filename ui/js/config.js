@@ -7,6 +7,7 @@ function Config(utils) {
     var supportedParams = ['data', 'lat', 'lng', 'zoom', 'date', 'time', 'speed', 'interval',
         'types', 'routes', 'alerts', 'vp', '_file', '_stop'];
     var urlParams = getUrlParams();
+    var configGtfs = new ConfigGtfs();
     this.dataType = urlParams.data || 'hsl';
     this.stopAfter = urlParams._stop || null;
     this.mapLat = urlParams.lat || getMapLat();
@@ -16,6 +17,7 @@ function Config(utils) {
     this.speed = urlParams.speed || 1;
     this.interval = urlParams.interval || 5;
     this.lang = getLang();
+    this.names = getNames();
     this.vehicleTypes = getVehicleTypes();
     this.visibleTypes = getVisibleTypes();
     this.onlyRoutes = getOnlyRoutes();
@@ -159,33 +161,15 @@ function Config(utils) {
     }
 
     function getMapLat() {
-        return {
-            'hsl': 60.302709, 'suomi': 65.229573, 'vr': 65.229573,
-            'hameenlinna': 60.993705, 'joensuu': 62.607072, 'jyvaskyla': 62.235599,
-            'kotka': 60.487563, 'kouvola': 60.866238, 'kuopio': 62.900360, 'lahti': 60.983510,
-            'lappeenranta': 61.058213, 'mikkeli': 61.683347, 'oulu': 65.021237,
-            'tampere': 61.475903, 'turku': 60.444043, 'vaasa': 63.097463
-        }[that.dataType];
+        return configGtfs.getConfig(that.dataType)['lat'];
     }
 
     function getMapLng() {
-        return {
-            'hsl': 24.940832, 'suomi': 26.918078, 'vr': 26.918078,
-            'hameenlinna': 24.458368, 'joensuu': 29.791886, 'jyvaskyla': 25.761523,
-            'kotka': 26.906511, 'kouvola': 26.705006, 'kuopio': 27.662373, 'lahti': 25.650401,
-            'lappeenranta': 28.188472, 'mikkeli': 27.283888, 'oulu': 25.468197,
-            'tampere': 23.774071, 'turku': 22.276154, 'vaasa': 21.621426
-        }[that.dataType];
+        return configGtfs.getConfig(that.dataType)['lng'];
     }
 
     function getMapZoomLevel() {
-        return {
-            'hsl': 10, 'suomi': 5, 'vr': 5,
-            'hameenlinna': 12, 'joensuu': 12, 'jyvaskyla': 11,
-            'kotka': 12, 'kouvola': 11, 'kuopio': 12, 'lahti': 11,
-            'lappeenranta': 12, 'mikkeli': 12, 'oulu': 11,
-            'tampere': 11, 'turku': 11, 'vaasa': 13
-        }[that.dataType];
+        return configGtfs.getConfig(that.dataType)['zl'];
     }
 
     function getStartDate() {
@@ -214,29 +198,24 @@ function Config(utils) {
         }
     }
 
-    function getVehicleTypes() {
-        if (that.dataType === 'hsl') {
-            return ['bus', 'train', 'tram', 'metro', 'ferry'];
-        } else if (that.dataType === 'suomi') {
-            return ['bus', 'train', 'tram', 'metro', 'ferry', 'airplane'];
-        } else if (that.dataType === 'vr') {
-            return ['bus', 'train'];
-        } else {
-            return ['bus'];
+    function getNames() {
+        var names = [];
+        var configGtfsList = configGtfs.getList();
+        for (var i = 0; i < configGtfsList.length; i++) {
+            names.push(configGtfsList[i]['name']);
         }
+        return names;
+    }
+
+    function getVehicleTypes() {
+        return configGtfs.getConfig(that.dataType)['vehicle_types'];
     }
 
     function getVisibleTypes() {
         if (urlParams.types !== undefined) {
             return urlParams.types.split('_');
         } else {
-            if (that.dataType === 'hsl') {
-                return ['train', 'ferry'];
-            } else if ((that.dataType === 'suomi') || (that.dataType === 'vr')) {
-                return ['train'];
-            } else {
-                return ['bus'];
-            }
+            return configGtfs.getConfig(that.dataType)['visible_types'];
         }
     }
 
@@ -252,16 +231,16 @@ function Config(utils) {
         if (urlParamsFile !== undefined) {
             return 'json/' + urlParamsFile + '.json';
         } else {
-            if ((that.dataType === 'hsl') || (that.dataType === 'suomi')) {
-                return 'json/' + that.dataType + '.json';
-            } else {
-                return 'json/split/' + that.dataType + '.json';
+            var url = 'json/';
+            if (configGtfs.getConfig(that.dataType)['dir'] !== '') {
+                url += configGtfs.getConfig(that.dataType)['dir'] + '/';
             }
+            return url + configGtfs.getConfig(that.dataType)['file'] + '.json';
         }
     }
 
     function getIsAlertsUsed(urlParamsAlers) {
-        if (that.dataType === 'hsl') {
+        if (configGtfs.getConfig(that.dataType)['alerts']) {
             return urlParamsAlers !== '0';
         } else {
             return undefined;
@@ -269,7 +248,7 @@ function Config(utils) {
     }
 
     function getIsVpUsed(urlParamsVp) {
-        if (that.dataType === 'hsl') {
+        if (configGtfs.getConfig(that.dataType)['vp']) {
             return urlParamsVp === '1';
         } else {
             return undefined;
