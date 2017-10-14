@@ -70,12 +70,20 @@ def _parse_shapes(input_dir_or_zip, shapes_txt):
     return shapes
 
 
-def _open_file(input_dir_or_zip, path):
+def _open_file(input_dir_or_zip, path, skip_utf8_bom=False):
     if os.path.isdir(input_dir_or_zip):
-        return open(os.path.join(input_dir_or_zip, path), 'r')
+        input_file = open(os.path.join(input_dir_or_zip, path), 'r')
+        if skip_utf8_bom:
+            if input_file.read(3) != codecs.BOM_UTF8:
+                input_file.seek(0)
+        return input_file
     else:
         with zipfile.ZipFile(input_dir_or_zip) as zip_file:
-            return zip_file.open(path)
+            input_file = zip_file.open(path)
+            if skip_utf8_bom:
+                if input_file.read(3) != codecs.BOM_UTF8:
+                    input_file = zip_file.open(path)
+            return input_file
 
 
 def _parse_stops(input_dir_or_zip, stops_txt):
@@ -237,8 +245,7 @@ def _parse_stop_times(input_dir_or_zip, stop_times_txt):
     stop_time_trips = {}  # by trip_id
     is_seconds_in_time = False
 
-    with _open_file(input_dir_or_zip, stop_times_txt) as input_file:
-        _skip_utf8_bom(input_file)
+    with _open_file(input_dir_or_zip, stop_times_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if not is_seconds_in_time:
@@ -263,12 +270,6 @@ def _parse_stop_times(input_dir_or_zip, stop_times_txt):
 
     _delete_invalid_stop_trip_times(stop_time_trips)
     return stop_time_trips
-
-
-def _skip_utf8_bom(input_file):
-    start = input_file.read(3)
-    if start != codecs.BOM_UTF8:
-        input_file.seek(0)
 
 
 def _is_seconds_in_time(row):  # row in stop_times.txt
