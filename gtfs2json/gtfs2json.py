@@ -9,7 +9,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
 import argparse
-import json
+import csv
 import logging
 import os
 import resource
@@ -58,8 +58,21 @@ def _init_logging(filename):
 
 
 def _get_additional_output_files(filename):
-    with open(filename) as json_file:
-        return json.load(json_file)
+    areas = {}
+    with open(filename) as input_file:
+        csv_reader = csv.DictReader(input_file)
+        for row in csv_reader:
+            area = row['area'].strip()
+            if area != '':
+                if area not in areas:
+                    areas[area] = []
+                areas[area].append(row['agency_id'])
+
+    additional_output_files = []
+    for area in sorted(areas):
+        additional_output_files.append({'filename': '{}.json'.format(area),
+                                        'agencies': areas[area]})
+    return additional_output_files
 
 
 def _get_filtered_routes(routes, agencies):
