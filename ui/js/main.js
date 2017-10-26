@@ -86,10 +86,8 @@ function main() {
     }
 
     function createDataSelection() {
-        var names = config.names;
-        var selectedData = getDataTypeName(names, config.dataType);
-        return {values: names, selectedValue: selectedData, changeType : function (newType) {
-            config.restart(getDataType(newType));
+        return {values: config.names, selectedValue: config.name, changeType : function (newName) {
+            config.restart(newName);
             tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
             alerts.restart(config.isAlertsUsed);
             mqtt.restart(config.isVpUsed);
@@ -100,20 +98,6 @@ function main() {
             window.onresize();
             downloadGtfsJsonData(config.jsonUrl);
         }};
-    }
-
-    function getDataTypeName(dataTypeNames, dataType) {
-        for (var i = 0; i < dataTypeNames.length; i++) {
-            if (getDataType(dataTypeNames[i]) === dataType) {
-                return dataTypeNames[i];
-            }
-        }
-        console.error('No %o in %o', dataType, dataTypeNames);
-        return null;
-    }
-
-    function getDataType(dataTypeName) {
-        return dataTypeName.toLowerCase().replace(/ä/g, 'a');
     }
 
     function createMapSelection() {

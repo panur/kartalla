@@ -9,6 +9,7 @@ function Config(utils) {
     var urlParams = getUrlParams();
     var configGtfs = new ConfigGtfs();
     this.dataType = urlParams.data || 'hsl';
+    this.name = configGtfs.getConfig(that.dataType)['name'];
     this.stopAfter = urlParams._stop || null;
     this.mapLat = urlParams.lat || getMapLat();
     this.mapLng = urlParams.lng || getMapLng();
@@ -25,8 +26,8 @@ function Config(utils) {
     this.isAlertsUsed = getIsAlertsUsed(urlParams.alerts);
     this.isVpUsed = getIsVpUsed(urlParams.vp);
 
-    this.restart = function (newDataType) {
-        that.dataType = newDataType;
+    this.restart = function (newName) {
+        that.dataType = getDataType(newName);
         that.mapLat = getMapLat();
         that.mapLng = getMapLng();
         that.mapZoomLevel = getMapZoomLevel();
@@ -205,6 +206,17 @@ function Config(utils) {
             names.push(configGtfsList[i]['name']);
         }
         return names;
+    }
+
+    function getDataType(name) {
+        var configGtfsList = configGtfs.getList();
+        for (var i = 0; i < configGtfsList.length; i++) {
+            if (name === configGtfsList[i]['name']) {
+                return configGtfsList[i]['file'];
+            }
+        }
+        console.error('No %o in %o', name, configGtfsList);
+        return null;
     }
 
     function getVehicleTypes() {
