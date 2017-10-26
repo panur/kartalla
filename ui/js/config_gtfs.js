@@ -67,7 +67,11 @@ function ConfigGtfs() {
         {'name': 'Vaasa', 'file': 'vaasa', 'dir': 'split',
          'lat': 63.097463, 'lng': 21.621426, 'zl': 13, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
-         'visible_types': ['bus']}
+         'visible_types': ['bus']},
+        {'name': 'Estonia', 'file': 'est', 'dir': 'est',
+         'lat': 58.857520, 'lng': 25.475996, 'zl': 8, 'alerts': false, 'vp': false,
+         'vehicle_types': ['bus', 'tram', 'train', 'ferry'],
+         'visible_types': ['train']}
     ];
     var configHash = null;
 
