@@ -86,6 +86,14 @@ def _open_file(input_dir_or_zip, path, skip_utf8_bom=False):
             return input_file
 
 
+def _is_file(input_dir_or_zip, path):
+    if os.path.isdir(input_dir_or_zip):
+        return os.path.isfile(os.path.join(input_dir_or_zip, path))
+    else:
+        with zipfile.ZipFile(input_dir_or_zip) as zip_file:
+            return path in zip_file.namelist()
+
+
 def _parse_stops(input_dir_or_zip, stops_txt):
     stops = {}
 
@@ -195,19 +203,20 @@ def _parse_trips(input_dir_or_zip, trips_txt):
 
 def _parse_calendar(input_dir_or_zip, calendar_txt):
     calendar_entries = {}
-    with _open_file(input_dir_or_zip, calendar_txt) as input_file:
-        csv_reader = csv.DictReader(input_file)
-        for row in csv_reader:
-            if row['service_id'] in calendar_entries:
-                logging.error('duplicate service_id={} in calendar'.format(row['service_id']))
-            else:
-                calendar_entries[row['service_id']] = {
-                    'start_date': row['start_date'],
-                    'end_date': row['end_date'],
-                    'weekdays': _get_service_weekdays(row)
-                }
+    if _is_file(input_dir_or_zip, calendar_txt):
+        with _open_file(input_dir_or_zip, calendar_txt) as input_file:
+            csv_reader = csv.DictReader(input_file)
+            for row in csv_reader:
+                if row['service_id'] in calendar_entries:
+                    logging.error('duplicate service_id={} in calendar'.format(row['service_id']))
+                else:
+                    calendar_entries[row['service_id']] = {
+                        'start_date': row['start_date'],
+                        'end_date': row['end_date'],
+                        'weekdays': _get_service_weekdays(row)
+                    }
 
-    logging.debug('parsed {} calendar entries'.format(len(calendar_entries)))
+        logging.debug('parsed {} calendar entries'.format(len(calendar_entries)))
 
     return calendar_entries
 
