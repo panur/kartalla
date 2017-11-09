@@ -36,6 +36,7 @@ function Controller(gtfs, map) {
         state.nextTripUpdate = 0;
         state.activeTripsDateString = null;
         state.activeTrips = {};
+        state.alertCache = {};
     };
 
     this.updateAlerts = function (alerts) {
