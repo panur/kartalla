@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import resource
+import shutil
 import sys
 import tempfile
 import time
@@ -105,15 +106,25 @@ def _create_dir(new_dir):
 
 def _generate_json(gtfs_name, modify_date, gtfs_zip, json_dir, log_dir):
     _create_dir(json_dir)
-    output_file = os.path.join(json_dir, '{}_{}.json'.format(gtfs_name, modify_date))
-    _rename_existing_file(output_file)
+    date_output_file = os.path.join(json_dir, '{}_{}.json'.format(gtfs_name, modify_date))
+    _rename_existing_file(date_output_file)
     _create_dir(log_dir)
     log_path = os.path.join(log_dir, 'gtfs2json_{}_{}_{}.log'.format(gtfs_name, modify_date,
                                                                      _get_now_timestamp()))
     _progress('generating json for {}'.format(gtfs_zip))
     command = '{}/gtfs2json.py --log-file {} {} {}'.format(os.path.dirname(__file__), log_path,
-                                                           gtfs_zip, output_file)
+                                                           gtfs_zip, date_output_file)
     _execute_command(command)
+
+    _create_base_output_file(date_output_file, os.path.join(json_dir, '{}.json'.format(gtfs_name)))
+
+
+def _create_base_output_file(date_output_file, base_output_file):
+    if os.path.isfile(base_output_file):
+        _progress('deleting {}'.format(base_output_file))
+        os.remove(base_output_file)
+    _progress('copying {} to {}'.format(date_output_file, base_output_file))
+    shutil.copyfile(date_output_file, base_output_file)
 
 
 def _rename_existing_file(filename):
