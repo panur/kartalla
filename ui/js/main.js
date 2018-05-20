@@ -7,7 +7,7 @@ function main() {
     var utils = new Utils();
     var config = new Config(utils);
     var uiBar = new UiBar(utils);
-    var map = new Map(utils);
+    var map = new CommonMap(utils);
     var gtfs = new Gtfs();
     var controller = new Controller(gtfs, map);
     var alerts = new HslAlerts(controller, uiBar);

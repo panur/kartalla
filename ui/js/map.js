@@ -2,7 +2,7 @@
 
 'use strict';
 
-function Map(utils) {
+function CommonMap(utils) {
     var that = this;
     var state = getState();
 
