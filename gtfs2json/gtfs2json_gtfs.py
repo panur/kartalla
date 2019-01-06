@@ -55,7 +55,7 @@ def get_routes(input_dir_or_zip):
 def _parse_shapes(input_dir_or_zip, shapes_txt):
     shapes = {}  # by shape_id
 
-    with _open_file(input_dir_or_zip, shapes_txt) as input_file:
+    with _open_file(input_dir_or_zip, shapes_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['shape_id'] not in shapes:
@@ -97,7 +97,7 @@ def _is_file(input_dir_or_zip, path):
 def _parse_stops(input_dir_or_zip, stops_txt):
     stops = {}
 
-    with _open_file(input_dir_or_zip, stops_txt) as input_file:
+    with _open_file(input_dir_or_zip, stops_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             stops[row['stop_id']] = (float(row['stop_lat']), float(row['stop_lon']))
@@ -111,7 +111,7 @@ def _parse_routes(input_dir_or_zip, routes_txt):
     routes = {}  # by route_id
     route_types = _get_route_types(os.path.join(os.path.dirname(__file__), 'route_types.json'))
 
-    with _open_file(input_dir_or_zip, routes_txt) as input_file:
+    with _open_file(input_dir_or_zip, routes_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['route_type'] not in route_types:
@@ -157,7 +157,7 @@ def _get_route_name(row):  # row in routes.txt
 def _parse_trips(input_dir_or_zip, trips_txt):
     trips = {}  # by trip_id
 
-    with _open_file(input_dir_or_zip, trips_txt) as input_file:
+    with _open_file(input_dir_or_zip, trips_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if ('direction_id' in row) and (row['direction_id'] not in ['0', '1']):
@@ -204,7 +204,7 @@ def _parse_trips(input_dir_or_zip, trips_txt):
 def _parse_calendar(input_dir_or_zip, calendar_txt):
     calendar_entries = {}
     if _is_file(input_dir_or_zip, calendar_txt):
-        with _open_file(input_dir_or_zip, calendar_txt) as input_file:
+        with _open_file(input_dir_or_zip, calendar_txt, skip_utf8_bom=True) as input_file:
             csv_reader = csv.DictReader(input_file)
             for row in csv_reader:
                 if row['service_id'] in calendar_entries:
@@ -233,7 +233,7 @@ def _get_service_weekdays(row):  # row in calendar.txt
 def _parse_calendar_dates(input_dir_or_zip, calendar_dates_txt):
     calendar_dates = {}
     exception_types = {'1': 'added', '2': 'removed'}
-    with _open_file(input_dir_or_zip, calendar_dates_txt) as input_file:
+    with _open_file(input_dir_or_zip, calendar_dates_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
             if row['exception_type'] in exception_types:

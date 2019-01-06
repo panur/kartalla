@@ -68,7 +68,7 @@ function ConfigGtfs() {
          'lat': 66.503454, 'lng': 25.692776, 'zl': 11, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
-        {'name': 'Tampere', 'file': 'tampere', 'dir': 'split',
+        {'name': 'Tampere', 'file': 'tre', 'dir': 'tre',
          'lat': 61.475903, 'lng': 23.774071, 'zl': 11, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
