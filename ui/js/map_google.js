@@ -21,6 +21,7 @@ function MapApiMap() {
     this.init = function (lat, lng, zoomLevel, zoomChanged) {
         var mapElement = document.getElementById('map_canvas');
         var mapOptions = {
+            'fullscreenControl': 0,
             'tilt': 0,
             'styles': [{
                 'featureType': 'road.arterial',
