@@ -120,6 +120,10 @@ function HslMqtt(utils, controller, uiBar) {
         s.isVpUsed = null;
         s.client = null;
         s.dataCount = 0;
+        s.topicFilters = [];
+        s.subscriptions = 0;
+        s.messageRate = {'intervalSec': 10, 'numMessages': 0, 'startTime': null};
+        s.verbose = false;
         return s;
     }
 
@@ -148,33 +152,8 @@ function HslMqtt(utils, controller, uiBar) {
     };
 
     this.connect = function () {
-        var readyEventName = 'vpCacheDownloadIsReady';
-        var readyEvent = document.createEvent('Event');
-        readyEvent.initEvent(readyEventName, false, false);
-        document.addEventListener(readyEventName, downloadIsReady, false);
-        var downloadRequest = null;
-        utils.downloadUrl('https://dev.hsl.fi/hfp/journey/', null, function (request) {
-            downloadRequest = request;
-            document.dispatchEvent(readyEvent);
-        });
-        function downloadIsReady() {
-            document.removeEventListener(readyEventName, downloadIsReady, false);
-            if (downloadRequest.responseText !== '') {
-                var messages = JSON.parse(downloadRequest.responseText);
-                for (var topic in messages) {
-                    var parsedVp = messages[topic].VP;
-                    if (isVpMessageOk(parsedVp)) {
-                        updateCache(topic, parsedVp);
-                    }
-                }
-            }
-            connectMqtt();
-        }
-    };
-
-    function connectMqtt() {
         var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
-        state.client = new Paho.MQTT.Client('wss://dev.hsl.fi/mqtt-proxy', clientId);
+        state.client = new Paho.MQTT.Client('wss://mqtt.hsl.fi:443/', clientId);
         state.client.onConnectionLost = onConnectionLost;
         state.client.onMessageArrived = onMessageArrived;
         state.client.connect({onSuccess: onConnect, onFailure: onFailedConnect});
@@ -184,8 +163,11 @@ function HslMqtt(utils, controller, uiBar) {
         }
 
         function onConnect() {
-            state.client.subscribe('/hfp/journey/#');
             console.log('connected mqtt');
+            state.subscriptions = 0;
+            state.messageRate.numMessages = 0;
+            state.messageRate.startTime = null;
+            subscribeTopics();
         }
 
         function onFailedConnect(responseObject) {
@@ -206,8 +188,11 @@ function HslMqtt(utils, controller, uiBar) {
             var parsedVp = JSON.parse(payload).VP;
             if (isVpMessageOk(parsedVp)) {
                 updateCache(topic, parsedVp);
+            } else {
+                console.log('invalid payload for topic ("%o"): %o', topic, payload);
             }
             state.dataCount += topic.length + payload.length;
+            updateMessageRate();
         }
     }
 
@@ -225,9 +210,28 @@ function HslMqtt(utils, controller, uiBar) {
     }
 
     function updateCache(topic, parsedVp) {
-        var routeId = topic.split('/')[5];
-        controller.updateVp(routeId, parsedVp['dir'] - 1, parsedVp['start'], parsedVp['tsi'],
+        var routeId = topic.split('/')[8];
+        var startTime = parsedVp['start'].replace(':', '');
+        controller.updateVp(routeId, parsedVp['dir'] - 1, startTime, parsedVp['tsi'],
                             parsedVp['lat'], parsedVp['long']);
+    }
+
+    function updateMessageRate() {
+        state.messageRate.numMessages += 1;
+        if (state.messageRate.startTime === null) {
+            state.messageRate.startTime = Date.now();
+        } else {
+            var messageRateDurationSec = (Date.now() - state.messageRate.startTime) / 1000;
+            if (messageRateDurationSec > state.messageRate.intervalSec) {
+                if (state.verbose) {
+                    console.log('%o mqtt messages per second (%o subscriptions)',
+                                (state.messageRate.numMessages / messageRateDurationSec).toFixed(2),
+                                state.subscriptions);
+                }
+                state.messageRate.startTime = Date.now();
+                state.messageRate.numMessages = 0;
+            }
+        }
     }
 
     function disconnect() {
@@ -246,4 +250,153 @@ function HslMqtt(utils, controller, uiBar) {
             return state.dataCount;
         }
     };
+
+    this.mapBoundsChanged = function (zoom, minLat, minLng, maxLat, maxLng) {
+        if (zoom > 16) {
+            var multiplier = 1000;
+            var geohashLevel = 5;
+        } else if (zoom > 13) {
+            var multiplier = 100;
+            var geohashLevel = 4;
+        } else if (zoom > 10) {
+            var multiplier = 10;
+            var geohashLevel = 3;
+        } else if (zoom > 7) {
+            var multiplier = 1;
+            var geohashLevel = 0;
+        } else {
+            var multiplier = 0;
+            var geohashLevel = 0;
+        }
+
+        if (multiplier > 0) {
+            var geohashLat = createGeohashLatLng(minLat, maxLat, multiplier);
+            var geohashLng = createGeohashLatLng(minLng, maxLng, multiplier);
+            updateTopicFilters(geohashLat, geohashLng, geohashLevel);
+        }
+    };
+
+    function updateTopicFilters(geohashLat, geohashLng, geohashLevel) {
+        var geohashes = createGeohashes(geohashLat, geohashLng);
+        var newTopicFilters = createTopicFilters(geohashLevel, geohashes);
+        if (newTopicFilters.join() !== state.topicFilters.join()) {
+            unsubscribeTopics();
+            state.topicFilters = newTopicFilters;
+            if (state.verbose) {
+                console.log('new topic filters (geohashLevel=%o, lat=%o, lng=%o): %o',
+                            geohashLevel, geohashLat, geohashLng, newTopicFilters);
+            }
+            subscribeTopics();
+        }
+    }
+
+    function createGeohashLatLng(minValue, maxValue, multiplier) {
+        var minV = Math.floor(minValue * multiplier);
+        var maxV = Math.floor(maxValue * multiplier);
+        return {'min': minV, 'n': maxV - minV};
+    }
+
+    function createGeohashes(geohashLat, geohashLng) {
+        var geohashes = [];
+        for (var i = 0; i <= geohashLat['n']; i++) {
+            for (var j = 0; j <= geohashLng['n']; j++) {
+                geohashes.push(createGeohash(geohashLat['min'] + i, geohashLng['min'] + j));
+            }
+        }
+        return geohashes;
+    }
+
+    function createGeohash(lat, lng) {  // 60123, 24789 becomes 60;24/17/28/39
+        var geohash = '';
+        while (true) {
+            if (lat < 100) {
+                geohash = lat + ';' + lng + geohash;
+                return geohash;
+            } else {
+                geohash = '/' + (lat % 10) + (lng % 10) + geohash;
+                lat = Math.floor(lat / 10);
+                lng = Math.floor(lng / 10);
+            }
+        }
+    }
+
+    function createTopicFilters(geohashLevel, geohashes) {
+        var filters = [];
+        for (var i = 0; i < geohashes.length; i++) {
+            filters.push(createTopicFilter(geohashLevel, geohashes[i]));
+        }
+        return filters;
+    }
+
+    function createTopicFilter(geohashLevel, geohash) {
+        var filter = [
+            // prefix
+            '/hfp',
+            // version
+            'v1',
+            // journey
+            'journey',
+            // temporal_type: ongoing or upcoming
+            'ongoing',
+            // transport_mode: bus, tram or train
+            '+',
+            // operator_id: 4 digits
+            '+',
+            // vehicle_number: 5 digits
+            '+',
+            // route_id: as in GTFS
+            '+',
+            // direction_id: 1 or 2
+            '+',
+            // headsign
+            '+',
+            // start_time: %H:%M
+            '+',
+            // next_stop: stop_id in GTFS
+            '+',
+            // geohash_level
+            geohashLevel,
+            // geohash
+            geohash,
+            // + for the rest of the levels
+            '#'
+        ];
+        return filter.join('/');
+    }
+
+    function subscribeTopics() {
+        for (var i = 0; i < state.topicFilters.length; i++) {
+            if (state.client !== null) {
+                state.client.subscribe(state.topicFilters[i], {onSuccess: onSubscribeSuccess,
+                                                               onFailure: onSubscribeFailure});
+            }
+        }
+
+        function onSubscribeSuccess() {
+            state.subscriptions += 1;
+        }
+
+        function onSubscribeFailure(responseObject) {
+            console.log('failed to subscribe (%o): %o',
+                        responseObject.errorCode, responseObject.errorMessage);
+        }
+    }
+
+    function unsubscribeTopics() {
+        for (var i = 0; i < state.topicFilters.length; i++) {
+            if (state.client !== null) {
+                state.client.unsubscribe(state.topicFilters[i], {onSuccess: onUnsubscribeSuccess,
+                                                                 onFailure: onUnsubscribeFailure});
+            }
+        }
+
+        function onUnsubscribeSuccess() {
+            state.subscriptions -= 1;
+        }
+
+        function onUnsubscribeFailure(responseObject) {
+            console.log('failed to unsubscribe (%o): %o',
+                        responseObject.errorCode, responseObject.errorMessage);
+        }
+    }
 }

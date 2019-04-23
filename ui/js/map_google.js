@@ -18,7 +18,7 @@ function MapApiMap() {
         return s;
     }
 
-    this.init = function (lat, lng, zoomLevel, zoomChanged) {
+    this.init = function (lat, lng, zoomLevel, zoomChanged, boundsChanged) {
         var mapElement = document.getElementById('map_canvas');
         var mapOptions = {
             'fullscreenControl': 0,
@@ -33,6 +33,12 @@ function MapApiMap() {
         state.map = new google.maps.Map(mapElement, mapOptions);
         state.map.setOptions({'center': new google.maps.LatLng(lat, lng), 'zoom': zoomLevel});
         state.map.addListener('zoom_changed', zoomChanged);
+        state.map.addListener('bounds_changed', function() {
+            var bounds = state.map.getBounds();
+            var sw = bounds.getSouthWest();
+            var ne = bounds.getNorthEast();
+            boundsChanged(state.map.getZoom(), sw.lat(), sw.lng(), ne.lat(), ne.lng());
+        });
     };
 
     this.getMap = function () {

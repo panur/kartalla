@@ -17,9 +17,9 @@ function CommonMap(utils) {
         return s;
     }
 
-    this.init = function (lang, lat, lng, zoomLevel) {
+    this.init = function (lang, lat, lng, zoomLevel, boundsChanged) {
         state.maMap = new MapApiMap();
-        state.maMap.init(lat, lng, zoomLevel, zoomChanged);
+        state.maMap.init(lat, lng, zoomLevel, zoomChanged, boundsChanged);
         state.previousSymbolScale = getSymbolScale();
 
         if ('geolocation' in navigator) {

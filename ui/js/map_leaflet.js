@@ -18,7 +18,7 @@ function MapApiMap() {
         return s;
     }
 
-    this.init = function (lat, lng, zoomLevel, zoomChanged) {
+    this.init = function (lat, lng, zoomLevel, zoomChanged, boundsChanged) {
         var baseMaps = getBaseMaps();
 
         state.map = L.map('map_canvas', {
@@ -42,6 +42,12 @@ function MapApiMap() {
         });
 
         state.map.on('zoomend', zoomChanged);
+        state.map.on('moveend', function () {
+            var bounds = state.map.getBounds();
+            var sw = bounds.getSouthWest();
+            var ne = bounds.getNorthEast();
+            boundsChanged(state.map.getZoom(), sw.lat, sw.lng, ne.lat, ne.lng);
+        });
 
         L.control.layers(baseMaps, null, {position: 'topleft'}).addTo(state.map);
     };
