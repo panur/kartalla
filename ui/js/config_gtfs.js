@@ -87,7 +87,15 @@ function ConfigGtfs() {
         {'name': 'Estonia', 'file': 'est', 'dir': 'est',
          'lat': 58.857520, 'lng': 25.475996, 'zl': 8, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus', 'tram', 'train', 'ferry'],
-         'visible_types': ['train']}
+         'visible_types': ['train']},
+        {'name': 'Stockholm', 'file': 'stockholm', 'dir': 'stockholm',
+         'lat': 59.328410, 'lng': 17.989837, 'zl': 11, 'alerts': false, 'vp': false,
+         'vehicle_types': ['bus', 'metro', 'tram', 'train', 'ferry'],
+         'visible_types': ['metro']},
+        {'name': 'Vienna', 'file': 'vienna', 'dir': 'vienna',
+         'lat': 48.212948, 'lng': 16.372101, 'zl': 12, 'alerts': false, 'vp': false,
+         'vehicle_types': ['metro', 'tram', 'bus'],
+         'visible_types': ['metro']}
     ];
     var configHash = null;
 
