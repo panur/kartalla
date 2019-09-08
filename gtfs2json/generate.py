@@ -7,6 +7,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 
 import argparse
 import datetime
+import hashlib
 import json
 import logging
 import os
@@ -35,7 +36,7 @@ def _main():
     downloaded_gtfs_zip = _download_gtfs(config['url'])
     modify_date = _get_modify_date(downloaded_gtfs_zip)
     gtfs_zip = _rename_gtfs_zip(config['gtfs_dir'], downloaded_gtfs_zip, gtfs_name, modify_date)
-    if not args.only_download:
+    if gtfs_zip and (not args.only_download):
         _generate_json(gtfs_name, modify_date, gtfs_zip, config['json_dir'], config['log_dir'])
 
     logging.debug('took {} seconds, max mem: {} megabytes'.format(
@@ -93,6 +94,11 @@ def _get_modify_times(zip_filename):
 def _rename_gtfs_zip(gtfs_dir, old_filename, gtfs_name, modify_date):
     _create_dir(gtfs_dir)
     new_filename = os.path.join(gtfs_dir, '{}_{}.zip'.format(gtfs_name, modify_date))
+    if os.path.isfile(new_filename):
+        if _compare_files(old_filename, new_filename):
+            _progress('downloaded gtfs file is identical to: {}'.format(new_filename))
+            os.remove(old_filename)
+            return None
     _rename_existing_file(new_filename)
     os.rename(old_filename, new_filename)
     _progress('renamed: {} -> {}'.format(old_filename, new_filename))
@@ -102,6 +108,17 @@ def _rename_gtfs_zip(gtfs_dir, old_filename, gtfs_name, modify_date):
 def _create_dir(new_dir):
     if not os.path.isdir(new_dir):
         os.makedirs(new_dir)
+
+
+def _compare_files(filename_a, filename_b):
+    return _get_hash(filename_a) == _get_hash(filename_b)
+
+
+def _get_hash(filename):
+    file_hash = hashlib.sha256()
+    with open(filename) as input_file:
+        file_hash.update(input_file.read())
+    return file_hash.digest()
 
 
 def _generate_json(gtfs_name, modify_date, gtfs_zip, json_dir, log_dir):
