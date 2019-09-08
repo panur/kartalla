@@ -210,7 +210,7 @@ function HslMqtt(utils, controller, uiBar) {
     }
 
     function updateCache(topic, parsedVp) {
-        var routeId = topic.split('/')[8];
+        var routeId = topic.split('/')[9];
         var startTime = parsedVp['start'].replace(':', '');
         controller.updateVp(routeId, parsedVp['dir'] - 1, startTime, parsedVp['tsi'],
                             parsedVp['lat'], parsedVp['long']);
@@ -333,12 +333,15 @@ function HslMqtt(utils, controller, uiBar) {
             // prefix
             '/hfp',
             // version
-            'v1',
-            // journey
+            'v2',
+            // journey_type: journey, deadrun or signoff
             'journey',
             // temporal_type: ongoing or upcoming
             'ongoing',
-            // transport_mode: bus, tram or train
+            // event_type: vp, due, arr, dep, ars, pde, pas, wait, doo, doc, tlr, tla, da, dout, ba,
+            // bout, vja or vjout
+            'vp',
+            // transport_mode: bus, tram, train, ferry or metro
             '+',
             // operator_id: 4 digits
             '+',
@@ -350,7 +353,7 @@ function HslMqtt(utils, controller, uiBar) {
             '+',
             // headsign
             '+',
-            // start_time: %H:%M
+            // start_time: HH:mm
             '+',
             // next_stop: stop_id in GTFS
             '+',
