@@ -56,7 +56,7 @@ function ConfigGtfs() {
          'lat': 61.683347, 'lng':  27.283888, 'zl': 12, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
-        {'name': 'Oulu', 'file': 'oulu', 'dir': 'split',
+        {'name': 'Oulu', 'file': 'oulu', 'dir': 'oulu',
          'lat': 65.021237, 'lng': 25.468197, 'zl': 11, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
