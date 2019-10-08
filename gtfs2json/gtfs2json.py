@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-"""Convert HSL/Liikennevirasto GTFS files into JSON.
+"""Convert HSL/Traficom GTFS files into JSON.
 
-HSL GTFS: http://dev.hsl.fi/gtfs/
-Liikennevirasto (Finnish Transport Agency) GTFS: http://developer.matka.fi/pages/en/home.php
+HSL GTFS: http://dev.hsl.fi/gtfs/hsl.zip
+Traficom (Finnish Transport and Communications Agency) GTFS: http://185.134.88.185/gtfs.zip
 
 Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
