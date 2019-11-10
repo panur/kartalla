@@ -77,7 +77,8 @@ function HslAlerts(controller, uiBar) {
             var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
             for (var j = 0; j < translations.length; j++) {
                 var translation = translations[j];
-                if (translation['language'] === state.lang) {
+                if ((translation['language'] === state.lang) && 
+                    (jsonAlerts[i].hasOwnProperty('route'))) {
                     var route = jsonAlerts[i]['route'];
                     if (alertTexts.indexOf(translation['text']) === -1) {
                         alertTexts.push(translation['text']);
@@ -102,7 +103,7 @@ function HslAlerts(controller, uiBar) {
         var routeId = route['gtfsId'].split(':')[1];
         var direction = undefined;
         var startTime = undefined;
-        if (trip !== null) {
+        if ((trip !== undefined) && (trip !== null)) {
             direction = trip['directionId'];
             startTime = trip['stoptimes'][0]['scheduledArrival'];
         }
