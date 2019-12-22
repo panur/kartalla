@@ -8,6 +8,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
 import codecs
+import collections
 import csv
 import datetime
 import json
@@ -108,7 +109,7 @@ def _parse_stops(input_dir_or_zip, stops_txt):
 
 
 def _parse_routes(input_dir_or_zip, routes_txt):
-    routes = {}  # by route_id
+    routes = collections.OrderedDict()  # by route_id
     route_types = _get_route_types(os.path.join(os.path.dirname(__file__), 'route_types.json'))
 
     with _open_file(input_dir_or_zip, routes_txt, skip_utf8_bom=True) as input_file:
@@ -125,7 +126,7 @@ def _parse_routes(input_dir_or_zip, routes_txt):
                 'long_name': row['route_long_name'],
                 'type': route_types.get(row['route_type'], row['route_type']),
                 'is_departure_times': False,
-                'trips': {},
+                'trips': collections.OrderedDict(),
                 'shapes': []
             }
 
@@ -155,7 +156,7 @@ def _get_route_name(row):  # row in routes.txt
 
 
 def _parse_trips(input_dir_or_zip, trips_txt):
-    trips = {}  # by trip_id
+    trips = collections.OrderedDict()  # by trip_id
 
     with _open_file(input_dir_or_zip, trips_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
@@ -179,7 +180,8 @@ def _parse_trips(input_dir_or_zip, trips_txt):
                             'start_date': None,
                             'end_date': None,
                             'weekdays': None,
-                            'exception_dates': {'added': [], 'removed': []}
+                            'exception_dates': collections.OrderedDict([('added', []),
+                                                                        ('removed', [])])
                         },
                         'times': {
                             'start_time': 0,  # number of minutes after midnight
@@ -231,7 +233,7 @@ def _get_service_weekdays(row):  # row in calendar.txt
 
 
 def _parse_calendar_dates(input_dir_or_zip, calendar_dates_txt):
-    calendar_dates = {}
+    calendar_dates = collections.OrderedDict()
     exception_types = {'1': 'added', '2': 'removed'}
     with _open_file(input_dir_or_zip, calendar_dates_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
@@ -251,7 +253,7 @@ def _parse_calendar_dates(input_dir_or_zip, calendar_dates_txt):
 
 
 def _parse_stop_times(input_dir_or_zip, stop_times_txt):
-    stop_time_trips = {}  # by trip_id
+    stop_time_trips = collections.OrderedDict()  # by trip_id
     is_seconds_in_time = False
 
     with _open_file(input_dir_or_zip, stop_times_txt, skip_utf8_bom=True) as input_file:

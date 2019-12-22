@@ -57,7 +57,7 @@ def _get_output_route_types():
 
 
 def _get_output_dates(routes):
-    output_dates = {}
+    output_dates = collections.OrderedDict()
     for route in routes.itervalues():
         for trip in route['trips'].itervalues():
             dates = [trip['dates']['start_date'], trip['dates']['end_date']]
@@ -112,7 +112,7 @@ def _get_route_trips_output_values(array_keys, trips, is_departure_times, output
         'stop_times': _get_new_value_stop_times,
         'trip_dates': _get_new_value_trip_dates,
     }
-    for trip in sorted(trips.itervalues()):
+    for trip in trips.itervalues():
         trip['times']['is_departure_times'] = is_departure_times
         for value_name in output_values:
             new_value = get_new_value[value_name](array_keys, trip, output_dates)
@@ -136,7 +136,7 @@ def _get_cache_index(cache_values, new_value):
 
 def _get_route_trips_groups(array_keys, trips):
     route_trip_groups = []
-    for trip in sorted(trips.itervalues()):
+    for trip in trips.itervalues():
         cis = trip['cache_indexes']
         output_trip_group = [None] * len(array_keys['trip_group'])
         output_trip_group[array_keys['trip_group']['shape_i']] = cis['shape_i']
