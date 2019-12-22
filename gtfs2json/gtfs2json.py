@@ -9,6 +9,7 @@ Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html
 """
 
 import argparse
+import collections
 import csv
 import logging
 import os
@@ -76,7 +77,7 @@ def _get_additional_output_files(filename):
 
 
 def _get_filtered_routes(routes, agencies):
-    filtered_routes = {}
+    filtered_routes = collections.OrderedDict()
     for route in routes.itervalues():
         if route['agency_id'] in agencies:
             filtered_routes[route['route_id']] = route
