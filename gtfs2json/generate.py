@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Download GTFS file and generate JSON file.
 
@@ -49,12 +49,12 @@ def _init_logging():
 
 
 def _progress(text):
-    print text
+    print(text)
     logging.debug(text)
 
 
 def _progress_warning(text):
-    print '\033[31m{}\033[0m'.format(text)
+    print('\033[31m{}\033[0m'.format(text))
     logging.warning(text)
 
 
@@ -116,7 +116,7 @@ def _compare_files(filename_a, filename_b):
 
 def _get_hash(filename):
     file_hash = hashlib.sha256()
-    with open(filename) as input_file:
+    with open(filename, 'rb') as input_file:
         file_hash.update(input_file.read())
     return file_hash.digest()
 

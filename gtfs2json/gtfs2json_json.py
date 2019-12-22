@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Create JSON file.
 
 JSON: http://www.json.org/
@@ -58,10 +56,10 @@ def _get_output_route_types():
 
 def _get_output_dates(routes):
     output_dates = collections.OrderedDict()
-    for route in routes.itervalues():
-        for trip in route['trips'].itervalues():
+    for route in routes.values():
+        for trip in route['trips'].values():
             dates = [trip['dates']['start_date'], trip['dates']['end_date']]
-            for exception_dates in trip['dates']['exception_dates'].itervalues():
+            for exception_dates in trip['dates']['exception_dates'].values():
                 dates = dates + exception_dates
             for date in dates:
                 if date not in output_dates:
@@ -112,7 +110,7 @@ def _get_route_trips_output_values(array_keys, trips, is_departure_times, output
         'stop_times': _get_new_value_stop_times,
         'trip_dates': _get_new_value_trip_dates,
     }
-    for trip in trips.itervalues():
+    for trip in trips.values():
         trip['times']['is_departure_times'] = is_departure_times
         for value_name in output_values:
             new_value = get_new_value[value_name](array_keys, trip, output_dates)
@@ -136,7 +134,7 @@ def _get_cache_index(cache_values, new_value):
 
 def _get_route_trips_groups(array_keys, trips):
     route_trip_groups = []
-    for trip in trips.itervalues():
+    for trip in trips.values():
         cis = trip['cache_indexes']
         output_trip_group = [None] * len(array_keys['trip_group'])
         output_trip_group[array_keys['trip_group']['shape_i']] = cis['shape_i']
@@ -148,7 +146,7 @@ def _get_route_trips_groups(array_keys, trips):
 
 def _get_output_directions(array_keys, trips):
     output_directions = []
-    if trips.values()[0]['direction_id'] == '-':
+    if list(trips.values())[0]['direction_id'] == '-':
         directions = ['-']
     else:
         directions = ['0', '1']
@@ -218,7 +216,7 @@ def _integer_list_to_string(integer_list):
     max_value = max_chr - min_chr
     output_string = ''
     for integer in integer_list:
-        num_mult_chr = max(0, integer - 1) / max_value
+        num_mult_chr = max(0, integer - 1) // max_value
         last_output_chr = chr(min_chr + (integer - (num_mult_chr * max_value)))
         output_string += (chr(mult_chr) * num_mult_chr) + last_output_chr
     return output_string
@@ -227,7 +225,7 @@ def _integer_list_to_string(integer_list):
 def _get_output_trips(array_keys, input_trips, direction_id):
     trips = {}  # by start time
 
-    for _, trip in sorted(input_trips.iteritems()):
+    for _, trip in sorted(input_trips.items()):
         if trip['direction_id'] == direction_id:
             start_time = trip['times']['start_time']
             if start_time not in trips:

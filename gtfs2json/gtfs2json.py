@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Convert HSL/Traficom GTFS files into JSON.
 
@@ -36,12 +36,12 @@ def _main():
 
     routes = gtfs2json_gtfs.get_routes(args.input_dir_or_zip)
     gtfs_modification_time = gtfs2json_gtfs.get_modification_time(args.input_dir_or_zip)
-    print 'creating output file...'
+    print('creating output file...')
     gtfs2json_json.create(routes, args.output_file, gtfs_modification_time)
 
     if args.additional_files:
         additional_output_files = _get_additional_output_files(args.additional_files)
-        print 'creating additional output files...'
+        print('creating additional output files...')
         output_dir = os.path.dirname(args.output_file)
         for additional_output_file in additional_output_files:
             output_filename = os.path.join(output_dir, additional_output_file['filename'])
@@ -78,7 +78,7 @@ def _get_additional_output_files(filename):
 
 def _get_filtered_routes(routes, agencies):
     filtered_routes = collections.OrderedDict()
-    for route in routes.itervalues():
+    for route in routes.values():
         if route['agency_id'] in agencies:
             filtered_routes[route['route_id']] = route
     return filtered_routes

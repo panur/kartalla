@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """Parse GTFS files.
 
 General Transit Feed Specification Reference: https://developers.google.com/transit/gtfs/reference
@@ -11,9 +9,11 @@ import codecs
 import collections
 import csv
 import datetime
+import io
 import json
 import logging
 import os
+import math
 import time
 import zipfile
 
@@ -22,29 +22,29 @@ import polyline
 
 def get_routes(input_dir_or_zip):
     """Parse GTFS files into dict of routes."""
-    print 'parsing shapes...'
+    print('parsing shapes...')
     shapes = _parse_shapes(input_dir_or_zip, 'shapes.txt')
-    print 'parsing stops...'
+    print('parsing stops...')
     stops = _parse_stops(input_dir_or_zip, 'stops.txt')
-    print 'parsing calendar...'
+    print('parsing calendar...')
     calendar_entries = _parse_calendar(input_dir_or_zip, 'calendar.txt')
-    print 'parsing calendar dates...'
+    print('parsing calendar dates...')
     calendar_dates = _parse_calendar_dates(input_dir_or_zip, 'calendar_dates.txt')
-    print 'parsing stop times...'
+    print('parsing stop times...')
     stop_times = _parse_stop_times(input_dir_or_zip, 'stop_times.txt')
-    print 'parsing routes...'
+    print('parsing routes...')
     routes = _parse_routes(input_dir_or_zip, 'routes.txt')
-    print 'parsing trips...'
+    print('parsing trips...')
     trips = _parse_trips(input_dir_or_zip, 'trips.txt')
 
-    print 'adding dates to trips...'
+    print('adding dates to trips...')
     _add_dates_to_trips(trips, calendar_entries, calendar_dates)
-    print 'adding stop times to trips...'
+    print('adding stop times to trips...')
     _add_stop_times_to_trips(trips, stop_times)
 
-    print 'adding trips to routes...'
+    print('adding trips to routes...')
     _add_trips_to_routes(routes, trips)
-    print 'adding shapes to routes...'
+    print('adding shapes to routes...')
     _add_shapes_to_routes(routes, shapes, stops)
 
     _delete_invalid_trips(routes)
@@ -73,18 +73,14 @@ def _parse_shapes(input_dir_or_zip, shapes_txt):
 
 def _open_file(input_dir_or_zip, path, skip_utf8_bom=False):
     if os.path.isdir(input_dir_or_zip):
-        input_file = open(os.path.join(input_dir_or_zip, path), 'r')
-        if skip_utf8_bom:
-            if input_file.read(3) != codecs.BOM_UTF8:
-                input_file.seek(0)
-        return input_file
+        return open(os.path.join(input_dir_or_zip, path), 'r', encoding='utf-8-sig')
     else:
         with zipfile.ZipFile(input_dir_or_zip) as zip_file:
             input_file = zip_file.open(path)
             if skip_utf8_bom:
                 if input_file.read(3) != codecs.BOM_UTF8:
                     input_file = zip_file.open(path)
-            return input_file
+            return io.TextIOWrapper(input_file)
 
 
 def _is_file(input_dir_or_zip, path):
@@ -294,7 +290,14 @@ def _is_seconds_in_time(row):  # row in stop_times.txt
 def _get_minutes(time_string):
     """Get number of minutes after midnight from HH:MM:SS time string."""
     (hours, minutes, seconds) = time_string.split(':')
-    return (int(hours) * 60) + int(minutes) + int(round(int(seconds) / 60.0))
+    return (int(hours) * 60) + int(minutes) + _round(int(seconds) / 60.0)
+
+
+def _round(number):
+    if number > 0:
+        return int(math.floor((number + 0.5)))
+    else:
+        return int(math.ceil((number - 0.5)))
 
 
 def _add_stop_to_stops(stops, row):  # row in stop_times.txt
@@ -390,7 +393,7 @@ def _add_trips_to_routes(routes, trips):
 def _add_shapes_to_routes(routes, shapes, stops):
     stats = {'shapes': 0, 'points': 0, 'dropped_points': 0, 'bytes': 0}
 
-    for route in routes.itervalues():
+    for route in routes.values():
         cache = {}
         for trip_id in route['trips']:
             trip = route['trips'][trip_id]
@@ -430,7 +433,7 @@ def _is_shape_ok(route, trip, shapes):
 def _get_stop_distances(shape, trip_stops, stops):
     stop_distances = []
 
-    for _, stop_id in sorted(trip_stops.iteritems()):
+    for _, stop_id in sorted(trip_stops.items()):
         if stop_id not in stops:
             logging.error('No stop information for stop_id={}.'.format(stop_id))
         else:
@@ -463,7 +466,7 @@ def _add_shape_to_route(route, trip, shape, stop_distances, stats):
 
 
 def _delete_invalid_trips(routes):
-    for route in routes.itervalues():
+    for route in routes.values():
         invalid_trip_ids = set()
         for trip_id in route['trips']:
             if route['trips'][trip_id]['is_invalid']:

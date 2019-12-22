@@ -15,8 +15,8 @@ def encode(points, fixed_indexes=None, very_small=0.00001):
     if not fixed_indexes:
         fixed_indexes = [0, len(points) - 1]
     if len(points) == len(fixed_indexes):
-        (points_to_be_encoded, indexes, kept_indexes) = (points, range(len(points)),
-                                                         range(len(points)))
+        (points_to_be_encoded, indexes, kept_indexes) = (points, list(range(len(points))),
+                                                         list(range(len(points))))
     else:
         (points_to_be_encoded, indexes, kept_indexes) = _get_points_to_be_encoded(
             points, fixed_indexes, very_small)
@@ -137,7 +137,7 @@ def _encode_signed_number(num):
 
 def get_point_index(points, point, previous_index):
     """Find index of the point in points that is closest to point after previous_index."""
-    min_dist = {'i': None, 'v': sys.maxint}
+    min_dist = {'i': None, 'v': sys.maxsize}
     for i in range(previous_index, len(points)):
         dist = _dist(points[i], point)
         if dist < min_dist['v']:
