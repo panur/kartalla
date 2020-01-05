@@ -73,7 +73,8 @@ def _download_gtfs(url):
 
 
 def _execute_command(command):
-    os.system(command)
+    if os.system(command) != 0:
+        raise SystemExit('failed to execute: {}'.format(command))
 
 
 def _get_modify_date(zip_filename):
