@@ -97,7 +97,7 @@ def _get_output_routes(array_keys, output_dates, routes):
         output_routes.append(output_route)
         stats['shapes'] += len(route['shapes'])
 
-    logging.debug('route types: {}'.format(route_types))
+    logging.debug('route types: {}'.format(sorted(route_types)))
     logging.debug('output stats: {}'.format(stats))
 
     return output_routes

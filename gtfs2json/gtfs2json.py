@@ -50,7 +50,7 @@ def _main():
             gtfs2json_json.create(filtered_routes, output_filename, gtfs_modification_time)
 
     logging.debug('took {} seconds, max mem: {} megabytes'.format(
-        int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
+        int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024))
 
 
 def _init_logging(filename):
