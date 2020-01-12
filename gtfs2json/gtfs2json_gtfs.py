@@ -405,10 +405,12 @@ def _add_shapes_to_routes(routes, shapes, stops):
                 else:
                     shape = shapes[trip['shape_id']]['points']
                     stop_distances = _get_stop_distances(shape, trip['stops'], stops)
-                    _add_shape_to_route(route, trip, shape, stop_distances, stats)
-                    cache[cache_key] = {
-                        'shape_i': trip['cache_indexes']['shape_i'],
-                        'stop_distances': trip['stop_distances']}
+                    if _add_shape_to_route(route, trip, shape, stop_distances, stats):
+                        cache[cache_key] = {
+                            'shape_i': trip['cache_indexes']['shape_i'],
+                            'stop_distances': trip['stop_distances']}
+                    else:
+                        trip['is_invalid'] = True
             else:
                 trip['is_invalid'] = True
 
@@ -449,13 +451,15 @@ def _get_stop_distances(shape, trip_stops, stops):
 
 def _add_shape_to_route(route, trip, shape, stop_distances, stats):
     if len(shape) < len(stop_distances):
-        logging.error('In route={} less points in shape than stops: {} < {}'.format(
-            route['long_name'], len(shape), len(stop_distances)))
-        return
+        logging.error('In route="{}/{}" ({}) less points in shape ({}) than stops: {} < {}'.format(
+            route['name'], route['long_name'], route['route_id'], trip['shape_id'], len(shape),
+            len(stop_distances)))
+        return False
     encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     trip['stop_distances'] = encoded_shape['fixed_indexes']
     if encoded_shape['points'] in route['shapes']:
-        logging.error('Duplicate shape encoding for route={}.'.format(route['long_name']))
+        logging.info('Duplicate shape encoding for route={}.'.format(route['long_name']))
+        trip['cache_indexes']['shape_i'] = route['shapes'].index(encoded_shape['points'])
     else:
         route['shapes'].append(encoded_shape['points'])
         trip['cache_indexes']['shape_i'] = len(route['shapes']) - 1
@@ -463,6 +467,7 @@ def _add_shape_to_route(route, trip, shape, stop_distances, stats):
         stats['points'] += len(shape)
         stats['dropped_points'] += encoded_shape['num_dropped_points']
         stats['bytes'] += len(encoded_shape['points'])
+    return True
 
 
 def _delete_invalid_trips(routes):
