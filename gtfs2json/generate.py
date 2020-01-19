@@ -81,7 +81,7 @@ def _get_modify_date(zip_filename):
     modify_times = _get_modify_times(zip_filename)
     if len(modify_times) > 1:
         _progress_warning('multiple modify times: {}'.format(modify_times))
-    return list(modify_times)[0]
+    return sorted(modify_times)[-1]
 
 
 def _get_modify_times(zip_filename):
