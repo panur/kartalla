@@ -269,12 +269,15 @@ def _parse_stop_times(input_dir_or_zip, stop_times_txt):
                 trip['start_time'] = _get_minutes(row['arrival_time'])
             arrival_time = _get_minutes(row['arrival_time'])
             departure_time = _get_minutes(row['departure_time'])
-            trip['is_departure_times'] = (trip['is_departure_times'] or
-                                          (arrival_time != departure_time))
-            trip['stop_times'].append(arrival_time - trip['start_time'])
-            trip['stop_times'].append(departure_time - trip['start_time'])
-            _add_stop_to_stops(trip['stops'], row)
-
+            if _is_duplicate_stop_id(trip, row, arrival_time, departure_time):
+                logging.info('Ignoring duplicate stop_id={} in trip_id={}.'.format(row['stop_id'],
+                                                                                   row['trip_id']))
+            else:
+                trip['is_departure_times'] = (trip['is_departure_times'] or
+                                              (arrival_time != departure_time))
+                trip['stop_times'].append(arrival_time - trip['start_time'])
+                trip['stop_times'].append(departure_time - trip['start_time'])
+                _add_stop_to_stops(trip['stops'], row)
     _delete_invalid_stop_trip_times(stop_time_trips)
     return stop_time_trips
 
@@ -298,6 +301,16 @@ def _round(number):
         return int(math.floor((number + 0.5)))
     else:
         return int(math.ceil((number - 0.5)))
+
+
+def _is_duplicate_stop_id(trip, row, arrival_time, departure_time):  # row in stop_times.txt
+    if (trip['stop_times'] and trip['stops']) and (arrival_time == departure_time):
+        previous_stop_time = trip['stop_times'][-1]
+        next_stop_time = arrival_time - trip['start_time']
+        previous_stop_id = trip['stops'].get(int(row['stop_sequence']) - 1)
+        if (next_stop_time == previous_stop_time) and (row['stop_id'] == previous_stop_id):
+            return True
+    return False
 
 
 def _add_stop_to_stops(stops, row):  # row in stop_times.txt
@@ -405,7 +418,7 @@ def _add_shapes_to_routes(routes, shapes, stops):
                 else:
                     shape = shapes[trip['shape_id']]['points']
                     stop_distances = _get_stop_distances(shape, trip['stops'], stops)
-                    if _add_shape_to_route(route, trip, shape, stop_distances, stats):
+                    if _add_shape_to_route(route, trip_id, shape, stop_distances, stats):
                         cache[cache_key] = {
                             'shape_i': trip['cache_indexes']['shape_i'],
                             'stop_distances': trip['stop_distances']}
@@ -449,11 +462,13 @@ def _get_stop_distances(shape, trip_stops, stops):
     return stop_distances
 
 
-def _add_shape_to_route(route, trip, shape, stop_distances, stats):
+def _add_shape_to_route(route, trip_id, shape, stop_distances, stats):
+    trip = route['trips'][trip_id]
     if len(shape) < len(stop_distances):
-        logging.error('In route="{}/{}" ({}) less points in shape ({}) than stops: {} < {}'.format(
-            route['name'], route['long_name'], route['route_id'], trip['shape_id'], len(shape),
-            len(stop_distances)))
+        msg = 'In trip_id={} (route={}/{}/{}) less points in shape ({}) than stops: {} < {}'
+        logging.error(msg.format(
+            trip_id, route['name'], route['long_name'], route['route_id'], trip['shape_id'],
+            len(shape), len(stop_distances)))
         return False
     encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     trip['stop_distances'] = encoded_shape['fixed_indexes']
