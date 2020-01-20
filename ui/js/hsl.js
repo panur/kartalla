@@ -71,7 +71,7 @@ function HslAlerts(controller, uiBar) {
 
     function parseAlerts(jsonAlerts, routeTypes) {
         var uiBarAlerts = [];
-        var alertTexts = [];
+        var alertTexts = {};
         var controllerAlerts = [];
         for (var i = 0; i < jsonAlerts.length; i++) {
             var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
@@ -79,14 +79,12 @@ function HslAlerts(controller, uiBar) {
                 var translation = translations[j];
                 if ((translation['language'] === state.lang) && 
                     (jsonAlerts[i].hasOwnProperty('route'))) {
+                    if (!alertTexts.hasOwnProperty(translation['text'])) {
+                        alertTexts[translation['text']] = '-';
+                    }
                     var route = jsonAlerts[i]['route'];
-                    if (alertTexts.indexOf(translation['text']) === -1) {
-                        alertTexts.push(translation['text']);
-                        var routeType = '-';
-                        if ((route !== null) && (routeTypes[route['type']])) {
-                            routeType = routeTypes[route['type']];
-                        }
-                        uiBarAlerts.push({'text': translation['text'], 'type': routeType});
+                    if ((route !== null) && (routeTypes[route['type']])) {
+                        alertTexts[translation['text']] = routeTypes[route['type']];
                     }
                     if (route !== null) {
                         controllerAlerts.push(getControllerAlert(route, jsonAlerts[i]['trip'],
@@ -95,7 +93,9 @@ function HslAlerts(controller, uiBar) {
                 }
             }
         }
-
+        for (var alertText in alertTexts) {
+            uiBarAlerts.push({'text': alertText, 'type': alertTexts[alertText]});
+        }
         return {'uiBar': uiBarAlerts, 'controller': controllerAlerts};
     }
 
