@@ -418,7 +418,8 @@ def _add_shapes_to_routes(routes, shapes, stops):
                 else:
                     shape = shapes[trip['shape_id']]['points']
                     stop_distances = _get_stop_distances(shape, trip['stops'], stops)
-                    if _add_shape_to_route(route, trip_id, shape, stop_distances, stats):
+                    if _is_shape_long_enough(route, trip_id, shape, stop_distances, stops):
+                        _add_shape_to_route(route, trip, shape, stop_distances, stats)
                         cache[cache_key] = {
                             'shape_i': trip['cache_indexes']['shape_i'],
                             'stop_distances': trip['stop_distances']}
@@ -462,14 +463,34 @@ def _get_stop_distances(shape, trip_stops, stops):
     return stop_distances
 
 
-def _add_shape_to_route(route, trip_id, shape, stop_distances, stats):
+def _is_shape_long_enough(route, trip_id, shape, stop_distances, stops):
     trip = route['trips'][trip_id]
     if len(shape) < len(stop_distances):
-        msg = 'In trip_id={} (route={}/{}/{}) less points in shape ({}) than stops: {} < {}'
-        logging.error(msg.format(
-            trip_id, route['name'], route['long_name'], route['route_id'], trip['shape_id'],
-            len(shape), len(stop_distances)))
-        return False
+        unique_stops = _count_unique_stops_in_trip(trip['stops'], stops)
+        id_msg = 'In trip_id={} (route={}/{}/{})'.format(trip_id, route['name'], route['long_name'],
+                                                         route['route_id'])
+        if unique_stops < len(stop_distances):
+            msg = '{} less unique stops than stops: {} < {}'
+            logging.info(msg.format(id_msg, unique_stops, len(stop_distances)))
+        if len(shape) < unique_stops:
+            msg = '{} less points in shape ({}) than unique stops: {} < {}'
+            logging.error(msg.format(id_msg, trip['shape_id'], len(shape), unique_stops))
+            return False
+    return True
+
+
+def _count_unique_stops_in_trip(trip_stops, stops):
+    unique_stops = 0
+    previous_stop = None
+    for _, stop_id in sorted(trip_stops.items()):
+        if stop_id in stops:
+            if stops[stop_id] != previous_stop:
+                unique_stops += 1
+            previous_stop = stops[stop_id]
+    return unique_stops
+
+
+def _add_shape_to_route(route, trip, shape, stop_distances, stats):
     encoded_shape = polyline.encode(shape, stop_distances, very_small=0.00002)
     trip['stop_distances'] = encoded_shape['fixed_indexes']
     if encoded_shape['points'] in route['shapes']:
@@ -482,7 +503,6 @@ def _add_shape_to_route(route, trip_id, shape, stop_distances, stats):
         stats['points'] += len(shape)
         stats['dropped_points'] += encoded_shape['num_dropped_points']
         stats['bytes'] += len(encoded_shape['points'])
-    return True
 
 
 def _delete_invalid_trips(routes):
