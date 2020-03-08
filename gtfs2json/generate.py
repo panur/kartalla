@@ -66,7 +66,8 @@ def _load_config(config_path):
 def _download_gtfs(url):
     output_file, output_filename = tempfile.mkstemp(dir='.')
     os.close(output_file)
-    command = 'curl "{}" --location > {}'.format(url, output_filename)
+    curl_options = '--header "Accept-Encoding: gzip" --location'
+    command = 'curl {} "{}" > {}'.format(curl_options, url, output_filename)
     _progress('downloading gtfs file into: {}'.format(os.path.relpath(output_filename)))
     _execute_command(command)
     return output_filename
