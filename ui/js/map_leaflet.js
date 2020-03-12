@@ -1,7 +1,7 @@
 /* Author: Panu Ranta, panu.ranta@iki.fi, https://14142.net/kartalla/about.html */
 
 /* Show markers on Leaflet
-API Reference: http://leafletjs.com/reference.html
+API Reference: https://leafletjs.com/reference.html
 */
 
 'use strict';
