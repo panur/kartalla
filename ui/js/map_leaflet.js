@@ -22,21 +22,21 @@ function MapApiMap() {
         var baseMaps = getBaseMaps();
 
         state.map = L.map('map_canvas', {
-            center: [lat, lng],
-            zoom: zoomLevel,
-            zoomControl: false,
-            layers: [baseMaps.Mapbox]
+            'center': [lat, lng],
+            'zoom': zoomLevel,
+            'zoomControl': false,
+            'layers': [baseMaps.Mapbox]
         });
-        state.map.addControl(L.control.zoom({position: 'bottomright'}));
+        state.map.addControl(L.control.zoom({'position': 'bottomright'}));
 
         // toggle CSS marker interpolation via a HTML class:
         L.DomUtil.addClass(state.map.getContainer(), 'kartalla-interpolate');
-        state.map.on('zoomstart', function() {
+        state.map.on('zoomstart', function () {
             L.DomUtil.removeClass(state.map.getContainer(), 'kartalla-interpolate');
         });
-        state.map.on('zoomend', function() {
+        state.map.on('zoomend', function () {
 	    // re-enable interpolation starting at next render:
-            L.Util.requestAnimFrame(function() {
+            L.Util.requestAnimFrame(function () {
                 L.DomUtil.addClass(state.map.getContainer(), 'kartalla-interpolate');
             });
         });
@@ -49,30 +49,30 @@ function MapApiMap() {
             boundsChanged(state.map.getZoom(), sw.lat, sw.lng, ne.lat, ne.lng);
         });
 
-        L.control.layers(baseMaps, null, {position: 'topleft'}).addTo(state.map);
+        L.control.layers(baseMaps, null, {'position': 'topleft'}).addTo(state.map);
     };
 
     function getBaseMaps() {
         var url = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?'+
             'access_token={accessToken}';
         var mapbox = L.tileLayer(url, {
-            attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> ' +
+            'attribution': 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> ' +
                 'contributors, ' +
                 '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
                 'Imagery &copy; <a href="https://mapbox.com">Mapbox</a>',
-            maxZoom: 18,
-            id: 'mapbox/streets-v11',
-            accessToken: 'pk.eyJ1IjoicGFudXIiLCJhIjoiY2s3bmRlamZjMDFu' +
+            'maxZoom': 18,
+            'id': 'mapbox/streets-v11',
+            'accessToken': 'pk.eyJ1IjoicGFudXIiLCJhIjoiY2s3bmRlamZjMDFu' +
                 'aDNtcDdieHg1ZGtodyJ9.eRP_VOSEgydMHusBPQFMyg'
         });
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; ' +
+            'maxZoom': 19,
+            'attribution': '&copy; ' +
                 '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         });
         var hsl = L.tileLayer('https://api.digitransit.fi/map/v1/hsl-map/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: 'Map data &copy; ' +
+            'maxZoom': 19,
+            'attribution': 'Map data &copy; ' +
                 '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +
                 'Tiles &copy; <a href="https://digitransit.fi/">Digitransit</a>'
         });
@@ -156,10 +156,10 @@ function MapApiMap() {
     // path as returned by decodePath()
     this.newPolyline = function (path, polylineOptions) {
         var polyline = L.polyline(path, {
-            clickable: false, // https://github.com/panur/kartalla/issues/8
-            color: polylineOptions.color,
-            opacity: polylineOptions.opacity,
-            weight: polylineOptions.weight
+            'clickable': false, // https://github.com/panur/kartalla/issues/8
+            'color': polylineOptions.color,
+            'opacity': polylineOptions.opacity,
+            'weight': polylineOptions.weight
         });
         return polyline;
     };
@@ -195,11 +195,11 @@ function MapApiMap() {
         return L.latLng(latLon.lat, latLon.lon);
     };
 
-    this.computeDistance = function(p1, p2) {
+    this.computeDistance = function (p1, p2) {
         return p1.distanceTo(p2);
     };
 
-    this.interpolate = function(p1, p2, fraction) {
+    this.interpolate = function (p1, p2, fraction) {
         var radius = 6378137; // earth's radius in meters
         var distance = that.computeDistance(p1, p2);
         var bearing = that.computeHeading(p1, p2);
@@ -225,10 +225,10 @@ function MapApiMap() {
 
     this.addLocationControl = function (controlElement) {
         var CustomControl = L.Control.extend({
-            options: {
-                position: 'topright'
+            'options': {
+                'position': 'topright'
             },
-            onAdd: function (map) {
+            'onAdd': function (map) {
                 return controlElement;
             }
         });
@@ -241,10 +241,10 @@ function MapApiMap() {
             state.control = null;
         } else {
             var CustomControl = L.Control.extend({
-                options: {
-                    position: 'bottomleft'
+                'options': {
+                    'position': 'bottomleft'
                 },
-                onAdd: function (map) {
+                'onAdd': function (map) {
                     return controlElement;
                 }
             });
@@ -282,29 +282,29 @@ function MapApiMarker(map, polyline) {
 
     function createNativeMarker() {
         return L.marker(state.latLng, {
-            clickable: false, // https://github.com/panur/kartalla/issues/8
-            icon: createIcon(state.symbolRootElement)
+            'clickable': false, // https://github.com/panur/kartalla/issues/8
+            'icon': createIcon(state.symbolRootElement)
         });
     }
 
     function createIcon(symbolRootElement) {
-        var iconOptions = {domElement: symbolRootElement, className: ''};
+        var iconOptions = {'domElement': symbolRootElement, 'className': ''};
         return new DomIcon(iconOptions);
     }
 
     var DomIcon = L.DivIcon.extend({
-        options: {
-            domElement: null
+        'options': {
+            'domElement': null
         },
 
-        createIcon: function(oldIcon) {
+        'createIcon': function (oldIcon) {
             var div = (oldIcon && (oldIcon.tagName === 'DIV')) ? oldIcon : this.options.domElement;
             this._setIconStyles(div, 'icon');
             return div;
         }
     });
 
-    this.update = function(latLng) {
+    this.update = function (latLng) {
         state.latLng = latLng;
         var isInViewport = map.getBounds().contains(state.latLng);
         if ((state.isVisible === true) && (isInViewport == true)) {
@@ -329,7 +329,7 @@ function MapApiMarker(map, polyline) {
         }
     };
 
-    this.remove = function() {
+    this.remove = function () {
         if (state.isMarkerOnMap) {
             state.isMarkerOnMap = false;
             map.removeLayer(state.nativeMarker);
@@ -337,7 +337,7 @@ function MapApiMarker(map, polyline) {
         }
     };
 
-    this.resize = function(newSize) {
+    this.resize = function (newSize) {
         state.size = newSize;
         if (state.isMarkerOnMap) {
             var icon = state.nativeMarker.options.icon;

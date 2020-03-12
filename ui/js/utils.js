@@ -45,11 +45,11 @@ function Utils() {
     };
 
     this.setDomTooltipPosition = function (tooltipElement, rect) {
-        var leftOffset = {true: 0,
-            false: tooltipElement.offsetWidth}[rect.left < (window.innerWidth / 2)];
+        var leftOffset = {'true': 0,
+            'false': tooltipElement.offsetWidth}[rect.left < (window.innerWidth / 2)];
         tooltipElement.style.left = Math.max(0, rect.left - leftOffset) + 'px';
-        var topOffset = {true: -rect.height,
-            false: tooltipElement.offsetHeight}[rect.top < (window.innerHeight / 2)];
+        var topOffset = {'true': -rect.height,
+            'false': tooltipElement.offsetHeight}[rect.top < (window.innerHeight / 2)];
         tooltipElement.style.top = (rect.top - topOffset) + 'px';
     };
 }

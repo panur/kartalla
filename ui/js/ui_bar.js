@@ -118,7 +118,7 @@ function UiBar(utils) {
     function updateTripTypeVisibilityElement(visibilityElement, isVisible) {
         var showText = {'en': 'show', 'fi': 'näytä'}[state.lang];
         var hideText = {'en': 'hide', 'fi': 'piilota'}[state.lang];
-        visibilityElement.title = {false: showText, true: hideText}[isVisible];
+        visibilityElement.title = {'false': showText, 'true': hideText}[isVisible];
         visibilityElement.textContent = '(' + visibilityElement.title.charAt(0) + ')';
     }
 
@@ -484,9 +484,9 @@ function UiBar(utils) {
     function getDataInfoItemValue(dataInfoItemValue) {
         if ((dataInfoItemValue === true) || (dataInfoItemValue === false)) {
             if (state.lang === 'fi') {
-                return {true: 'kyllä', false: 'ei'}[dataInfoItemValue];
+                return {'true': 'kyllä', 'false': 'ei'}[dataInfoItemValue];
             } else {
-                return {true: 'yes', false: 'no'}[dataInfoItemValue];
+                return {'true': 'yes', 'false': 'no'}[dataInfoItemValue];
             }
         } else {
             return dataInfoItemValue;

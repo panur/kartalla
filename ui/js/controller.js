@@ -267,8 +267,8 @@ function ControllerTrip(map, alertCache, vpCache) {
             }
 
             if (distance !== undefined) {
-                timesAndDistances.push({arrival: arrivalTime, departure: departureTime,
-                                        distance: distance});
+                timesAndDistances.push({'arrival': arrivalTime, 'departure': departureTime,
+                                        'distance': distance});
             }
         }
         return timesAndDistances;

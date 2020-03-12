@@ -335,7 +335,7 @@ function GtfsTrip(tripId, gtfsRoot, gtfsRoute, directionIndex, startTime, stopTi
         var tripDates = getTripDates();
         var addedDates = tripDates[getTripDatesArrayKey('added')];
         var removedDates = tripDates[getTripDatesArrayKey('removed')];
-        return {added: getDateStrings(addedDates), removed: getDateStrings(removedDates)};
+        return {'added': getDateStrings(addedDates), 'removed': getDateStrings(removedDates)};
     }
 
     function getDateStrings(dateIndexes) {

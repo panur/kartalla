@@ -33,7 +33,7 @@ function MapApiMap() {
         state.map = new google.maps.Map(mapElement, mapOptions);
         state.map.setOptions({'center': new google.maps.LatLng(lat, lng), 'zoom': zoomLevel});
         state.map.addListener('zoom_changed', zoomChanged);
-        state.map.addListener('bounds_changed', function() {
+        state.map.addListener('bounds_changed', function () {
             var bounds = state.map.getBounds();
             var sw = bounds.getSouthWest();
             var ne = bounds.getNorthEast();
@@ -46,7 +46,7 @@ function MapApiMap() {
     };
 
     this.restart = function (lat, lng, zoomLevel) {
-        state.map.setCenter({lat: lat, lng: lng});
+        state.map.setCenter({'lat': lat, 'lng': lng});
         state.map.setZoom(zoomLevel);
     };
 
@@ -124,11 +124,11 @@ function MapApiMap() {
         return new google.maps.LatLng(latLon.lat, latLon.lon);
     };
 
-    this.computeDistance = function(p1, p2) {
+    this.computeDistance = function (p1, p2) {
         return google.maps.geometry.spherical.computeDistanceBetween(p1, p2)
     };
 
-    this.interpolate = function(p1, p2, fraction) {
+    this.interpolate = function (p1, p2, fraction) {
         return google.maps.geometry.spherical.interpolate(p1, p2, fraction);
     };
 
@@ -180,12 +180,12 @@ function MapApiMarker(map, polyline) {
         that.resize(size);
     };
 
-    this.onAdd = function() { // part of OverlayView
+    this.onAdd = function () { // part of OverlayView
         var panes = that.getPanes();
         panes.overlayImage.appendChild(state.symbolRootElement);
     };
 
-    this.draw = function() { // part of OverlayView
+    this.draw = function () { // part of OverlayView
         var projection = that.getProjection();
         if ((projection !== undefined) && (projection !== null)) {
             var point = projection.fromLatLngToDivPixel(state.latLng);
@@ -196,7 +196,7 @@ function MapApiMarker(map, polyline) {
         }
     };
 
-    this.update = function(latLng) {
+    this.update = function (latLng) {
         state.latLng = latLng;
         var isInViewport = map.getBounds().contains(state.latLng);
         if ((state.isVisible === true) && (isInViewport == true)) {
@@ -216,15 +216,15 @@ function MapApiMarker(map, polyline) {
         }
     };
 
-    this.onRemove = function() { // part of OverlayView
+    this.onRemove = function () { // part of OverlayView
         state.symbolRootElement.parentNode.removeChild(state.symbolRootElement);
     };
 
-    this.remove = function() {
+    this.remove = function () {
         that.setMap(null);
     };
 
-    this.resize = function(newSize) {
+    this.resize = function (newSize) {
         state.size = newSize;
         state.symbolRootElement.style.width = newSize + 'px';
         state.symbolRootElement.style.height = newSize + 'px';

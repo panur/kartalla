@@ -125,12 +125,12 @@ function CommonMap(utils) {
     this.addMarker = function (path, pathId, isVisible, color, routeName, getTitleText) {
         if (state.polylineCache[pathId] === undefined) {
             var polylineOptions = {
-                color: 'black',
-                opacity: 0.6,
-                weight: 1
+                'color': 'black',
+                'opacity': 0.6,
+                'weight': 1
             };
             var newPolyline = state.maMap.newPolyline(path, polylineOptions);
-            state.polylineCache[pathId] = {polyline: newPolyline, count: 1};
+            state.polylineCache[pathId] = {'polyline': newPolyline, 'count': 1};
         } else {
             state.polylineCache[pathId].count += 1;
         }
@@ -138,7 +138,7 @@ function CommonMap(utils) {
         var marker = new MapMarker(utils, state.maMap);
         marker.init(state.nextMarkerId, polyline, isVisible, color, getSymbolScale(), routeName,
                     {'getTitleText': getTitleText, 'highlightPolyline': highlightPolyline});
-        state.markers[state.nextMarkerId] = {marker: marker, pathId: pathId};
+        state.markers[state.nextMarkerId] = {'marker': marker, 'pathId': pathId};
         state.nextMarkerId += 1;
         return marker;
     };
@@ -319,7 +319,7 @@ function MapMarker(utils, maMap) {
     }
 
     function getVisibilityString(isVisible) {
-        return {true: 'visible', false: 'hidden'}[isVisible];
+        return {'true': 'visible', 'false': 'hidden'}[isVisible];
     }
 
     function createSymbolRootElement(svgSymbolElement) {
@@ -439,13 +439,13 @@ function MapMarker(utils, maMap) {
                 var fraction = distanceFromP1 / distanceInc;
                 var position = maMap.interpolate(p1, p2, fraction);
                 var heading = maMap.computeHeading(p1, p2);
-                return {position: position, heading: heading};
+                return {'position': position, 'heading': heading};
             }
         }
 
         var p1 = maMap.getPathPoint(polylinePath, pathLength - 2);
         var p2 = maMap.getPathPoint(polylinePath, pathLength - 1);
-        return {position: p2, heading: maMap.computeHeading(p1, p2)};
+        return {'position': p2, 'heading': maMap.computeHeading(p1, p2)};
     }
 
     function getSymbolForm(distanceFromStart, isPastLastArrival) {

@@ -86,27 +86,38 @@ function main() {
     }
 
     function createDataSelection() {
-        return {values: config.names, selectedValue: config.name, changeType : function (newName) {
-            config.restart(newName);
-            tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
-            alerts.restart(config.isAlertsUsed);
-            mqtt.restart(config.isVpUsed);
-            uiBar.restart();
-            controller.restart();
-            timing.restart();
-            map.restart(config.mapLat, config.mapLng, config.mapZoomLevel);
-            window.onresize();
-            downloadGtfsJsonData(config.jsonUrl);
-        }};
+        return {
+            'values': config.names,
+            'selectedValue': config.name,
+            'changeType': function (newName) {
+                config.restart(newName);
+                tripTypeInfos.restart(config.vehicleTypes, config.visibleTypes);
+                alerts.restart(config.isAlertsUsed);
+                mqtt.restart(config.isVpUsed);
+                uiBar.restart();
+                controller.restart();
+                timing.restart();
+                map.restart(config.mapLat, config.mapLng, config.mapZoomLevel);
+                window.onresize();
+                downloadGtfsJsonData(config.jsonUrl);
+            }
+        };
     }
 
     function createMapSelection() {
         var maps = ['Leaflet', 'Google'];
-        var selectedMap = {true: 'Leaflet', false: 'Google'}[document.URL.indexOf('gmap') === -1];
-        return {values: maps, selectedValue: selectedMap, changeType : function (newType) {
-            var filePrefix = {'Leaflet': 'index', 'Google': 'gmap'}[newType];
-            window.location = filePrefix + '.' + config.lang + '.html';
-        }};
+        var selectedMap = {
+            'true': 'Leaflet',
+            'false': 'Google'
+        }[document.URL.indexOf('gmap') === -1];
+        return {
+            'values': maps,
+            'selectedValue': selectedMap,
+            'changeType': function (newType) {
+                var filePrefix = {'Leaflet': 'index', 'Google': 'gmap'}[newType];
+                window.location = filePrefix + '.' + config.lang + '.html';
+            }
+        };
     }
 
     function createPositionType() {
@@ -207,12 +218,12 @@ function TripTypeInfos(controller, uiBar) {
 
     function createTypes() {
         var types = {};
-        types.bus = {isUsed: false, isVisible: false, color: '#007AC9', count: 0};
-        types.train = {isUsed: false, isVisible: false, color: '#8C4799', count: 0};
-        types.tram = {isUsed: false, isVisible: false, color: '#00985F', count: 0};
-        types.metro = {isUsed: false, isVisible: false, color: '#FF6319', count: 0};
-        types.ferry = {isUsed: false, isVisible: false, color: '#00B9E4', count: 0};
-        types.airplane = {isUsed: false, isVisible: false, color: 'olive', count: 0};
+        types.bus = {'isUsed': false, 'isVisible': false, 'color': '#007AC9', 'count': 0};
+        types.train = {'isUsed': false, 'isVisible': false, 'color': '#8C4799', 'count': 0};
+        types.tram = {'isUsed': false, 'isVisible': false, 'color': '#00985F', 'count': 0};
+        types.metro = {'isUsed': false, 'isVisible': false, 'color': '#FF6319', 'count': 0};
+        types.ferry = {'isUsed': false, 'isVisible': false, 'color': '#00B9E4', 'count': 0};
+        types.airplane = {'isUsed': false, 'isVisible': false, 'color': 'olive', 'count': 0};
         return types;
     }
 

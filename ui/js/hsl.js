@@ -77,7 +77,7 @@ function HslAlerts(controller, uiBar) {
             var translations = jsonAlerts[i]['alertDescriptionTextTranslations'];
             for (var j = 0; j < translations.length; j++) {
                 var translation = translations[j];
-                if ((translation['language'] === state.lang) && 
+                if ((translation['language'] === state.lang) &&
                     (jsonAlerts[i].hasOwnProperty('route'))) {
                     if (!alertTexts.hasOwnProperty(translation['text'])) {
                         alertTexts[translation['text']] = '-';
@@ -157,7 +157,7 @@ function HslMqtt(utils, controller, uiBar) {
         state.client = new Paho.MQTT.Client('wss://mqtt.hsl.fi:443/', clientId);
         state.client.onConnectionLost = onConnectionLost;
         state.client.onMessageArrived = onMessageArrived;
-        state.client.connect({onSuccess: onConnect, onFailure: onFailedConnect});
+        state.client.connect({'onSuccess': onConnect, 'onFailure': onFailedConnect});
 
         function onConnectionLost(responseObject) {
             processFailure('lost mqtt connection', responseObject);
@@ -371,8 +371,8 @@ function HslMqtt(utils, controller, uiBar) {
     function subscribeTopics() {
         for (var i = 0; i < state.topicFilters.length; i++) {
             if (state.client !== null) {
-                state.client.subscribe(state.topicFilters[i], {onSuccess: onSubscribeSuccess,
-                                                               onFailure: onSubscribeFailure});
+                state.client.subscribe(state.topicFilters[i], {'onSuccess': onSubscribeSuccess,
+                                                               'onFailure': onSubscribeFailure});
             }
         }
 
@@ -389,8 +389,9 @@ function HslMqtt(utils, controller, uiBar) {
     function unsubscribeTopics() {
         for (var i = 0; i < state.topicFilters.length; i++) {
             if (state.client !== null) {
-                state.client.unsubscribe(state.topicFilters[i], {onSuccess: onUnsubscribeSuccess,
-                                                                 onFailure: onUnsubscribeFailure});
+                state.client.unsubscribe(state.topicFilters[i],
+                                         {'onSuccess': onUnsubscribeSuccess,
+                                          'onFailure': onUnsubscribeFailure});
             }
         }
 
