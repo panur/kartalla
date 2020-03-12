@@ -53,16 +53,17 @@ function MapApiMap() {
     };
 
     function getBaseMaps() {
-        var url = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}';
+        var url = 'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?'+
+            'access_token={accessToken}';
         var mapbox = L.tileLayer(url, {
             attribution: 'Map data &copy; <a href="https://openstreetmap.org">OpenStreetMap</a> ' +
                 'contributors, ' +
                 '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
                 'Imagery &copy; <a href="https://mapbox.com">Mapbox</a>',
             maxZoom: 18,
-            id: 'mapbox.streets',
-            accessToken: 'pk.eyJ1IjoicGFudXIiLCJhIjoiY2lqMzZnZWJuMDAz' +
-                'eXR0a25jYm84Y2M4ZCJ9.0JDpHBxZNybehgLgGBAO9g'
+            id: 'mapbox/streets-v11',
+            accessToken: 'pk.eyJ1IjoicGFudXIiLCJhIjoiY2s3bmRlamZjMDFu' +
+                'aDNtcDdieHg1ZGtodyJ9.eRP_VOSEgydMHusBPQFMyg'
         });
         var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
