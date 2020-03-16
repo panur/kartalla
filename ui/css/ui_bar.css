@@ -52,10 +52,12 @@ div.textBox {
     background-color: white;
     opacity: 0.9;
     position: absolute;
-    overflow: auto;
     max-width: 75%;
-    max-height: 50%;
     z-index: 1000;
+}
+
+div.scrollBox {
+    overflow: auto;
 }
 
 ul.alertList {

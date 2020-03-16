@@ -164,6 +164,7 @@ function UiBar(utils) {
         var alertListElement = createElement('div', elementId);
         alertListElement.className = 'textBox';
         alertListElement.appendChild(createCloseButtonElement());
+        alertListElement.appendChild(createAlertListHeaderElement(alerts));
         var listElement = createElement('ul', elementId);
         listElement.className = 'alertList';
         for (var i = 0; i < alerts.length; i++) {
@@ -174,9 +175,48 @@ function UiBar(utils) {
             }
             listElement.appendChild(itemElement);
         }
-        alertListElement.appendChild(listElement);
+        var scrollElement = createElement('div');
+        scrollElement.className = 'scrollBox';
+        scrollElement.appendChild(listElement);
+        alertListElement.appendChild(scrollElement);
         document.body.appendChild(alertListElement);
+        setScrollElementHeight(scrollElement);
         centerElement(alertListElement);
+    }
+
+    function createAlertListHeaderElement(alerts) {
+        var alertListHeaderElement = createElement('div');
+        var colorCounts = {};
+        for (var i = 0; i < alerts.length; i++) {
+            var alertColor = getAlertColor(alerts[i]['type']);
+            if (colorCounts[alertColor] === undefined) {
+                colorCounts[alertColor] = 1;
+            } else {
+                colorCounts[alertColor] += 1;
+            }
+        }
+        if (Object.keys(colorCounts).length > 1) {
+            var isFirst = true;
+            for (var color in colorCounts) {
+                if (!isFirst) {
+                    alertListHeaderElement.appendChild(createTextElement(' + '));
+                }
+                isFirst = false;
+                var countElement = createTextElement(colorCounts[color]);
+                if (color !== 'undefined') {
+                    countElement.style.color = color;
+                }
+                alertListHeaderElement.appendChild(countElement);
+            }
+            alertListHeaderElement.appendChild(createTextElement(' = '));
+        }
+        if (alerts.length === 1) {
+            var headerText = {'en': 'alert', 'fi': 'häiriö'}[state.lang];
+        } else {
+            var headerText = {'en': 'alerts', 'fi': 'häiriötä'}[state.lang];
+        }
+        alertListHeaderElement.appendChild(createTextElement(alerts.length + ' ' + headerText));
+        return alertListHeaderElement;
     }
 
     function getAlertColor(alertType) {
@@ -325,14 +365,21 @@ function UiBar(utils) {
         var editShareLinkElement = createElement('div', elementId);
         editShareLinkElement.className = 'textBox';
         editShareLinkElement.appendChild(createCloseButtonElement());
+        var headerText =
+            {'en': 'Select fields for the link', 'fi': 'Valitse linkin kentät'}[state.lang];
+        editShareLinkElement.appendChild(createTextElement(headerText));
         var linkElement = createElement('a');
         var itemElementIdPrefix = 'editShareLinkCheckBox';
         var tableElement =
             createShareLinkTableElement(urlParams, linkElement, itemElementIdPrefix, selectedMap);
-        editShareLinkElement.appendChild(tableElement);
-        editShareLinkElement.appendChild(linkElement);
+        var scrollElement = createElement('div');
+        scrollElement.className = 'scrollBox';
+        scrollElement.appendChild(tableElement);
+        scrollElement.appendChild(linkElement);
+        editShareLinkElement.appendChild(scrollElement);
         document.body.appendChild(editShareLinkElement);
         updateShareLinkUrl(linkElement, urlParams, itemElementIdPrefix, selectedMap);
+        setScrollElementHeight(scrollElement);
         centerElement(editShareLinkElement);
     }
 
@@ -376,6 +423,13 @@ function UiBar(utils) {
         var fullUrl = getUrl(selectedMap, state.lang) + '?' + pairs.join('&');
         linkElement.href = fullUrl;
         linkElement.textContent = fullUrl;
+    }
+
+    function setScrollElementHeight(scrollElement) {
+        var maxHeight = Math.round(document.body.clientHeight * 0.5);
+        if (scrollElement.clientHeight > maxHeight) {
+            scrollElement.style.height = maxHeight + 'px';
+        }
     }
 
     function centerElement(elem) {
