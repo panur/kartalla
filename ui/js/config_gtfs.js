@@ -24,7 +24,7 @@ function ConfigGtfs() {
          'lat': 62.607072, 'lng': 29.791886, 'zl': 12, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
-        {'name': 'Jyväskylä', 'file': 'jyvaskyla', 'dir': 'split',
+        {'name': 'Jyväskylä', 'file': 'jyvaskyla', 'dir': 'jyvaskyla',
          'lat': 62.235599, 'lng': 25.761523, 'zl': 11, 'alerts': false, 'vp': false,
          'vehicle_types': ['bus'],
          'visible_types': ['bus']},
