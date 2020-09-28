@@ -23,6 +23,7 @@ def _main():
     parser = argparse.ArgumentParser()
     parser.add_argument('config', help='JSON configuration file')
     parser.add_argument('--only-download', action='store_true', help='Only download GTFS file')
+    parser.add_argument('--use-no-q-dirs', action='store_true', help='Do not use Q dirs')
     args = parser.parse_args()
 
     _init_logging()
@@ -35,9 +36,11 @@ def _main():
     gtfs_name = config['name']
     downloaded_gtfs_zip = _download_gtfs(config['url'])
     modify_date = _get_modify_date(downloaded_gtfs_zip)
-    gtfs_zip = _rename_gtfs_zip(config['gtfs_dir'], downloaded_gtfs_zip, gtfs_name, modify_date)
+    gtfs_dir = _get_q_dir(config['gtfs_dir'], modify_date, not args.use_no_q_dirs)
+    gtfs_zip = _rename_gtfs_zip(gtfs_dir, downloaded_gtfs_zip, gtfs_name, modify_date)
     if gtfs_zip and (not args.only_download):
-        _generate_json(gtfs_name, modify_date, gtfs_zip, config['json_dir'], config['log_dir'])
+        log_dir = _get_q_dir(config['log_dir'], modify_date, not args.use_no_q_dirs)
+        _generate_json(gtfs_name, modify_date, gtfs_zip, config['json_dir'], log_dir)
 
     logging.debug('took {} seconds, max mem: {} megabytes'.format(
         int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
@@ -91,6 +94,14 @@ def _get_modify_times(zip_filename):
         for info in zip_file.infolist():
             modify_times.add(datetime.datetime(*info.date_time).strftime('%Y%m%d'))
     return modify_times
+
+
+def _get_q_dir(base_dir, modify_date, create_q_dir):
+    if create_q_dir:
+        modify_month = int(modify_date[4:6])
+        q_dir = '{}_q{}'.format(modify_date[:4], 1 + ((modify_month - 1) // 3))
+        return os.path.join(base_dir, q_dir)
+    return base_dir
 
 
 def _rename_gtfs_zip(gtfs_dir, old_filename, gtfs_name, modify_date):
