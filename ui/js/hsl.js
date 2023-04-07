@@ -59,6 +59,8 @@ function HslAlerts(controller, uiBar) {
         request.open('POST', 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql',
                      true);
         request.setRequestHeader('Content-Type', 'application/graphql');
+        request.setRequestHeader('digitransit-subscription-key',
+                                 'e2d17429164e4d14a885dedf2560627f');
         request.send(getQuery());
     }
 
@@ -154,7 +156,8 @@ function HslMqtt(utils, controller, uiBar) {
 
     this.connect = function () {
         var clientId = 'kartalla_' + Math.random().toString(16).substr(2, 8);
-        state.client = new Paho.MQTT.Client('wss://mqtt.hsl.fi:443/', clientId);
+        var key = 'digitransit-subscription-key=e2d17429164e4d14a885dedf2560627f';
+        state.client = new Paho.MQTT.Client('wss://mqtt.hsl.fi:443/?' + key, clientId);
         state.client.onConnectionLost = onConnectionLost;
         state.client.onMessageArrived = onMessageArrived;
         state.client.connect({'onSuccess': onConnect, 'onFailure': onFailedConnect});
