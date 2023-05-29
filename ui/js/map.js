@@ -81,8 +81,13 @@ function CommonMap(utils) {
                 newControlElement.title =
                     {'en': 'finding own location', 'fi': 'etsitään omaa sijaintia'}[lang];
                 newControlElement.textContent = '(\u25CE)';
+                var positionOptions = {
+                    enableHighAccuracy: true,
+                    timeout: 20000,
+                    maximumAge: 30000
+                };
                 navigator.geolocation.getCurrentPosition(onPositionSuccess, onPositionError,
-                                                         {'timeout': 20000});
+                                                         positionOptions);
             }
         }
 
