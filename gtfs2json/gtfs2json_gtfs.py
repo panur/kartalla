@@ -255,6 +255,9 @@ def _parse_stop_times(input_dir_or_zip, stop_times_txt):
     with _open_file(input_dir_or_zip, stop_times_txt, skip_utf8_bom=True) as input_file:
         csv_reader = csv.DictReader(input_file)
         for row in csv_reader:
+            if ':' not in row['arrival_time']:
+                logging.info('Invalid arrival_time in {}.'.format(row))
+                continue
             if not is_seconds_in_time:
                 is_seconds_in_time = _is_seconds_in_time(row)
             if row['trip_id'] not in stop_time_trips:
