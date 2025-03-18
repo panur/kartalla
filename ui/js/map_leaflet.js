@@ -71,7 +71,7 @@ function MapApiMap() {
                 '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         });
         var key = 'digitransit-subscription-key=e2d17429164e4d14a885dedf2560627f';
-        var hsl = L.tileLayer('https://cdn.digitransit.fi/map/v2/hsl-map/{z}/{x}/{y}.png?' + key, {
+        var hsl = L.tileLayer('https://cdn.digitransit.fi/map/v3/hsl-map/{z}/{x}/{y}.png?' + key, {
             'maxZoom': 19,
             'attribution': 'Map data &copy; ' +
                 '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, ' +

@@ -56,7 +56,7 @@ function HslAlerts(controller, uiBar) {
                 }
             }
         };
-        request.open('POST', 'https://api.digitransit.fi/routing/v1/routers/hsl/index/graphql',
+        request.open('POST', 'https://api.digitransit.fi/routing/v2/hsl/gtfs/v1',
                      true);
         request.setRequestHeader('Content-Type', 'application/graphql');
         request.setRequestHeader('digitransit-subscription-key',
