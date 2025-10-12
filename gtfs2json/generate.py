@@ -11,6 +11,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import resource
 import shutil
 import sys
@@ -41,6 +42,8 @@ def _main():
     if gtfs_zip and (not args.only_download):
         log_dir = _get_q_dir(config['log_dir'], modify_date, not args.use_no_q_dirs)
         _generate_json(gtfs_name, modify_date, gtfs_zip, config['json_dir'], log_dir)
+        if 'json_bu_dir' in config:
+            _move_old_json_files_to_bu_dir(config['json_dir'], config['json_bu_dir'])
 
     logging.debug('took {} seconds, max mem: {} megabytes'.format(
         int(time.time() - start_time), resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024))
@@ -98,10 +101,20 @@ def _get_modify_times(zip_filename):
 
 def _get_q_dir(base_dir, modify_date, create_q_dir):
     if create_q_dir:
-        modify_month = int(modify_date[4:6])
-        q_dir = '{}_q{}'.format(modify_date[:4], 1 + ((modify_month - 1) // 3))
-        return os.path.join(base_dir, q_dir)
+        return os.path.join(base_dir, _format_q_dir_name(modify_date))
     return base_dir
+
+
+def _format_q_dir_name(timestamp):  # yyyymmdd
+    q_dir_year, q_dir_quarter = _parse_timestamp(timestamp)
+    return '{}_q{}'.format(q_dir_year, q_dir_quarter)
+
+
+def _parse_timestamp(timestamp):  # yyyymmdd
+    month = int(timestamp[4:6])
+    quarter = 1 + ((month - 1) // 3)
+    year = timestamp[:4]
+    return year, quarter
 
 
 def _rename_gtfs_zip(gtfs_dir, old_filename, gtfs_name, modify_date):
@@ -169,6 +182,20 @@ def _rename_existing_file(filename):
 
 def _get_now_timestamp():
     return datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+
+def _move_old_json_files_to_bu_dir(json_dir, json_bu_dir):
+    bu_file_pattern = r'.+_\d{8}\.json'
+    bu_files = []
+    for json_file in sorted(os.listdir(json_dir)):
+        if re.fullmatch(bu_file_pattern, json_file):
+            bu_files.append(json_file)
+    files_to_move = bu_files[:-3]  # keep three newest backup files
+    for file_to_move in files_to_move:
+        q_dir_name = _format_q_dir_name(file_to_move[-13:-5])
+        q_dir = os.path.join(json_bu_dir, q_dir_name)
+        _create_dir(q_dir)
+        shutil.move(os.path.join(json_dir, file_to_move), q_dir)
 
 
 if __name__ == "__main__":
